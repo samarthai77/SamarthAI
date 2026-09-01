@@ -5,3 +5,10 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     plan: free
+    envVars:
+      - key: SUPABASE_URL
+        value: https://curszxwxfujksnkihkc.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_bQx3ArHzqVUuHD-wMGkvqq_EdPfo...
+      - key: SUPABASE_SERVICE_KEY
+        value: sb_secret_VjrJh......
