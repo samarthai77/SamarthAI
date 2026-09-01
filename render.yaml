@@ -9,6 +9,6 @@ services:
       - key: SUPABASE_URL
         value: https://curszxwxfujksnkihkc.supabase.co
       - key: SUPABASE_ANON_KEY
-        value: sb_publishable_bQx3ArHzqVUuHD-wMGkvqq_EdPfo...
+        value: sb_publishable_bQxJArHzqVUuHD-wMGkvqQ_EdPf04
       - key: SUPABASE_SERVICE_KEY
-        value: sb_secret_VjrJh......
+        value: sb_secret_VjrJhMAOPUiMZtot610BvW_L39FSWmI
