@@ -103,5 +103,35 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ PROFILE ============
+router.get('/profile', async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
 
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Get user from database
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, name, email, phone, created_at')
+      .eq('id', decoded.id)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+
+  } catch (error) {
+    console.error('❌ Profile error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
 module.exports = router;
