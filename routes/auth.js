@@ -134,4 +134,34 @@ router.get('/profile', async (req, res) => {
     res.status(401).json({ error: 'Invalid token' });
   }
 });
+// ========== UPDATE PROFILE ==========
+router.put('/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { name, phone } = req.body;
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .update({ name, phone })
+      .eq('id', decoded.id)
+      .select('id, name, email, phone, created_at')
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      user
+    });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
 module.exports = router;
