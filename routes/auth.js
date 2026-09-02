@@ -16,9 +16,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'samarthai_secret';
 // ============ REGISTER ============
 router.post('/register', async (req, res) => {
   try {
+    console.log('📥 Register request received:', req.body);
+
     const { name, email, password, phone } = req.body;
 
-    // 1. Check if user exists
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email and password are required' });
+    }
+
+    // Check if user exists
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
@@ -29,10 +36,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // 2. Hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3. Insert user
+    // Insert user
     const { data: user, error } = await supabase
       .from('users')
       .insert([{ name, email, password: hashedPassword, phone }])
@@ -40,10 +47,11 @@ router.post('/register', async (req, res) => {
       .single();
 
     if (error) {
+      console.error('❌ Supabase insert error:', error);
       return res.status(400).json({ error: error.message });
     }
 
-    // 4. Generate JWT
+    // Generate JWT
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
 
     res.status(201).json({
@@ -53,6 +61,7 @@ router.post('/register', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Register error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -62,7 +71,10 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find user
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -73,13 +85,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // 2. Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // 3. Generate JWT
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
 
     res.json({
@@ -89,6 +99,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
