@@ -145,15 +145,25 @@ router.put('/profile', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const { name, phone } = req.body;
 
-    const { data: user, error } = await supabase
+    // Update user
+    const { error: updateError } = await supabase
       .from('users')
       .update({ name, phone })
-      .eq('id', decoded.id)
+      .eq('id', decoded.id);
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    // Fetch updated user
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
       .select('id, name, email, phone, created_at')
+      .eq('id', decoded.id)
       .single();
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
+    if (fetchError || !user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
     res.json({
