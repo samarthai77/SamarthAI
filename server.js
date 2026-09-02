@@ -8,9 +8,15 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// ============ Routes ============
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
 app.get('/', (req, res) => {
   res.json({ message: '🚀 SamarthAI Backend Live!', status: 'success' });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ SamarthAI server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ SamarthAI server running on port ${PORT}`);
+});
