@@ -64,6 +64,10 @@ async function callGroqAI(message) {
   });
 
   const data = await response.json();
+  
+  // यहाँ हमने console.log जोड़ दिया है ताकि Render के लॉग्ज़ में पता चल सके
+  console.log('🔍 Groq API Full Response:', JSON.stringify(data, null, 2));
+
  return data.choices?.[0]?.message?.content || 'Sorry, I could not process your request.'; 
 }
 
