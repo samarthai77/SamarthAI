@@ -50,5 +50,30 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ GET SOS ALERTS ============
+router.get('/', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
 
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    const { data: sosAlerts, error } = await supabase
+      .from('sos_alerts')
+      .select('*')
+      .eq('user_id', decoded.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(sosAlerts);
+  } catch (error) {
+    console.error('❌ Get SOS error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
