@@ -56,7 +56,7 @@ async function callGroqAI(message) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'mixtral-8x7b-32768',
+      model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: message }],
       temperature: 0.7,
       max_tokens: 500
@@ -65,12 +65,10 @@ async function callGroqAI(message) {
 
   const data = await response.json();
   
-  // यहाँ हमने console.log जोड़ दिया है ताकि Render के लॉग्ज़ में पता चल सके
   console.log('🔍 Groq API Full Response:', JSON.stringify(data, null, 2));
 
  return data.choices?.[0]?.message?.content || 'Sorry, I could not process your request.'; 
 }
-
 // ============ CHAT HISTORY ============
 router.get('/history', async (req, res) => {
   try {
