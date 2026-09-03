@@ -64,7 +64,7 @@ async function callGroqAI(message) {
   });
 
   const data = await response.json();
-  return data.choices[0].message.content;
+ return data.choices?.[0]?.message?.content || 'Sorry, I could not process your request.'; 
 }
 
 // ============ CHAT HISTORY ============
