@@ -53,5 +53,23 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ GET ALL SERVICES ============
+router.get('/', async (req, res) => {
+  try {
+    const { data: services, error } = await supabase
+      .from('services')
+      .select('*, users(name, email, phone)')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(services);
+  } catch (error) {
+    console.error('❌ Get services error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
