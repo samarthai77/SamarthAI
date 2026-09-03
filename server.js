@@ -17,6 +17,8 @@ app.use('/api/chat', chatRoutes);
 // ======= SERVICES ROUTE =========
 const servicesRoutes = require('./routes/services');
 app.use('/api/services', servicesRoutes);
+const requestsRoutes = require('./routes/requests');
+app.use('/api/requests', requestsRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
