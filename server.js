@@ -23,6 +23,8 @@ const sosRoutes = require('./routes/sos');
 app.use('/api/sos', sosRoutes);
 const familyRoutes = require('./routes/family');
 app.use('/api/family', familyRoutes);
+const reviewsRoutes = require('./routes/reviews');
+app.use('/api/reviews', reviewsRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
