@@ -130,4 +130,42 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ DELETE FAMILY MEMBER ============
+router.delete('/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { id } = req.params;
+
+    // Check if member exists and belongs to user
+    const { data: existing, error: checkError } = await supabase
+      .from('family_members')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', decoded.id)
+      .single();
+
+    if (checkError || !existing) {
+      return res.status(404).json({ error: 'Member not found or unauthorized' });
+    }
+
+    const { error } = await supabase
+      .from('family_members')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Family member deleted successfully' });
+  } catch (error) {
+    console.error('❌ Delete family member error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
