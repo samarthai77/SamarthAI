@@ -72,4 +72,56 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ UPDATE SERVICE ============
+router.put('/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { id } = req.params;
+    const { title, description, price, category, location, is_active } = req.body;
+
+    // Check if service exists and belongs to user
+    const { data: existing, error: checkError } = await supabase
+      .from('services')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', decoded.id)
+      .single();
+
+    if (checkError || !existing) {
+      return res.status(404).json({ error: 'Service not found or unauthorized' });
+    }
+
+    // Update service
+    const { data: service, error } = await supabase
+      .from('services')
+      .update({
+        title: title || existing.title,
+        description: description || existing.description,
+        price: price || existing.price,
+        category: category || existing.category,
+        location: location || existing.location,
+        is_active: is_active !== undefined ? is_active : existing.is_active
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({
+      message: 'Service updated successfully',
+      service
+    });
+  } catch (error) {
+    console.error('❌ Update service error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
