@@ -54,5 +54,29 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ GET REVIEWS FOR A SERVICE ============
+router.get('/:service_id', async (req, res) => {
+  try {
+    const { service_id } = req.params;
 
+    if (!service_id) {
+      return res.status(400).json({ error: 'Service ID is required' });
+    }
+
+    const { data: reviews, error } = await supabase
+      .from('reviews')
+      .select('*, users(name, email)')
+      .eq('service_id', service_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('❌ Get reviews error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
