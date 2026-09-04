@@ -79,4 +79,52 @@ router.get('/:service_id', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ UPDATE REVIEW ============
+router.put('/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    // Check if review exists and belongs to user
+    const { data: existing, error: checkError } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('id', id)
+      .eq('reviewer_id', decoded.id)
+      .single();
+
+    if (checkError || !existing) {
+      return res.status(404).json({ error: 'Review not found or unauthorized' });
+    }
+
+    // Update review
+    const { data: review, error } = await supabase
+      .from('reviews')
+      .update({
+        rating: rating || existing.rating,
+        comment: comment || existing.comment
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({
+      message: 'Review updated successfully',
+      review
+    });
+  } catch (error) {
+    console.error('❌ Update review error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
