@@ -73,15 +73,16 @@
             try {
                 const token = localStorage.getItem('token');
                 const res = await fetch(`${API_BASE}/chat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        message: `Describe this image in simple words: ${dataURL}`
-                    })
-                });
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ 
+        message: `Describe this image: ${dataURL}`,
+        image: dataURL 
+    })
+})
                 const data = await res.json();
                 const reply = data.response || 'No description available.';
                 analysisText.textContent = reply;
