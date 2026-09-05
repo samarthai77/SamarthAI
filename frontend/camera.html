@@ -10,6 +10,9 @@
         video { width:100%; border-radius:12px; background:#000; margin-bottom:1rem; }
         .cam-btn { background:#ff6b00; color:white; padding:0.7rem 1.5rem; border:none; border-radius:30px; cursor:pointer; font-weight:bold; margin:0.5rem; }
         .cam-btn:hover { background:#e55a00; }
+        .result-box { background:#f0f0f0; padding:1rem; border-radius:12px; margin-top:1rem; text-align:left; }
+        .result-box h3 { margin:0; color:#003366; }
+        .result-box p { margin:0.5rem 0; }
     </style>
 </head>
 <body>
@@ -25,22 +28,28 @@
     </header>
 
     <div class="camera-container">
-        <h1>📷 Camera</h1>
+        <h1>📷 Camera + Analysis</h1>
         <video id="video" autoplay></video>
         <div>
             <button class="cam-btn" onclick="startCamera()">📷 Start Camera</button>
-            <button class="cam-btn" onclick="capturePhoto()">📸 Click</button>
+            <button class="cam-btn" onclick="captureAndAnalyze()">📸 Click + Analyze</button>
         </div>
         <canvas id="canvas" style="display:none;"></canvas>
         <div id="photoPreview"></div>
+        <div class="result-box" id="analysisResult">
+            <h3>🤖 Analysis Result</h3>
+            <p id="analysisText">Take a photo to analyze...</p>
+        </div>
     </div>
 
     <footer><p>&copy; 2026 SamarthAI</p></footer>
     <script src="js/app.js"></script>
     <script>
+        const API_BASE = 'https://samarthai-backend.onrender.com/api';
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const preview = document.getElementById('photoPreview');
+        const analysisText = document.getElementById('analysisText');
 
         async function startCamera() {
             try {
@@ -51,13 +60,34 @@
             }
         }
 
-        function capturePhoto() {
+        async function captureAndAnalyze() {
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0);
             const dataURL = canvas.toDataURL('image/png');
             preview.innerHTML = `<img src="${dataURL}" style="width:100%; border-radius:12px; margin-top:1rem;" />`;
+
+            analysisText.textContent = '⏳ Analyzing...';
+
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        message: `Describe this image in simple words: ${dataURL}`
+                    })
+                });
+                const data = await res.json();
+                const reply = data.response || 'No description available.';
+                analysisText.textContent = reply;
+            } catch (error) {
+                analysisText.textContent = 'Error analyzing image: ' + error.message;
+            }
         }
 
         document.addEventListener('DOMContentLoaded', startCamera);
