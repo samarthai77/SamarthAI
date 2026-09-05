@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('frontend'));
-app.use(express.static(__dirname));
+
 // ======= Routes =========
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
