@@ -33,6 +33,8 @@ async function callGroqAI(message) {
 // ============ GEMINI VISION ============
 async function callGeminiVision(imageBase64) {
   try {
+    console.log('📸 Analyzing image...');
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -41,18 +43,31 @@ async function callGeminiVision(imageBase64) {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: 'Describe this image in simple words:' },
+              { text: 'Describe this image in simple words in Hindi:' },
               { inline_data: { mime_type: 'image/png', data: imageBase64 } }
             ]
           }]
         })
       }
     );
+
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No description available.';
+    console.log('📥 Gemini raw response:', JSON.stringify(data, null, 2));
+
+    // Check for different response structures
+    let description = data.candidates?.[0]?.content?.parts?.[0]?.text ||
+                      data.candidates?.[0]?.output ||
+                      data.response?.text;
+
+    if (!description) {
+      console.error('❌ No description found in response:', data);
+      return 'No description available. Please try again.';
+    }
+
+    return description;
   } catch (error) {
-    console.error('Gemini vision error:', error);
-    return 'Image analysis failed.';
+    console.error('❌ Gemini vision error:', error);
+    return 'Image analysis failed: ' + error.message;
   }
 }
 
