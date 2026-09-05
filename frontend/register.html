@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register — SamarthAI</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .auth-container { max-width:400px; margin:4rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+        .auth-container input { width:100%; padding:0.7rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:8px; }
+        .auth-container button { width:100%; padding:0.7rem; background:#ff6b00; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .auth-container a { display:block; text-align:center; margin-top:1rem; color:#003366; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Register</h2>
+        <input type="text" id="regName" placeholder="Full Name" />
+        <input type="email" id="regEmail" placeholder="Email" />
+        <input type="password" id="regPassword" placeholder="Password" />
+        <input type="text" id="regPhone" placeholder="Phone" />
+        <button onclick="register()">Register</button>
+        <a href="login.html">Already have an account? Login</a>
+        <p id="regMessage" style="color:red; margin-top:0.5rem;"></p>
+    </div>
+    <script>
+        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+
+        async function register() {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const phone = document.getElementById('regPhone').value;
+
+            if (!name || !email || !password) {
+                document.getElementById('regMessage').textContent = 'Please fill all fields';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, phone })
+                });
+                const data = await res.json();
+
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'dashboard.html';
+                } else {
+                    document.getElementById('regMessage').textContent = data.error || 'Registration failed';
+                }
+            } catch (error) {
+                document.getElementById('regMessage').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
