@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPS — SamarthAI</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .gps-container { max-width:600px; margin:2rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); text-align:center; }
+        .gps-btn { background:#003366; color:white; padding:1rem 2rem; border:none; border-radius:30px; cursor:pointer; font-weight:bold; margin:1rem 0; }
+        .gps-btn:hover { background:#002244; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">SamarthAI</div>
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="chat.html">Chat</a>
+            <a href="services.html">Services</a>
+            <a href="sos.html">SOS</a>
+            <a href="gps.html">GPS</a>
+            <a href="profile.html">Profile</a>
+        </nav>
+    </header>
+
+    <div class="gps-container">
+        <h1>📍 GPS Tracking</h1>
+        <p>Update your location for family tracking</p>
+        <button class="gps-btn" onclick="updateLocation()">📍 Update Location</button>
+        <div id="gpsStatus" style="margin-top:1rem; padding:1rem; border-radius:8px; background:#f0f0f0;">Ready</div>
+    </div>
+
+    <footer><p>&copy; 2026 SamarthAI</p></footer>
+    <script src="js/app.js"></script>
+    <script>
+        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+
+        async function updateLocation() {
+            const status = document.getElementById('gpsStatus');
+            status.textContent = '⏳ Updating location...';
+            status.style.background = '#fff3cd';
+
+            try {
+                const token = localStorage.getItem('token');
+                const latitude = 28.6139 + (Math.random() * 0.01);
+                const longitude = 77.2090 + (Math.random() * 0.01);
+
+                const res = await fetch(`${API_BASE}/gps/location`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ latitude, longitude })
+                });
+                const data = await res.json();
+
+                if (res.status === 200) {
+                    status.textContent = `✅ Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    status.style.background = '#d4edda';
+                } else {
+                    status.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    status.style.background = '#f8d7da';
+                }
+            } catch (error) {
+                status.textContent = '❌ Error: ' + error.message;
+                status.style.background = '#f8d7da';
+            }
+        }
+    </script>
+</body>
+</html>
