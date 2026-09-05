@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SamarthAI — Har Zaroorat Ka Sathi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SamarthAI</title>
+
+    <!-- ========== MANIFEST ========== -->
     <link rel="manifest" href="manifest.json" />
+
+    <!-- ========== CSS ========== -->
     <link rel="stylesheet" href="css/style.css" />
+
 </head>
 <body>
 
-    <!-- HEADER -->
     <header>
         <div class="logo">SamarthAI</div>
         <nav>
@@ -21,7 +25,6 @@
         </nav>
     </header>
 
-    <!-- HERO -->
     <section class="hero">
         <h1>SamarthAI</h1>
         <p>Har Zaroorat Ka Sathi</p>
@@ -29,7 +32,6 @@
         <a href="dashboard.html" class="btn">Get Started</a>
     </section>
 
-    <!-- FEATURES -->
     <section class="features">
         <div class="feature-card">
             <h3>🤖 AI Chat</h3>
@@ -53,6 +55,16 @@
         <p>&copy; 2026 SamarthAI — Har Zaroorat Ka Sathi</p>
     </footer>
 
+    <!-- ========== SERVICE WORKER ========== -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('✅ Service Worker Registered!'))
+                .catch(err => console.log('❌ Service Worker Error:', err));
+        }
+    </script>
+
     <script src="js/app.js"></script>
+
 </body>
 </html>
