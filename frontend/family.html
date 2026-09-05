@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family — SamarthAI</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .family-container { max-width:700px; margin:2rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+        .family-container input { width:100%; padding:0.7rem; margin-bottom:0.8rem; border:1px solid #ccc; border-radius:8px; }
+        .family-container button { background:#ff6b00; color:white; padding:0.7rem 1.5rem; border:none; border-radius:30px; cursor:pointer; font-weight:bold; }
+        .family-list { margin-top:1rem; }
+        .family-item { background:#f0f0f0; padding:0.8rem; border-radius:8px; margin-bottom:0.5rem; display:flex; justify-content:space-between; }
+        .family-item button { background:#dc3545; color:white; border:none; border-radius:8px; padding:0.3rem 0.8rem; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">SamarthAI</div>
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="chat.html">Chat</a>
+            <a href="services.html">Services</a>
+            <a href="sos.html">SOS</a>
+            <a href="gps.html">GPS</a>
+            <a href="family.html">Family</a>
+            <a href="profile.html">Profile</a>
+        </nav>
+    </header>
+
+    <div class="family-container">
+        <h1>👨‍👩‍👦 Family</h1>
+        <div>
+            <input type="text" id="familyName" placeholder="Member Name" />
+            <input type="text" id="familyPhone" placeholder="Phone" />
+            <input type="text" id="familyLocation" placeholder="Location" />
+            <button onclick="addFamilyMember()">Add Family Member</button>
+        </div>
+        <div class="family-list" id="familyList"></div>
+    </div>
+
+    <footer><p>&copy; 2026 SamarthAI</p></footer>
+    <script src="js/app.js"></script>
+    <script>
+        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+
+        async function addFamilyMember() {
+            const name = document.getElementById('familyName').value;
+            const phone = document.getElementById('familyPhone').value;
+            const location = document.getElementById('familyLocation').value;
+
+            if (!name || !phone) {
+                alert('Name and phone are required');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/family`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, phone, location })
+                });
+                const data = await res.json();
+                if (res.status === 201) {
+                    alert('Family member added!');
+                    document.getElementById('familyName').value = '';
+                    document.getElementById('familyPhone').value = '';
+                    document.getElementById('familyLocation').value = '';
+                    loadFamily();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function loadFamily() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/family`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const list = document.getElementById('familyList');
+                list.innerHTML = '';
+                if (Array.isArray(data)) {
+                    data.forEach(member => {
+                        list.innerHTML += `
+                            <div class="family-item">
+                                <div>
+                                    <strong>${member.name}</strong><br />
+                                    📞 ${member.phone}<br />
+                                    📍 ${member.location || 'N/A'}
+                                </div>
+                                <div>
+                                    <button onclick="deleteFamilyMember('${member.id}')">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading family:', error);
+            }
+        }
+
+        async function deleteFamilyMember(id) {
+            if (!confirm('Delete this member?')) return;
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`${API_BASE}/family/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadFamily();
+            } catch (error) {
+                console.error('Error deleting member:', error);
+            }
+        }
+
+        // Load family on page load
+        document.addEventListener('DOMContentLoaded', loadFamily);
+    </script>
+</body>
+</html>
