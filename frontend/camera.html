@@ -78,10 +78,9 @@
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ 
-        message: `Describe this image: ${dataURL}`,
-        image: dataURL 
-    })
+   body: JSON.stringify({ 
+    message: `Describe this image: ${dataURL}`,
+    image: dataURL.split(',')[1]  // Remove data:image/png;base64,
 })
                 const data = await res.json();
                 const reply = data.response || 'No description available.';
