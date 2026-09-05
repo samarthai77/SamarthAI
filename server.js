@@ -7,6 +7,13 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.get('/css/style.css', (req, res) => {
+  res.sendFile(__dirname + '/frontend/style.css');
+});
+
+app.get('/js/app.js', (req, res) => {
+  res.sendFile(__dirname + '/frontend/app.js');
+});
 app.use(express.static('frontend'));
 app.use('/css', express.static(__dirname + '/frontend'));
 app.use('/js', express.static(__dirname + '/frontend'));
