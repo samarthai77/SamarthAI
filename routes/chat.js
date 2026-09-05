@@ -34,6 +34,13 @@ async function callGroqAI(message) {
 async function callGeminiVision(imageBase64) {
   try {
     console.log('📸 Analyzing image...');
+    console.log('🔑 Gemini API Key exists?', !!process.env.GEMINI_API_KEY);
+    
+    // Check if image data is valid
+    if (!imageBase64 || imageBase64.length < 100) {
+      console.error('❌ Invalid image data');
+      return 'Invalid image. Please try again.';
+    }
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -44,7 +51,7 @@ async function callGeminiVision(imageBase64) {
           contents: [{
             parts: [
               { text: 'Describe this image in simple words in Hindi:' },
-              { inline_data: { mime_type: 'image/png', data: imageBase64 } }
+              { inline_data: { mime_type: 'image/png', data: imageBase64.split(',')[1] } }
             ]
           }]
         })
@@ -52,15 +59,17 @@ async function callGeminiVision(imageBase64) {
     );
 
     const data = await response.json();
-    console.log('📥 Gemini raw response:', JSON.stringify(data, null, 2));
+    console.log('📥 Gemini status:', response.status);
+    console.log('📥 Gemini response:', JSON.stringify(data, null, 2));
 
-    // Check for different response structures
-    let description = data.candidates?.[0]?.content?.parts?.[0]?.text ||
-                      data.candidates?.[0]?.output ||
-                      data.response?.text;
+    if (data.error) {
+      console.error('❌ Gemini API error:', data.error);
+      return 'Gemini API error: ' + data.error.message;
+    }
 
+    const description = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!description) {
-      console.error('❌ No description found in response:', data);
+      console.error('❌ No description found');
       return 'No description available. Please try again.';
     }
 
