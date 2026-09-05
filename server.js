@@ -29,6 +29,8 @@ const messagesRoutes = require('./routes/messages');
 app.use('/api/messages', messagesRoutes);
 const gpsRoutes = require('./routes/gps');
 app.use('/api/gps', gpsRoutes);
+const memoryRoutes = require('./routes/memory');
+app.use('/api/memory', memoryRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
