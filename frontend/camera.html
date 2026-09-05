@@ -12,7 +12,6 @@
         .cam-btn:hover { background:#e55a00; }
         .result-box { background:#f0f0f0; padding:1rem; border-radius:12px; margin-top:1rem; text-align:left; }
         .result-box h3 { margin:0; color:#003366; }
-        .result-box p { margin:0.5rem 0; }
     </style>
 </head>
 <body>
@@ -31,8 +30,8 @@
         <h1>📷 Camera + Analysis</h1>
         <video id="video" autoplay></video>
         <div>
-            <button class="cam-btn" onclick="startCamera()">📷 Start Camera</button>
-            <button class="cam-btn" onclick="captureAndAnalyze()">📸 Click + Analyze</button>
+            <button class="cam-btn" id="startBtn">📷 Start Camera</button>
+            <button class="cam-btn" id="captureBtn">📸 Click + Analyze</button>
         </div>
         <canvas id="canvas" style="display:none;"></canvas>
         <div id="photoPreview"></div>
@@ -51,9 +50,17 @@
         const preview = document.getElementById('photoPreview');
         const analysisText = document.getElementById('analysisText');
 
+        let stream = null;
+
+        document.getElementById('startBtn').addEventListener('click', startCamera);
+        document.getElementById('captureBtn').addEventListener('click', captureAndAnalyze);
+
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
             } catch (error) {
                 alert('Camera access denied: ' + error.message);
@@ -61,6 +68,11 @@
         }
 
         async function captureAndAnalyze() {
+            if (!stream) {
+                alert('Please start camera first!');
+                return;
+            }
+
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -72,16 +84,22 @@
 
             try {
                 const token = localStorage.getItem('token');
+                if (!token) {
+                    analysisText.textContent = '❌ Please login first!';
+                    return;
+                }
+
                 const res = await fetch(`${API_BASE}/chat`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    },
-   body: JSON.stringify({ 
-    message: `Describe this image: ${dataURL}`,
-    image: dataURL.split(',')[1]  // Remove data:image/png;base64,
-})
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        message: `Describe this image: ${dataURL}`,
+                        image: dataURL.split(',')[1]
+                    })
+                });
                 const data = await res.json();
                 const reply = data.response || 'No description available.';
                 analysisText.textContent = reply;
@@ -89,8 +107,6 @@
                 analysisText.textContent = 'Error analyzing image: ' + error.message;
             }
         }
-
-        document.addEventListener('DOMContentLoaded', startCamera);
     </script>
 </body>
 </html>
