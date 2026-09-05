@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SOS — SamarthAI</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .sos-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .sos-btn {
+            background: red;
+            color: white;
+            padding: 1.5rem 4rem;
+            font-size: 2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .sos-btn:hover {
+            background: darkred;
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">SamarthAI</div>
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="chat.html">Chat</a>
+            <a href="services.html">Services</a>
+            <a href="sos.html">SOS</a>
+            <a href="profile.html">Profile</a>
+        </nav>
+    </header>
+
+    <div class="sos-container">
+        <h1>🆘 SOS Emergency</h1>
+        <p>Click the button below to send an emergency alert</p>
+        <button class="sos-btn" onclick="sendSOS()">🚨 SOS</button>
+        <div class="status" id="sosStatus">Ready</div>
+    </div>
+
+    <footer><p>&copy; 2026 SamarthAI</p></footer>
+    <script src="js/app.js"></script>
+    <script>
+        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+
+        async function sendSOS() {
+            const status = document.getElementById('sosStatus');
+            status.textContent = '⏳ Sending SOS...';
+            status.style.background = '#fff3cd';
+
+            try {
+                const token = localStorage.getItem('token');
+                const location = 'Delhi, India';
+                const contacts = ['9876543210', '9876543211'];
+
+                const res = await fetch(`${API_BASE}/sos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ location, contacts })
+                });
+                const data = await res.json();
+
+                if (res.status === 201) {
+                    status.textContent = '✅ SOS Sent Successfully!';
+                    status.style.background = '#d4edda';
+                } else {
+                    status.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    status.style.background = '#f8d7da';
+                }
+            } catch (error) {
+                status.textContent = '❌ Error: ' + error.message;
+                status.style.background = '#f8d7da';
+            }
+        }
+    </script>
+</body>
+</html>
