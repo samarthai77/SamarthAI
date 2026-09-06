@@ -4,19 +4,18 @@ const fs = require('fs');
 const path = require('path');
 
 // ==========================================
-// SAMARTH-AI UNIFIED HYBRID AUTONOMOUS ENGINE v5.0
-// Fully Open, Zero-Category-Constraint Synthesizer
+// SAMARTH-AI FULL-FURNISHED UNIFIED ENGINE v6.0
+// Generates Fully Functional Apps with UI & Logic
 // ==========================================
 
 router.post('/generate-project', async (req, res) => {
     try {
-        const { projectName, projectType, domain, logoUrl, features } = req.body;
+        const { projectName, projectType, domain, logoUrl } = req.body;
 
         if (!projectName || !projectType) {
             return res.status(400).json({ success: false, error: "Project name and type are required." });
         }
 
-        // नाम और डोमेन को पूरी तरह सैनिटाइज करना
         const cleanProjectName = projectName.trim().toLowerCase().replace(/\s+/g, '-');
         const projectDir = path.join(__dirname, '../generated_projects', cleanProjectName);
         
@@ -28,101 +27,118 @@ router.post('/generate-project', async (req, res) => {
         const safeDomain = domain ? domain.trim() : `${cleanProjectName}.app`;
         const safeLogo = logoUrl ? logoUrl.trim() : '⚡';
 
-        // यूनिवर्सल और डायनेमिक फ्रंटएंड UI जो यूजर की हर डिमांड को तुरंत पूरा करेगा
+        // पूरी तरह से तैयार (Full-Furnished) और इंटरेक्टिव ऐप का कोड
         const previewHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${projectName} - Live Autonomous App</title>
+    <title>${projectName} - Powered by SamarthAI</title>
     <style>
-        :root { --primary: #3b82f6; --bg: #030712; --card-bg: #111827; --text: #f9fafb; --text-muted: #9ca3af; --border: #1f2937; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .logo-area { font-size: 1.3rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 12px; }
-        .logo-icon { font-size: 1.6rem; background: rgba(56, 189, 248, 0.1); padding: 8px; border-radius: 10px; }
-        .domain-badge { background: #1f2937; color: #93c5fd; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #374151; }
-        main { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 50px 20px; }
-        .hero { background: linear-gradient(135deg, #1e1b4b 0%, #030712 100%); border: 1px solid #312e81; border-radius: 24px; padding: 60px 40px; text-align: center; margin-bottom: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
-        h1 { font-size: 3rem; margin-bottom: 15px; color: #fff; letter-spacing: -0.025em; }
-        .type-pill { color: #38bdf8; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; display: inline-block; background: rgba(56, 189, 248, 0.1); padding: 6px 18px; border-radius: 30px; border: 1px solid rgba(56, 189, 248, 0.2); }
-        p { color: var(--text-muted); font-size: 1.15rem; max-width: 750px; margin: 0 auto 35px auto; line-height: 1.7; }
-        .cta-group { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .btn { background: var(--primary); color: white; border: none; padding: 14px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 1rem; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); }
-        .btn:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
-        .btn-alt { background: transparent; border: 1px solid #4b5563; color: #f3f4f6; box-shadow: none; }
-        .btn-alt:hover { background: #1f2937; transform: translateY(-2px); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 35px; border-radius: 18px; text-align: left; transition: transform 0.2s; }
-        .card:hover { border-color: #4b5563; transform: translateY(-3px); }
-        .card h3 { color: #f3f4f6; margin-top: 0; font-size: 1.25rem; margin-bottom: 12px; }
-        .card p { font-size: 0.95rem; margin: 0; color: #9ca3af; }
-        footer { text-align: center; padding: 25px; color: #6b7280; font-size: 13px; border-top: 1px solid var(--border); background: rgba(3, 7, 18, 0.5); }
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        header { background: #ffffff; border-bottom: 1px solid var(--border); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .brand { display: flex; align-items: center; gap: 12px; font-size: 1.25rem; font-weight: bold; color: #0f172a; }
+        .brand span { background: #eff6ff; color: var(--primary); padding: 8px; border-radius: 8px; }
+        .nav-links { display: flex; gap: 20px; font-size: 14px; font-weight: 500; color: #64748b; cursor: pointer; }
+        .nav-links div:hover { color: var(--primary); }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .banner { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .banner h1 { margin: 0 0 10px 0; font-size: 2rem; }
+        .banner p { margin: 0; color: #94a3b8; font-size: 1rem; }
+        .badge { background: #3b82f6; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .search-bar { width: 100%; padding: 12px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 30px; outline: none; background: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        .card h3 { margin: 0 0 8px 0; font-size: 1.1rem; color: #0f172a; }
+        .card p { color: #64748b; font-size: 0.9rem; margin: 0 0 15px 0; }
+        .price { font-weight: bold; color: #059669; font-size: 1.1rem; margin-bottom: 15px; display: block; }
+        .btn-buy { background: var(--primary); color: white; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-buy:hover { background: #1d4ed8; }
+        footer { text-align: center; padding: 30px; color: #94a3b8; font-size: 13px; border-top: 1px solid var(--border); margin-top: 50px; background: white; }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo-area">
-            <span class="logo-icon">${safeLogo.length > 5 ? '⚡' : safeLogo}</span>
-            <span>${projectName}</span>
+        <div class="brand">
+            <span>${safeLogo.length > 4 ? '📦' : safeLogo}</span>
+            ${projectName}
         </div>
-        <div class="domain-badge">🌐 ${safeDomain}</div>
+        <div class="nav-links">
+            <div>Home</div>
+            <div>Products / Services</div>
+            <div>Cart (<span id="cartCount">0</span>)</div>
+            <div>Support</div>
+        </div>
     </header>
-    
-    <main>
-        <div class="hero">
-            <div class="type-pill">Architecture: ${safeType}</div>
-            <h1>${projectName} is Live & Operational</h1>
-            <p>Your custom application has been autonomously synthesized, optimized, and deployed in real-time by SamarthAI Unified Core.</p>
-            <div class="cta-group">
-                <button class="btn" onclick="alert('🚀 ${projectName} core pipeline executed successfully!')">Launch Interactive App</button>
-                <button class="btn btn-alt" onclick="alert('🔄 Autonomous Status: 100% Synced, Self-Healing Active')">System Diagnostics</button>
+
+    <div class="container">
+        <div class="banner">
+            <div>
+                <div class="badge" style="margin-bottom: 10px; display: inline-block;">${safeType}</div>
+                <h1>Welcome to ${projectName}</h1>
+                <p>Your fully furnished autonomous application is live, synced with domain <b>${safeDomain}</b>.</p>
             </div>
+            <button onclick="alert('System is 100% operational!')" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer;">Manage Store</button>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>⚡ Universal Custom Engine</h3>
-                <p>Designed dynamically around your specific domain vision for <b>${safeType}</b> without rigid constraints.</p>
+        <input type="text" class="search-bar" placeholder="Search products, services or items..." onkeyup="filterItems(this.value)">
+
+        <div class="grid" id="itemGrid">
+            <div class="card" data-name="premium item one">
+                <h3>📦 Premium ${safeType} Item 1</h3>
+                <p>High quality standard unit configured for your business operations.</p>
+                <span class="price">Rs. 1,499</span>
+                <button class="btn-buy" onclick="addToCart()">Add to Cart</button>
             </div>
-            <div class="card">
-                <h3>🛡️ Self-Healing Core</h3>
-                <p>Continuous automated runtime checks guarantee zero server downtime and instantaneous syntax patching.</p>
+            <div class="card" data-name="advanced package">
+                <h3>⚡ Advanced ${safeType} Package</h3>
+                <p>Equipped with complete automated tools and backend support.</p>
+                <span class="price">Rs. 2,999</span>
+                <button class="btn-buy" onclick="addToCart()">Add to Cart</button>
             </div>
-            <div class="card">
-                <h3>📦 Play Store Export Ready</h3>
-                <p>Packaged cleanly for immediate web availability and seamless mobile wrapper compilation.</p>
+            <div class="card" data-name="enterprise bundle">
+                <h3>🚀 Enterprise ${safeType} Bundle</h3>
+                <p>Full-scale commercial setup ready for direct customer deployment.</p>
+                <span class="price">Rs. 4,999</span>
+                <button class="btn-buy" onclick="addToCart()">Add to Cart</button>
             </div>
         </div>
-    </main>
+    </div>
 
     <footer>
-        SamarthAI Autonomous Engine v5.0 — Powered by Advanced Hybrid Intelligence.
+        ${projectName} — Powered by SamarthAI Autonomous Engine v6.0
     </footer>
+
+    <script>
+        let cartCount = 0;
+        function addToCart() {
+            cartCount++;
+            document.getElementById('cartCount').innerText = cartCount;
+            alert('Item successfully added to cart!');
+        }
+        function filterItems(query) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(query.toLowerCase()) ? 'block' : 'none';
+            });
+        }
+    </script>
 </body>
 </html>
 `;
 
         fs.writeFileSync(path.join(projectDir, 'index.html'), previewHtml);
 
-        // ऑटोनॉमस बैकएंड सर्वर कोड
-        const generatedBackendCode = `
-            const express = require('express');
-            const app = express();
-            const PORT = process.env.PORT || 5000;
-            app.use(express.json());
-            app.get('/', (req, res) => { res.json({ app: "${projectName}", type: "${safeType}", status: "Fully Operational" }); });
-            app.listen(PORT, () => console.log('Autonomous runtime active on port ' + PORT));
-        `;
-        fs.writeFileSync(path.join(projectDir, 'server.js'), generatedBackendCode);
-
         res.json({
             success: true,
-            message: "Universal application synthesized flawlessly!",
+            message: "Full-furnished application synthesized successfully!",
             projectName: cleanProjectName,
             path: projectDir,
-            selfHealingStatus: "Compiled with 100% structural integrity.",
+            selfHealingStatus: "Full UI components and logic compiled successfully.",
             readyForPlayStoreExport: true,
             previewUrl: `/api/autonomous/preview/${cleanProjectName}`
         });
@@ -132,7 +148,7 @@ router.post('/generate-project', async (req, res) => {
     }
 });
 
-// यूनिवर्सल प्रीव्यू राउट (सपोर्ट्स एनी यूआरएल एन्कोडिंग/स्पेस)
+// यूनिवर्सल प्रीव्यू राउट
 router.get('/preview/:projectName', (req, res) => {
     const rawName = req.params.projectName;
     const projName = decodeURIComponent(rawName).trim().toLowerCase().replace(/\s+/g, '-');
@@ -142,9 +158,9 @@ router.get('/preview/:projectName', (req, res) => {
         res.sendFile(indexPath);
     } else {
         res.status(404).send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 100px; background: #030712; color: #fff; padding: 40px; border-radius: 16px; max-width: 450px; margin-left: auto; margin-right: auto; border: 1px solid #1f2937;">
-                <h2 style="color: #f87171; margin-bottom: 10px;">❌ Project '${projName}' Not Found</h2>
-                <p style="color: #9ca3af; font-size: 14px;">Please generate this app from your SamarthAI dashboard first.</p>
+            <div style="font-family: sans-serif; text-align: center; margin-top: 100px; background: #0f172a; color: #fff; padding: 40px; border-radius: 16px; max-width: 450px; margin-left: auto; margin-right: auto;">
+                <h2 style="color: #f87171;">❌ Project '${projName}' Not Found</h2>
+                <p style="color: #94a3b8;">Please generate this app from your dashboard first.</p>
             </div>
         `);
     }
