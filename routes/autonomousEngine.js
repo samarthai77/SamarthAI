@@ -50,15 +50,17 @@ router.post('/generate-project', async (req, res) => {
         // 3. सेल्फ-हीलिंग और सिंटैक्स वैलिडेशन लूप
         let isHealthy = true;
         let healingLogs = "No errors detected. Code is clean and optimized.";
-
-        try {
-            // यहाँ कोड की सिंटैक्स जांच की जाती है (सैंडबॉक्स चेक)
-        // 3. सुरक्षित सिंटैक्स वैलिडेशन लूप
+// 3. सुरक्षित सिंटैक्स वैलिडेशन लूप (सर्वर क्रैश रोकेगा)
     let isHealthy = true;
     let healingLogs = "No errors detected. Code is clean and optimized.";
 
     try {
         // बिना सर्वर चलाए केवल कोड का सिंटैक्स चेक करना
+        new Function(generatedCode);
+    } catch (err) {
+        isHealthy = false;
+        healingLogs = `Syntax Error detected: ${err.message}. Auto-patching simulated.`;
+    }
         new Function(generatedCode);
     } catch (err) {
         isHealthy = false;
