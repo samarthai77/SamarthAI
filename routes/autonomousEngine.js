@@ -46,6 +46,39 @@ router.post('/generate-project', async (req, res) => {
 
         const filePath = path.join(projectDir, 'server.js');
         fs.writeFileSync(filePath, generatedCode);
+       const projectDir = path.join(__dirname, '../generated_projects', projectName);
+if (!fs.existsSync(projectDir)){
+    fs.mkdirSync(projectDir, { recursive: true });
+}
+
+const previewHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>\${projectName} - Live Store</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 60px; background: #0f172a; color: #f8fafc; }
+        .card { background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: inline-block; max-width: 500px; width: 100%; border: 1px solid #334155; }
+        h1 { color: #38bdf8; margin-bottom: 10px; }
+        .badge { background: #22c55e; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; display: inline-block; margin-top: 15px; }
+        p { color: #94a3b8; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🛒 \${projectName.toUpperCase()}</h1>
+        <p>Category: <b>\${projectType}</b></p>
+        <p>Domain: <b>\${domain || 'N/A'}</b></p>
+        <div class="badge">● Live & Fully Operational</div>
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #334155;">
+        <p style="font-size: 13px;">Self-Healing Autonomous Engine v1.0 - Ready for Play Store Export</p>
+    </div>
+</body>
+</html>
+`;
+
+fs.writeFileSync(path.join(projectDir, 'index.html'), previewHtml); 
 
         // 3. सेल्फ-हीलिंग और सिंटैक्स वैलिडेशन लूप
         let isHealthy = true;
@@ -80,5 +113,14 @@ router.post('/generate-project', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+router.get('/preview/:projectName', (req, res) => {
+    const projName = req.params.projectName;
+    const indexPath = path.join(__dirname, '../generated_projects', projName, 'index.html');
 
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('<h2 style="text-align:center; margin-top:50px; font-family:sans-serif;">❌ Project Preview Not Found. Please generate the app first.</h2>');
+    }
+});
 module.exports = router;
