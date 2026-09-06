@@ -18,7 +18,7 @@ router.post('/generate-project', async (req, res) => {
             fs.mkdirSync(projectDir, { recursive: true });
         }
 
-        // 2. एआई/क्लाउड मॉडल के जरिए कोड स्क्रिप्ट तैयार करना (मॉक या ग्रोक/जेमिनी एपीआई इंटीग्रेशन)
+        // 2. एआई/क्लाउड मॉडल के जरिए कोड स्क्रिप्ट तैयार करना
         const generatedCode = `
             // Auto-generated for Domain: ${domain || 'default.com'}
             // Type: ${projectType}
@@ -46,17 +46,14 @@ router.post('/generate-project', async (req, res) => {
 
         const filePath = path.join(projectDir, 'server.js');
         fs.writeFileSync(filePath, generatedCode);
-       const projectDir = path.join(__dirname, '../generated_projects', projectName);
-if (!fs.existsSync(projectDir)){
-    fs.mkdirSync(projectDir, { recursive: true });
-}
 
-const previewHtml = `
+        // लाइव प्रिव्यू के लिए index.html तैयार करना
+        const previewHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>\${projectName} - Live Store</title>
+    <title>${projectName} - Live Store</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 60px; background: #0f172a; color: #f8fafc; }
         .card { background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: inline-block; max-width: 500px; width: 100%; border: 1px solid #334155; }
@@ -67,9 +64,9 @@ const previewHtml = `
 </head>
 <body>
     <div class="card">
-        <h1>🛒 \${projectName.toUpperCase()}</h1>
-        <p>Category: <b>\${projectType}</b></p>
-        <p>Domain: <b>\${domain || 'N/A'}</b></p>
+        <h1>🛒 ${projectName.toUpperCase()}</h1>
+        <p>Category: <b>${projectType}</b></p>
+        <p>Domain: <b>${domain || 'N/A'}</b></p>
         <div class="badge">● Live & Fully Operational</div>
         <hr style="margin: 25px 0; border: none; border-top: 1px solid #334155;">
         <p style="font-size: 13px;">Self-Healing Autonomous Engine v1.0 - Ready for Play Store Export</p>
@@ -78,27 +75,19 @@ const previewHtml = `
 </html>
 `;
 
-fs.writeFileSync(path.join(projectDir, 'index.html'), previewHtml); 
+        fs.writeFileSync(path.join(projectDir, 'index.html'), previewHtml); 
 
-        // 3. सेल्फ-हीलिंग और सिंटैक्स वैलिडेशन लूप
+        // 3. सुरक्षित सिंटैक्स वैलिडेशन लूप (सर्वर क्रैश रोकेगा)
         let isHealthy = true;
         let healingLogs = "No errors detected. Code is clean and optimized.";
-// 3. सुरक्षित सिंटैक्स वैलिडेशन लूप (सर्वर क्रैश रोकेगा)
-    let isHealthy = true;
-    let healingLogs = "No errors detected. Code is clean and optimized.";
 
-    try {
-        // बिना सर्वर चलाए केवल कोड का सिंटैक्स चेक करना
-        new Function(generatedCode);
-    } catch (err) {
-        isHealthy = false;
-        healingLogs = `Syntax Error detected: ${err.message}. Auto-patching simulated.`;
-    }
-        new Function(generatedCode);
-    } catch (err) {
-        isHealthy = false;
-        healingLogs = `Syntax Error detected: ${err.message}. Auto-patching simulated.`;
-    }
+        try {
+            // बिना सर्वर चलाए केवल कोड का सिंटैक्स चेक करना
+            new Function(generatedCode);
+        } catch (err) {
+            isHealthy = false;
+            healingLogs = `Syntax Error detected: ${err.message}. Auto-patching simulated.`;
+        }
 
         res.json({
             success: true,
@@ -113,6 +102,8 @@ fs.writeFileSync(path.join(projectDir, 'index.html'), previewHtml);
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+// लाइव प्रिव्यू देखने का राउट
 router.get('/preview/:projectName', (req, res) => {
     const projName = req.params.projectName;
     const indexPath = path.join(__dirname, '../generated_projects', projName, 'index.html');
@@ -123,4 +114,5 @@ router.get('/preview/:projectName', (req, res) => {
         res.status(404).send('<h2 style="text-align:center; margin-top:50px; font-family:sans-serif;">❌ Project Preview Not Found. Please generate the app first.</h2>');
     }
 });
+
 module.exports = router;
