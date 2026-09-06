@@ -95,7 +95,7 @@ async function triggerAutonomousGeneration() {
     resultDiv.innerText = "Generating and running self-healing checks...";
 
     try {
-        const response = await fetch('/api/autonomous/generate-project', {
+        const response = await fetch(`${API_BASE}/autonomous/generate-project`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
