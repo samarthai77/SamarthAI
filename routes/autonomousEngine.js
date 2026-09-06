@@ -29,7 +29,7 @@ router.post('/generate-project', async (req, res) => {
         else if (isVideo) { themeColor = "#ff0000"; categoryName = "Video & Reels Streamer"; }
         else if (isDating) { themeColor = "#fd3a73"; categoryName = "Matchmaking & Dating Portal"; }
 
-      // सफलता का रिस्पॉन्स भेजें और फ्रंटएंड के सभी वेरिएबल्स को सही वैल्यू दें
+    // सफलता का रिस्पॉन्स भेजें और सही स्टेटस सेट करें
         res.json({
             success: true,
             message: `Successfully synthesized runtime app (${categoryName})!`,
@@ -39,7 +39,7 @@ router.post('/generate-project', async (req, res) => {
             status: 'Active & Deployed',
             readyForPlayStore: 'Yes (APK Ready)',
             previewUrl: `/api/autonomous/preview/${cleanProjectName}/index.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}`
-        });
+        }); 
 
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -55,6 +55,8 @@ router.get('/preview/:projectName/:page?', (req, res) => {
     const safeType = query.type || 'Standard App';
     const safeDomain = query.domain || `${projName}.com`;
     const safeLogo = query.logo || '⚡';
+    let pageTitleClean = page.replace('.html', '').replace(/-/g, ' ');
+    pageTitleClean = pageTitleClean.charAt(0).toUpperCase() + pageTitleClean.slice(1);
     const projectNameFormatted = projName.charAt(0).toUpperCase() + projName.slice(1).replace(/-/g, ' ');
 
     let themeColor = "#2563eb";
@@ -102,36 +104,11 @@ router.get('/preview/:projectName/:page?', (req, res) => {
     </head>
     `;
 
-    let pageContent = `<div class="card"><h2>Page Not Found</h2></div>`;
+  let pageContent = `<div class="card"><h2>Page Not Found</h2></div>`;
     
     if (page === 'index.html' || !page) {
         pageContent = `<div class="card"><h1>Welcome to ${projectNameFormatted}</h1><p>Running on <b>${categoryName}</b> framework for domain ${safeDomain}.</p><a href="catalog.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn">Explore All Modules</a></div>`;
-    } else if (page === 'explore.html') {
-        pageContent = `<div class="card"><h2>Explore Trending Categories</h2><p>Discover real-time feeds, items, and specialized ${safeType} utilities.</p></div>`;
-    } else if (page === 'catalog.html') {
-        pageContent = `<div class="card"><h2>Product / Service Catalog</h2><p>Browse through fully synthesized items ready for deployment.</p><a href="product-detail.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn">View Product Details</a></div>`;
-    } else if (page === 'product-detail.html') {
-        pageContent = `<div class="card"><h2>Flagship ${safeType} Item Specification</h2><p>High-grade commercial item configured with zero human intervention.</p><a href="cart.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn" style="background:#16a34a;">Add to Cart & Proceed</a></div>`;
-    } else if (page === 'search.html') {
-        pageContent = `<div class="card"><h2>Advanced Search Engine</h2><input type="text" placeholder="Type to search items, profiles or tags..." style="width:100%; padding:12px; background:#0b0f19; border:1px solid var(--border); border-radius:8px; color:white; box-sizing:border-box; margin-top:15px;"></div>`;
-    } else if (page === 'cart.html') {
-        pageContent = `<div class="card"><h2>Your Active Shopping Cart</h2><p>1x Flagship Item — Active Session</p><a href="checkout.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn" style="background:#ea580c;">Proceed to Checkout</a></div>`;
-    } else if (page === 'checkout.html') {
-        pageContent = `<div class="card"><h2>Secure Payment & Checkout Gateway</h2><p>Enter delivery address and select payment mode.</p><a href="success.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn" style="background:#16a34a;">Confirm & Pay</a></div>`;
-    } else if (page === 'success.html') {
-        pageContent = `<div class="card" style="text-align:center;"><h2>🎉 Order Successfully Placed!</h2><p>Your transaction has been verified by SamarthAI Engine.</p><a href="orders.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn">View Order History</a></div>`;
-    } else if (page === 'orders.html') {
-        pageContent = `<div class="card"><h2>Your Past Orders & Tracking</h2><p><b>Order #SAM-8942:</b> Active Session Verified</p></div>`;
-    } else if (page === 'profile.html') {
-        pageContent = `<div class="card"><h2>User Profile & Account</h2><p><b>Domain:</b> ${safeDomain}</p><p><b>Account Type:</b> ${categoryName}</p></div>`;
-    } else if (page === 'settings.html') {
-        pageContent = `<div class="card"><h2>Application Preferences & Security</h2><p>Manage notifications, API keys, and autonomous runtime permissions.</p></div>`;
-    } else if (page === 'terms.html') {
-        pageContent = `<div class="card"><h2>Terms of Service & Privacy Policy</h2><p>All operations under ${projectNameFormatted} are governed autonomously.</p></div>`;
-    }
-
-    const finalHtml = `<!DOCTYPE html><html>${commonHead(page)}<body>${commonNavbar}<div class="container">${pageContent}</div><footer>${projectNameFormatted}</footer></body></html>`;
-    
-    res.send(finalHtml);
-});
+    } else {
+        pageContent = `<div class="card"><h2>Welcome to ${pageTitleClean}</h2><p>This is the dedicated workspace for managing ${pageTitleClean.toLowerCase()} under ${projectNameFormatted}.</p></div>`;
+    } 
 module.exports = router;
