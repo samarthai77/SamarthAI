@@ -121,6 +121,8 @@ router.post('/generate-project', async (req, res) => {
     }
 });
 
+
+
 // किसी भी पेज को लोड करने के लिए मल्टी-पेज राउटिंग सपोर्ट
 router.get('/preview/:projectName/:page?', (req, res) => {
     const rawName = req.params.projectName;
@@ -135,7 +137,17 @@ router.get('/preview/:projectName/:page?', (req, res) => {
         if (fs.existsSync(indexPath)) {
             res.sendFile(indexPath);
         } else {
-            res.status(404).send(`<h2 style="text-align:center; margin-top:100px; font-family:sans-serif; color:white; background:#0b0f19; padding:50px;">Project not found.</h2>`);
+            res.status(200).send(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Project Session Reset</title></head>
+                <body style="background:#0b0f19; color:white; font-family:sans-serif; text-align:center; padding-top:100px;">
+                    <h2>⚠️ Project Session Was Reset by Cloud Server</h2>
+                    <p>Cloud hosting cleared temporary files. Please click generate again from your dashboard to recreate the files instantly.</p>
+                    <a href="/" style="background:#2563eb; color:white; padding:10px 20px; text-decoration:none; border-radius:8px; display:inline-block; margin-top:20px;">Go Back</a>
+                </body>
+                </html>
+            `);
         }
     }
 });
