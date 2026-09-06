@@ -40,7 +40,29 @@
             </a>
         </div>
     </section>
+<div class="autonomous-card" style="background: #1e1e2f; padding: 20px; border-radius: 10px; color: #fff; margin-top: 20px;">
+    <h3>🤖 SamarthAI Autonomous App Generator</h3>
+    <p>Build and deploy your custom app instantly using the self-healing engine.</p>
+    
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label>Project Name:</label>
+        <input type="text" id="autoProjectName" placeholder="e.g., MyStoreApp" style="width: 100%; padding: 8px; margin-top: 5px;">
+    </div>
 
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label>Project Type:</label>
+        <input type="text" id="autoProjectType" placeholder="e.g., E-commerce / Service App" style="width: 100%; padding: 8px; margin-top: 5px;">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label>Domain / URL:</label>
+        <input type="text" id="autoDomain" placeholder="e.g., mystore.com" style="width: 100%; padding: 8px; margin-top: 5px;">
+    </div>
+
+    <button onclick="triggerAutonomousGeneration()" style="background: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Generate Autonomous App</button>
+
+    <div id="autoResult" style="margin-top: 15px; font-family: monospace; white-space: pre-wrap;"></div>
+</div>
     <footer><p>&copy; 2026 SamarthAI</p></footer>
     <script src="js/app.js"></script>
 </body>
