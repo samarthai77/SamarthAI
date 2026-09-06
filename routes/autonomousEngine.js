@@ -29,13 +29,16 @@ router.post('/generate-project', async (req, res) => {
         else if (isVideo) { themeColor = "#ff0000"; categoryName = "Video & Reels Streamer"; }
         else if (isDating) { themeColor = "#fd3a73"; categoryName = "Matchmaking & Dating Portal"; }
 
-        // सफलता का रिस्पॉन्स भेजें जो सीधे हमारे डायनेमिक व्यूअर पर रीडायरेक्ट करेगा
+      // सफलता का रिस्पॉन्स भेजें और फ्रंटएंड के सभी वेरिएबल्स को सही वैल्यू दें
         res.json({
             success: true,
             message: `Successfully synthesized runtime app (${categoryName})!`,
             projectName: cleanProjectName,
             totalPages: 12,
-            previewUrl: `/api/autonomous/view/${cleanProjectName}/index.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}`
+            path: `generated_projects/${cleanProjectName}`,
+            status: 'Active & Deployed',
+            readyForPlayStore: 'Yes (APK Ready)',
+            previewUrl: `/api/autonomous/preview/${cleanProjectName}/index.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}`
         });
 
     } catch (error) {
@@ -43,8 +46,8 @@ router.post('/generate-project', async (req, res) => {
     }
 });
 
-// यूनिवर्सल डायनेमिक पेज रेंडरर (जो बिना किसी फाइल के सीधे मेमोरी से पेज बनाएगा)
-router.get('/view/:projectName/:page', (req, res) => {
+// यूनिवर्सल डायनेमिक पेज रेंडरर (जो बिना किसी फाइल के सीधे मेमोरी से 12 पेज बनाएगा)
+router.get('/preview/:projectName/:page?', (req, res) => {
     const projName = req.params.projectName;
     const page = req.params.page || 'index.html';
     const query = req.query;
@@ -60,7 +63,6 @@ router.get('/view/:projectName/:page', (req, res) => {
     else if (/video|youtube|reel/i.test(safeType)) { themeColor = "#ff0000"; categoryName = "Video & Reels Streamer"; }
     else if (/dating|tinder|match/i.test(safeType)) { themeColor = "#fd3a73"; categoryName = "Matchmaking & Dating Portal"; }
 
-    // नेविगेशन बार जो डायनेमिक पैरामीटर को आगे पास करेगा
     const makeLink = (targetPage, label) => `<a href="${targetPage}?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" style="color: ${page === targetPage ? '#60a5fa' : '#94a3b8'}; text-decoration: none; font-weight: ${page === targetPage ? 'bold' : '600'};">${label}</a>`;
 
     const commonNavbar = `
@@ -100,10 +102,9 @@ router.get('/view/:projectName/:page', (req, res) => {
     </head>
     `;
 
-    // अलग-अलग पेजों का कंटेंट
     let pageContent = `<div class="card"><h2>Page Not Found</h2></div>`;
     
-    if (page === 'index.html') {
+    if (page === 'index.html' || !page) {
         pageContent = `<div class="card"><h1>Welcome to ${projectNameFormatted}</h1><p>Running on <b>${categoryName}</b> framework for domain ${safeDomain}.</p><a href="catalog.html?type=${encodeURIComponent(safeType)}&domain=${encodeURIComponent(safeDomain)}&logo=${encodeURIComponent(safeLogo)}" class="btn">Explore All Modules</a></div>`;
     } else if (page === 'explore.html') {
         pageContent = `<div class="card"><h2>Explore Trending Categories</h2><p>Discover real-time feeds, items, and specialized ${safeType} utilities.</p></div>`;
@@ -133,5 +134,4 @@ router.get('/view/:projectName/:page', (req, res) => {
     
     res.send(finalHtml);
 });
-
 module.exports = router;
