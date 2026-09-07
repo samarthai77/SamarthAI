@@ -3157,10 +3157,7 @@ async function createAutonomousProject(input) {
        PROJECT DIRECTORIES
     --------------------------------------------------- */
 
-    const directory =
-        projectDirectory(
-            projectId
-        );
+  const directory = projectDirectory({ id: projectId });
 
     ensureDir(
         directory
