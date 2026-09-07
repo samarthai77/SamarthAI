@@ -1377,21 +1377,7 @@ return '<td>' + (record[field.name] ?? '') + '</td>';
 
                 }).join('');
 
-            return `
-<tr>
-    ${cells}
-
-    <td>
-                                                                                                                                                                 
-          <button
-    class="danger"
-    onclick="deleteRecord('${record.id}')"
->
-            Delete
-        </button>
-    </td>
-</tr>
-`;
+    return '<tr>' + cells + '<td><button class="danger" onclick="deleteRecord(\'' + record.id + '\')">Delete</button></td></tr>';      
 
         }).join('');
 }
