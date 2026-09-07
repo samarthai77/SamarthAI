@@ -1373,7 +1373,7 @@ function renderRecords(records) {
             const cells =
                 fields.map(field => {
 
-return `<td>${record[field.name] ?? ''}</td>`;
+return '<td>' + (record[field.name] ?? '') + '</td>';
 
                 }).join('');
 
