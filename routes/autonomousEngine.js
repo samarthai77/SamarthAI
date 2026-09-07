@@ -1388,10 +1388,11 @@ function renderRecords(records) {
     ${cells}
 
     <td>
-        <button
-            class="danger"
-            onclick="deleteRecord('${'${record.id}'}')"
-        >
+                                                                                                                                                                 
+          <button
+    class="danger"
+    onclick="deleteRecord('${record.id}')"
+>
             Delete
         </button>
     </td>
