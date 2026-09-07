@@ -82,45 +82,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 async function triggerAutonomousGeneration() {
-    const projectName = document.getElementById('autoProjectName').value;
-    const projectType = document.getElementById('autoProjectType').value;
-    const domain = document.getElementById('autoDomain').value;
-    const resultDiv = document.getElementById('autoResult');
+    const projectName =
+        document.getElementById('autoProjectName').value.trim();
+
+    const projectType =
+        document.getElementById('autoProjectType').value.trim();
+
+    const domain =
+        document.getElementById('autoDomain').value.trim();
+
+    const resultDiv =
+        document.getElementById('autoResult');
 
     if (!projectName || !projectType) {
-        alert("Please enter Project Name and Type.");
+        alert('Please enter Project Name and Type.');
         return;
     }
 
-    resultDiv.innerText = "Generating and running self-healing checks...";
+    resultDiv.innerHTML =
+        '⏳ Generating project...';
 
     try {
-        const response = await fetch(`${API_BASE}/autonomous/generate-project`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                projectName,
-                projectType,
-                domain,
-                features: ["GPS", "SOS", "AI Chat", "Database Sync"]
-            })
-        });
+        const response = await fetch(
+            `${API_BASE}/autonomous/generate-project`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    projectName,
+                    projectType,
+                    domain,
+                    features: [
+                        'GPS',
+                        'SOS',
+                        'AI Chat',
+                        'Database Sync'
+                    ]
+                })
+            }
+        );
 
-        const data = await response.json();
+        const data =
+            await response.json();
+
+        console.log(
+            'Autonomous API Response:',
+            data
+        );
 
         if (data.success) {
-            resultDiv.innerHTML = `✅ <span style="color: #4ade80;">Success!</span>\n` +
-                `Project: ${data.projectName}\n` +
-                `Path: ${data.path}\n` +
-                `Status: ${data.selfHealingStatus}\n` +
-                `Ready for Play Store Export: ${data.readyForPlayStoreExport}`;
+
+            const project =
+                data.project || {};
+
+            resultDiv.innerHTML =
+                `✅ <span style="color:#4ade80;">Success!</span><br>` +
+                `Project: ${data.projectName || project.name || projectName}<br>` +
+                `Project ID: ${data.projectId || project.id || 'N/A'}<br>` +
+                `Pages: ${data.totalPages || (project.pages ? project.pages.length : 0)}<br>` +
+                `Status: ${data.status || project.status || 'Generated'}<br>` +
+                `Play Store Build: ${
+                    data.readyForPlayStore === true
+                        ? 'Yes'
+                        : 'Not built yet'
+                }<br>` +
+                `Preview: ${
+                    data.previewUrl
+                        ? `<a href="${API_BASE.replace('/api', '')}${data.previewUrl}" target="_blank" style="color:#60a5fa;">Open Preview</a>`
+                        : 'Not available'
+                }`;
+
         } else {
-            resultDiv.innerHTML = `❌ <span style="color: #f87171;">Error:</span> ${data.error}`;
+
+            resultDiv.innerHTML =
+                `❌ <span style="color:#f87171;">Error:</span> ${
+                    data.error || 'Generation failed.'
+                }`;
         }
+
     } catch (err) {
-        resultDiv.innerHTML = `❌ <span style="color: #f87171;">Network Error:</span> ${err.message}`;
+
+        console.error(
+            'Autonomous Generation Error:',
+            err
+        );
+
+        resultDiv.innerHTML =
+            `❌ <span style="color:#f87171;">Network Error:</span> ${
+                err.message
+            }`;
     }
-}
+} 
 console.log('🚀 SamarthAI Frontend Loaded!');
