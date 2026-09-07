@@ -3,67 +3,1008 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Dashboard — SamarthAI</title>
+
     <link rel="stylesheet" href="style.css" />
+
+    <style>
+        /* =====================================================
+           SAMARTHAI AUTONOMOUS DASHBOARD
+           ===================================================== */
+
+        .dashboard-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 25px 15px 50px;
+        }
+
+        .welcome-box {
+            margin-bottom: 25px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            display: block;
+            padding: 20px;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* =====================================================
+           AUTONOMOUS GENERATOR
+           ===================================================== */
+
+        .autonomous-card {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 18px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #111827,
+                    #1e293b,
+                    #172554
+                );
+            color: white;
+            box-shadow:
+                0 10px 35px rgba(0,0,0,0.25);
+        }
+
+        .autonomous-title {
+            margin-top: 0;
+            font-size: 25px;
+        }
+
+        .autonomous-subtitle {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        .generator-label {
+            display: block;
+            margin-top: 18px;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        .generator-input,
+        .generator-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px;
+            border-radius: 9px;
+            border: 1px solid #475569;
+            background: #f8fafc;
+            color: #111827;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .generator-textarea {
+            min-height: 145px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .generator-input:focus,
+        .generator-textarea:focus {
+            border-color: #38bdf8;
+            box-shadow:
+                0 0 0 3px rgba(56,189,248,0.15);
+        }
+
+        .generator-row {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .generate-button {
+            width: 100%;
+            margin-top: 22px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #2563eb,
+                    #06b6d4
+                );
+
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+
+            box-shadow:
+                0 7px 20px rgba(37,99,235,0.35);
+        }
+
+        .generate-button:hover {
+            opacity: 0.92;
+        }
+
+        .generate-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        /* =====================================================
+           EXAMPLE BOX
+           ===================================================== */
+
+        .example-box {
+            margin-top: 15px;
+            padding: 13px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* =====================================================
+           RESULT
+           ===================================================== */
+
+        .auto-result {
+            margin-top: 22px;
+            padding: 18px;
+            border-radius: 12px;
+            background: #020617;
+            border: 1px solid #334155;
+            display: none;
+            line-height: 1.7;
+        }
+
+        .result-success {
+            border-color: #22c55e;
+        }
+
+        .result-error {
+            border-color: #ef4444;
+        }
+
+        .result-loading {
+            border-color: #38bdf8;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-item {
+            margin: 5px 0;
+        }
+
+        .preview-button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: #22c55e;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .modify-button {
+            display: inline-block;
+            margin-top: 15px;
+            margin-left: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: #f59e0b;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 600px) {
+
+            .dashboard-container {
+                padding: 18px 12px 40px;
+            }
+
+            .autonomous-card {
+                padding: 18px;
+            }
+
+            .autonomous-title {
+                font-size: 21px;
+            }
+
+            .generate-button {
+                font-size: 16px;
+            }
+
+            .modify-button {
+                margin-left: 0;
+                margin-top: 8px;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-    <header>
-        <div class="logo">SamarthAI</div>
-        <nav>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="chat.html">Chat</a>
-            <a href="services.html">Services</a>
-            <a href="profile.html">Profile</a>
-        </nav>
-    </header>
+<header>
+    <div class="logo">SamarthAI</div>
 
-    <section style="max-width:1000px; margin:2rem auto; padding:0 1rem;">
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="chat.html">Chat</a>
+        <a href="services.html">Services</a>
+        <a href="profile.html">Profile</a>
+    </nav>
+</header>
+
+
+<main class="dashboard-container">
+
+    <!-- =====================================================
+         WELCOME
+         ===================================================== -->
+
+    <section class="welcome-box">
+
         <h1>Dashboard</h1>
-        <p>Welcome to SamarthAI!</p>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1.5rem; margin-top:2rem;">
-            <a href="chat.html" class="feature-card" style="text-decoration:none; color:inherit;">
-                <h3>🤖 Chat</h3> 
+
+        <p>
+            Welcome to SamarthAI!
+        </p>
+
+    </section>
+
+
+    <!-- =====================================================
+         EXISTING FEATURES
+         ===================================================== -->
+
+    <section>
+
+        <div class="feature-grid">
+
+            <a
+                href="chat.html"
+                class="feature-card"
+                style="text-decoration:none; color:inherit;"
+            >
+                <h3>🤖 Chat</h3>
                 <p>AI Chat</p>
             </a>
-            <a href="services.html" class="feature-card" style="text-decoration:none; color:inherit;">
+
+
+            <a
+                href="services.html"
+                class="feature-card"
+                style="text-decoration:none; color:inherit;"
+            >
                 <h3>🛠️ Services</h3>
                 <p>Find services</p>
             </a>
-            <a href="#" class="feature-card" style="text-decoration:none; color:inherit;">
+
+
+            <a
+                href="#"
+                class="feature-card"
+                style="text-decoration:none; color:inherit;"
+            >
                 <h3>🆘 SOS</h3>
                 <p>Emergency</p>
             </a>
-            <a href="#" class="feature-card" style="text-decoration:none; color:inherit;">
+
+
+            <a
+                href="#"
+                class="feature-card"
+                style="text-decoration:none; color:inherit;"
+            >
                 <h3>📍 GPS</h3>
                 <p>Family tracking</p>
             </a>
+
         </div>
+
     </section>
-<div class="autonomous-card" style="background: #1e1e2f; padding: 20px; border-radius: 10px; color: #fff; margin-top: 20px;">
-    <h3>🤖 SamarthAI Autonomous App Generator</h3>
-    <p>Build and deploy your custom app instantly using the self-healing engine.</p>
-    
-    <div class="form-group" style="margin-bottom: 15px;">
-        <label>Project Name:</label>
-        <input type="text" id="autoProjectName" placeholder="e.g., MyStoreApp" style="width: 100%; padding: 8px; margin-top: 5px;">
-    </div>
 
-    <div class="form-group" style="margin-bottom: 15px;">
-        <label>Project Type:</label>
-        <input type="text" id="autoProjectType" placeholder="e.g., E-commerce / Service App" style="width: 100%; padding: 8px; margin-top: 5px;">
-    </div>
 
-    <div class="form-group" style="margin-bottom: 15px;">
-        <label>Domain / URL:</label>
-        <input type="text" id="autoDomain" placeholder="e.g., mystore.com" style="width: 100%; padding: 8px; margin-top: 5px;">
-    </div>
+    <!-- =====================================================
+         SAMARTHAI AUTONOMOUS APP / WEBSITE GENERATOR
+         ===================================================== -->
 
-    <button onclick="triggerAutonomousGeneration()" style="background: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Generate Autonomous App</button>
+    <section class="autonomous-card">
 
-    <div id="autoResult" style="margin-top: 15px; font-family: monospace; white-space: pre-wrap;"></div>
-</div>
-    <footer><p>&copy; 2026 SamarthAI</p></footer>
-   <script src="app.js"></script> 
+        <h2 class="autonomous-title">
+            🤖 SamarthAI Autonomous App & Website Generator
+        </h2>
+
+        <p class="autonomous-subtitle">
+            बस बताइए कि आपको क्या बनाना है।
+            SamarthAI आपकी requirement को समझकर project blueprint,
+            files और working preview तैयार करेगा।
+        </p>
+
+
+        <!-- =================================================
+             MAIN USER REQUIREMENT
+             ================================================= -->
+
+        <label
+            class="generator-label"
+            for="autoPrompt"
+        >
+            📝 आप क्या बनाना चाहते हैं?
+        </label>
+
+        <textarea
+            id="autoPrompt"
+            class="generator-textarea"
+            placeholder="उदाहरण:
+
+मुझे एक किराना दुकान की वेबसाइट बनानी है।
+इसमें product list, product search, WhatsApp order,
+customer login, admin panel और payment option होना चाहिए।
+
+या:
+
+मुझे एक construction company की professional website बनानी है
+जिसमें Home, About, Services, Projects, Gallery,
+Contact और WhatsApp button हो।"
+        ></textarea>
+
+
+        <!-- =================================================
+             OPTIONAL PROJECT DETAILS
+             ================================================= -->
+
+        <div class="generator-row">
+
+            <div>
+
+                <label
+                    class="generator-label"
+                    for="autoProjectName"
+                >
+                    Project Name
+                </label>
+
+                <input
+                    type="text"
+                    id="autoProjectName"
+                    class="generator-input"
+                    placeholder="जैसे: Shekhar Store"
+                />
+
+            </div>
+
+
+            <div>
+
+                <label
+                    class="generator-label"
+                    for="autoProjectType"
+                >
+                    Project Type
+                </label>
+
+                <input
+                    type="text"
+                    id="autoProjectType"
+                    class="generator-input"
+                    placeholder="जैसे: E-commerce Website"
+                />
+
+            </div>
+
+
+            <div>
+
+                <label
+                    class="generator-label"
+                    for="autoDomain"
+                >
+                    Domain / URL
+                </label>
+
+                <input
+                    type="text"
+                    id="autoDomain"
+                    class="generator-input"
+                    placeholder="जैसे: mystore.com"
+                />
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             EXAMPLES
+             ================================================= -->
+
+        <div class="example-box">
+
+            💡 <strong>Example:</strong>
+
+            <br />
+
+            "मुझे एक restaurant website बनानी है जिसमें
+            menu, table booking, online order, location,
+            WhatsApp और admin panel हो।"
+
+            <br /><br />
+
+            SamarthAI बाद में इसी project में आपके कहने पर
+            बदलाव भी कर सकेगा।
+
+        </div>
+
+
+        <!-- =================================================
+             GENERATE BUTTON
+             ================================================= -->
+
+        <button
+            id="autonomousGenerateButton"
+            class="generate-button"
+            onclick="generateWithSamarthAI()"
+        >
+            🚀 Build with SamarthAI
+        </button>
+
+
+        <!-- =================================================
+             RESULT
+             ================================================= -->
+
+        <div
+            id="autoResult"
+            class="auto-result"
+        ></div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    <p>
+        &copy; 2026 SamarthAI — Har Zaroorat Ka Sathi
+    </p>
+</footer>
+
+
+<!-- =========================================================
+     EXISTING APP.JS
+     ========================================================= -->
+
+<script src="app.js"></script>
+
+
+<!-- =========================================================
+     AUTONOMOUS DASHBOARD SCRIPT
+     ========================================================= -->
+
+<script>
+
+const SAMARTHAI_API =
+    'https://samarthai-backend.onrender.com/api';
+
+
+async function generateWithSamarthAI() {
+
+    const prompt =
+        document.getElementById('autoPrompt').value.trim();
+
+    const projectName =
+        document.getElementById('autoProjectName').value.trim();
+
+    const projectType =
+        document.getElementById('autoProjectType').value.trim();
+
+    const domain =
+        document.getElementById('autoDomain').value.trim();
+
+    const resultDiv =
+        document.getElementById('autoResult');
+
+    const button =
+        document.getElementById(
+            'autonomousGenerateButton'
+        );
+
+
+    // -------------------------------------------------------
+    // Validate
+    // -------------------------------------------------------
+
+    if (!prompt) {
+
+        alert(
+            'पहले बताइए कि आपको क्या बनाना है।'
+        );
+
+        document
+            .getElementById('autoPrompt')
+            .focus();
+
+        return;
+    }
+
+
+    // -------------------------------------------------------
+    // Loading
+    // -------------------------------------------------------
+
+    button.disabled = true;
+
+    button.innerText =
+        '⏳ SamarthAI is building...';
+
+    resultDiv.style.display = 'block';
+
+    resultDiv.className =
+        'auto-result result-loading';
+
+    resultDiv.innerHTML = `
+
+        <div class="result-title">
+            🤖 SamarthAI Autonomous Engine
+        </div>
+
+        <div class="result-item">
+            🔍 Requirement समझी जा रही है...
+        </div>
+
+        <div class="result-item">
+            🧠 Project blueprint बनाया जा रहा है...
+        </div>
+
+        <div class="result-item">
+            ⚙️ Project files generate हो रही हैं...
+        </div>
+
+        <div class="result-item">
+            🛡️ Validation और self-check चल रहा है...
+        </div>
+
+    `;
+
+
+    // -------------------------------------------------------
+    // API Request
+    // -------------------------------------------------------
+
+    try {
+
+        const response =
+            await fetch(
+                `${SAMARTHAI_API}/autonomous/generate`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body: JSON.stringify({
+
+                        prompt: prompt,
+
+                        projectName:
+                            projectName || undefined,
+
+                        projectType:
+                            projectType || undefined,
+
+                        domain:
+                            domain || undefined
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        // ---------------------------------------------------
+        // API ERROR
+        // ---------------------------------------------------
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.error ||
+                data.message ||
+                `Generation failed (${response.status})`
+            );
+        }
+
+
+        // ---------------------------------------------------
+        // SUCCESS
+        // ---------------------------------------------------
+
+        resultDiv.className =
+            'auto-result result-success';
+
+
+        let previewUrl =
+            data.preview || '';
+
+
+        /*
+         * Backend normally returns preview URL.
+         * If it returns a relative path,
+         * convert it into the backend URL.
+         */
+
+        if (
+            previewUrl &&
+            previewUrl.startsWith('/')
+        ) {
+
+            previewUrl =
+                'https://samarthai-backend.onrender.com'
+                + previewUrl;
+        }
+
+
+        resultDiv.innerHTML = `
+
+            <div class="result-title">
+                ✅ Project Successfully Generated
+            </div>
+
+            <div class="result-item">
+                📦 <strong>Project:</strong>
+                ${escapeGeneratorHTML(
+                    data.projectName || projectName || 'Project'
+                )}
+            </div>
+
+            <div class="result-item">
+                🆔 <strong>Project ID:</strong>
+                ${escapeGeneratorHTML(
+                    data.projectId || 'N/A'
+                )}
+            </div>
+
+            <div class="result-item">
+                🔖 <strong>Version:</strong>
+                ${escapeGeneratorHTML(
+                    String(data.version || 1)
+                )}
+            </div>
+
+            <div class="result-item">
+                ⚙️ <strong>Status:</strong>
+                ${escapeGeneratorHTML(
+                    data.status || 'GENERATED'
+                )}
+            </div>
+
+            <div class="result-item">
+                🛡️ <strong>Validation:</strong>
+                ${
+                    data.validation
+                    ? 'Available'
+                    : 'Completed'
+                }
+            </div>
+
+            ${
+                previewUrl
+                ? `
+                    <a
+                        href="${previewUrl}"
+                        target="_blank"
+                        rel="noopener"
+                        class="preview-button"
+                    >
+                        👁️ Open Preview
+                    </a>
+                `
+                : ''
+            }
+
+            ${
+                data.projectId
+                ? `
+                    <button
+                        type="button"
+                        class="modify-button"
+                        onclick="prepareProjectModification('${escapeGeneratorJS(data.projectId)}')"
+                    >
+                        🔧 Modify Project
+                    </button>
+                `
+                : ''
+            }
+
+        `;
+
+
+        // ---------------------------------------------------
+        // Save latest project locally
+        // ---------------------------------------------------
+
+        if (data.projectId) {
+
+            localStorage.setItem(
+                'samarthai_last_project_id',
+                data.projectId
+            );
+
+            localStorage.setItem(
+                'samarthai_last_project_name',
+                data.projectName ||
+                projectName ||
+                ''
+            );
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            'SamarthAI Autonomous Generation Error:',
+            error
+        );
+
+
+        resultDiv.className =
+            'auto-result result-error';
+
+
+        resultDiv.innerHTML = `
+
+            <div class="result-title">
+                ❌ Project Generation Failed
+            </div>
+
+            <div class="result-item">
+                ${escapeGeneratorHTML(
+                    error.message
+                )}
+            </div>
+
+            <div class="result-item">
+                🔧 Backend / Render / API connection
+                check करें।
+            </div>
+
+        `;
+
+    } finally {
+
+        button.disabled = false;
+
+        button.innerText =
+            '🚀 Build with SamarthAI';
+
+    }
+}
+
+
+// ============================================================
+// HTML SAFE OUTPUT
+// ============================================================
+
+function escapeGeneratorHTML(value) {
+
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+}
+
+
+// ============================================================
+// JS SAFE OUTPUT
+// ============================================================
+
+function escapeGeneratorJS(value) {
+
+    return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n');
+
+}
+
+
+// ============================================================
+// MODIFY PROJECT
+// ============================================================
+
+function prepareProjectModification(projectId) {
+
+    localStorage.setItem(
+        'samarthai_modify_project_id',
+        projectId
+    );
+
+    alert(
+        'Project ID save हो गया है। अगला चरण इसी project में AI से बदलाव कराने का होगा।'
+    );
+
+}
+
+
+// ============================================================
+// LAST PROJECT — QUICK ACCESS
+// ============================================================
+
+function getLastSamarthAIProject() {
+
+    return {
+        id:
+            localStorage.getItem(
+                'samarthai_last_project_id'
+            ),
+
+        name:
+            localStorage.getItem(
+                'samarthai_last_project_name'
+            )
+    };
+
+}
+
+
+// ============================================================
+// PAGE LOAD — RESTORE LAST PROJECT
+// ============================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+
+        const lastProject =
+            getLastSamarthAIProject();
+
+        if (
+            lastProject.id &&
+            lastProject.name
+        ) {
+
+            console.log(
+                'Last SamarthAI Project:',
+                lastProject
+            );
+
+        }
+
+    }
+);
+
+
+// ============================================================
+// ENTER KEY SUPPORT
+// ============================================================
+
+const autonomousPromptElement =
+    document.getElementById(
+        'autoPrompt'
+    );
+
+if (autonomousPromptElement) {
+
+    autonomousPromptElement.addEventListener(
+        'keydown',
+        function(event) {
+
+            /*
+             * Ctrl + Enter
+             * = Generate Project
+             */
+
+            if (
+                event.ctrlKey &&
+                event.key === 'Enter'
+            ) {
+
+                event.preventDefault();
+
+                generateWithSamarthAI();
+
+            }
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// AUTONOMOUS ENGINE CONNECTION TEST
+// ============================================================
+
+async function checkSamarthAIEngine() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${SAMARTHAI_API}/autonomous/engine-status`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                'Engine status request failed'
+            );
+
+        }
+
+        const data =
+            await response.json();
+
+        console.log(
+            'SamarthAI Autonomous Engine:',
+            data
+        );
+
+        return data;
+
+    } catch (error) {
+
+        console.warn(
+            'SamarthAI Engine Status:',
+            error.message
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// ============================================================
+// CHECK ENGINE WHEN DASHBOARD LOADS
+// ============================================================
+
+checkSamarthAIEngine();
+
+</script>
+
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+
 </body>
 </html>
