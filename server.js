@@ -23,7 +23,10 @@ app.use('/api/auth', authRoutes);
 
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
+
 const autonomousEngineRouter = require('./Router/autonomous');
+app.use('/api/autonomous', autonomousEngineRouter);
+
 // ======= SERVICES ROUTE =========
 const servicesRoutes = require('./routes/services');
 app.use('/api/services', servicesRoutes);
