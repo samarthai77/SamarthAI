@@ -1373,13 +1373,7 @@ function renderRecords(records) {
             const cells =
                 fields.map(field => {
 
-                    return `
-<td>
-    ${escapeValue(
-        record[field.name] ?? ''
-    )}
-</td>
-`;
+return `<td>${escapeValue(record[field.name] ?? '')}</td>`;
 
                 }).join('');
 
