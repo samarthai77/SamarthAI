@@ -35,7 +35,18 @@ const path = require('path');
 const crypto = require('crypto');
 
 const router = express.Router();
+// ============================================================
+// BASIC HEALTH CHECK
+// ============================================================
 
+router.get('/health', (req, res) => {
+    res.status(200).json({
+        success: true,
+        status: 'healthy',
+        service: 'SamarthAI Autonomous Engine',
+        timestamp: new Date().toISOString()
+    });
+});
 /* =======================================================
    CONFIG
 ======================================================= */
