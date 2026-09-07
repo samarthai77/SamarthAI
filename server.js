@@ -23,7 +23,7 @@ app.use('/api/auth', authRoutes);
 
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
-const autonomousEngineRouter = require('./routes/autonomousEngine');
+const autonomousEngineRouter = require('./Router/autonomous');
 // ======= SERVICES ROUTE =========
 const servicesRoutes = require('./routes/services');
 app.use('/api/services', servicesRoutes);
@@ -41,7 +41,7 @@ const gpsRoutes = require('./routes/gps');
 app.use('/api/gps', gpsRoutes);
 const memoryRoutes = require('./routes/memory');
 app.use('/api/memory', memoryRoutes);
-app.use('/api/autonomous', autonomousEngineRouter);
+
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
