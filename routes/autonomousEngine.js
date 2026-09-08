@@ -3964,8 +3964,7 @@ router.get(
                 );
 
 
-            const page =
-                (blueprint.pages || []).find(
+           const blueprint = project.blueprint || { pages: [] };
                     item =>
                         safeSlug(
                             item.name
