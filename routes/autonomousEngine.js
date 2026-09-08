@@ -181,11 +181,10 @@ function getProject(id) {
 }
 
 function projectDirectory(project) {
-    return path.join(
-        PROJECTS_DIR,
-        project.id
-    );
+    const id = typeof project === 'string' ? project : project.id;
+    return path.join(PROJECTS_DIR, id);
 }
+
 
 /* =======================================================
    AI PROMPT
