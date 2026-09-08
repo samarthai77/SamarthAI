@@ -3058,7 +3058,9 @@ function updateProjectStatus(
         }
     );
 
-    saveRegistry();
+ const registry = loadRegistry();
+registerProject(project);
+saveRegistry(registry);  
 
     return project;
 }
