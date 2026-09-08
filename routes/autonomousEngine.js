@@ -3963,7 +3963,7 @@ const blueprint = project.blueprint || { pages: [] };
                 );
 
 
-           const blueprint = project.blueprint || { pages: [] };
+ const page = (blueprint.pages || []).find(          
                     item =>
                         safeSlug(
                             item.name
