@@ -2835,9 +2835,9 @@ function writeGeneratedProject(
 ) {
 
     const directory =
-        projectDirectory(
-            project.id
-        );
+     projectDirectory(
+    { id: project.id }
+);  
 
     ensureDir(directory);
 
