@@ -20,7 +20,7 @@ async function callGroqAI(message) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-  model: 'llama3-groq-70b-8192-tool-use-preview',
+model: 'gemma2-9b-it',
       messages: [{ role: 'user', content: message }],
       temperature: 0.7,
       max_tokens: 500
