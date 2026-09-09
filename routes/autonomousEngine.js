@@ -300,7 +300,7 @@ async function askGemini(requirement) {
     }
 
     const endpoint =
-        'https://generativelanguage.googleapis.com/v1beta/models/' +
+    'https://generativelanguage.googleapis.com/v1/models/' +    
         encodeURIComponent(GEMINI_MODEL) +
         ':generateContent?key=' +
         encodeURIComponent(GEMINI_API_KEY);
