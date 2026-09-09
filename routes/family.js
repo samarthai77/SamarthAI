@@ -1,171 +1,70 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
-
+const express = require("express");
 const router = express.Router();
+const { createClient } = require("@supabase/supabase-js");
 
+// ✅ Supabase client setup
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_KEY
 );
 
-const JWT_SECRET = process.env.JWT_SECRET || 'samarthai_secret';
-
-// ============ ADD FAMILY MEMBER ============
-router.post('/', async (req, res) => {
+// ✅ Get all family members
+router.get("/", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { name, phone, location } = req.body;
-
-    if (!name || !phone) {
-      return res.status(400).json({ error: 'Name and phone are required' });
-    }
-
-    // Generate a family_id (same for all members)
-    const familyId = decoded.id; // Using user_id as family_id
-
-    const { data: member, error } = await supabase
-      .from('family_members')
-      .insert([{
-        user_id: decoded.id,
-        family_id: familyId,
-        name,
-        phone,
-        location: location || null
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.status(201).json({
-      message: 'Family member added successfully',
-      member
-    });
-  } catch (error) {
-    console.error('❌ Add family member error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const { data, error } = await supabase.from("family").select("*");
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error("Family fetch error:", err);
+    res.status(500).send("Error: Could not fetch family members");
   }
 });
-// ============ GET FAMILY MEMBERS ============
-router.get('/', async (req, res) => {
+
+// ✅ Add new family member
+router.post("/", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    const { data: members, error } = await supabase
-      .from('family_members')
-      .select('*')
-      .eq('user_id', decoded.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json(members);
-  } catch (error) {
-    console.error('❌ Get family members error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const { name, phone } = req.body;
+    const { data, error } = await supabase
+      .from("family")
+      .insert([{ name, phone }]);
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error("Family insert error:", err);
+    res.status(500).send("Error: Could not add family member");
   }
 });
-// ============ UPDATE FAMILY MEMBER ============
-router.put('/:id', async (req, res) => {
+
+// ✅ GPS location for specific family member
+router.get("/:memberId/gps", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { id } = req.params;
-    const { name, phone, location } = req.body;
-
-    // Check if member exists and belongs to user
-    const { data: existing, error: checkError } = await supabase
-      .from('family_members')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', decoded.id)
+    const memberId = req.params.memberId;
+    const { data, error } = await supabase
+      .from("family")
+      .select("id, name, location")
+      .eq("id", memberId)
       .single();
-
-    if (checkError || !existing) {
-      return res.status(404).json({ error: 'Member not found or unauthorized' });
-    }
-
-    // Update member
-    const { data: member, error } = await supabase
-      .from('family_members')
-      .update({
-        name: name || existing.name,
-        phone: phone || existing.phone,
-        location: location || existing.location,
-        last_updated: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({
-      message: 'Family member updated successfully',
-      member
-    });
-  } catch (error) {
-    console.error('❌ Update family member error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    if (error) throw error;
+    res.json({ message: `GPS location for ${data.name}`, location: data.location });
+  } catch (err) {
+    console.error("Family GPS error:", err);
+    res.status(500).send("Error: Could not fetch GPS location");
   }
 });
-// ============ DELETE FAMILY MEMBER ============
-router.delete('/:id', async (req, res) => {
+
+// ✅ SOS alert for specific family member
+router.post("/:memberId/sos", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { id } = req.params;
-
-    // Check if member exists and belongs to user
-    const { data: existing, error: checkError } = await supabase
-      .from('family_members')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', decoded.id)
-      .single();
-
-    if (checkError || !existing) {
-      return res.status(404).json({ error: 'Member not found or unauthorized' });
-    }
-
-    const { error } = await supabase
-      .from('family_members')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ message: 'Family member deleted successfully' });
-  } catch (error) {
-    console.error('❌ Delete family member error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const memberId = req.params.memberId;
+    const { data, error } = await supabase
+      .from("alerts")
+      .insert([{ member_id: memberId, timestamp: new Date() }]);
+    if (error) throw error;
+    res.json({ message: `SOS alert triggered for family member ${memberId}` });
+  } catch (err) {
+    console.error("Family SOS error:", err);
+    res.status(500).send("Error: Could not trigger SOS alert");
   }
 });
+
 module.exports = router;
