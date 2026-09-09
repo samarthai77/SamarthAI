@@ -11,7 +11,8 @@ const supabase = createClient(
 // ✅ Get all family members
 router.get("/", async (req, res) => {
   try {
-    const { data, error } = await supabase.from("family").select("*");
+  const { data, error } = await supabase.from("family_members").select("*");
+
     if (error) throw error;
     res.json(data);
   } catch (err) {
