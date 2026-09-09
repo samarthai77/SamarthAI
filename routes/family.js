@@ -5,7 +5,7 @@ const { createClient } = require("@supabase/supabase-js");
 // ✅ FIXED: Sahi tarika se Supabase client initialize karo
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY  // Ya SUPABASE_KEY agar aapne set kiya hai
+    process.env.SUPABASE_SERVICE_KEY  // Ya SUPABASE_KEY agar aapne set kiya hai
 );
 
 // Rest of your code remains same...
