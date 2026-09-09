@@ -19,12 +19,12 @@ async function callGroqAI(message) {
       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-model: "openai/gpt-oss-20b"
-      messages: [{ role: 'user', content: message }],
-      temperature: 0.7,
-      max_tokens: 500
-    })
+  body: JSON.stringify({
+    model: "openai/gpt-oss-20b",
+    messages: [{ role: 'user', content: message }],
+    temperature: 0.7,
+    max_tokens: 500
+})
   });
   const data = await response.json();
   console.log('Groq response:', JSON.stringify(data));
