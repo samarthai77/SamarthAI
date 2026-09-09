@@ -89,7 +89,7 @@
 
     <script src="js/app.js"></script>
     <script>
-        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+     var API_BASE = API_BASE || 'https://samarthai-backend.onrender.com/api';   
 
         async function sendMessage() {
             const input = document.getElementById('chatInput');
