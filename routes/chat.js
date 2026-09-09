@@ -27,6 +27,7 @@ async function callGroqAI(message) {
     })
   });
   const data = await response.json();
+  console.log('Groq response:', JSON.stringify(data));
   return data.choices?.[0]?.message?.content || 'Sorry, I could not process your request.';
 }
 
