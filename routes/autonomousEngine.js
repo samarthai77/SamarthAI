@@ -62,7 +62,7 @@ const GEMINI_API_KEY =
 
 const GEMINI_MODEL =
     process.env.GEMINI_MODEL ||
-  'gemini-1.5-flash' 
+ 'gemini-3.5-flash'
 
 const MAX_PROJECTS = 100;
 
@@ -300,7 +300,7 @@ async function askGemini(requirement) {
     }
 
     const endpoint =
-    'https://generativelanguage.googleapis.com/v1/models/' +    
+    'https://generativelanguage.googleapis.com/v1beta/models/' + 
         encodeURIComponent(GEMINI_MODEL) +
         ':generateContent?key=' +
         encodeURIComponent(GEMINI_API_KEY);
