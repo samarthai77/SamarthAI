@@ -20,7 +20,7 @@ async function callGroqAI(message) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-model: 'gemma2-9b-it',
+model: "openai/gpt-oss-20b"
       messages: [{ role: 'user', content: message }],
       temperature: 0.7,
       max_tokens: 500
