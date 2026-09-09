@@ -20,7 +20,7 @@ async function callGroqAI(message) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'mixtral-8x7b-32768',
+   model: 'llama3-8b-8192',   
       messages: [{ role: 'user', content: message }],
       temperature: 0.7,
       max_tokens: 500
@@ -84,9 +84,9 @@ async function callGeminiVision(imageBase64) {
 router.post('/', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token provided' });
+    
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+const decoded = token ? jwt.verify(token, JWT_SECRET) : { id: 'guest' };  
     const { message, image } = req.body;
 
     if (!message && !image) {
