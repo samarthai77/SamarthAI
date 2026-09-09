@@ -2,24 +2,25 @@ const express = require("express");
 const router = express.Router();
 const { createClient } = require("@supabase/supabase-js");
 
-// ✅ Supabase client setup
+// ✅ FIXED: Sahi tarika se Supabase client initialize karo
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY  // Ya SUPABASE_KEY agar aapne set kiya hai
 );
 
-// ✅ Get all family members
+// Rest of your code remains same...
 router.get("/", async (req, res) => {
-  try {
-  const { data, error } = await supabase.from("family_members").select("*");
-
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    console.error("Family fetch error:", err);
-    res.status(500).send("Error: Could not fetch family members");
-  }
+    try {
+        const { data, error } = await supabase.from("family_members").select("*");
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error("Family fetch error:", err);
+        res.status(500).send("Error: Could not fetch family members");
+    }
 });
+
+// ... baaki routes
 
 // ✅ Add new family member
 router.post("/", async (req, res) => {
