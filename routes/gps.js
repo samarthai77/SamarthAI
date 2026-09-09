@@ -1,53 +1,43 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
-
+const express = require("express");
 const router = express.Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
-const JWT_SECRET = process.env.JWT_SECRET || 'samarthai_secret';
-
-// ============ UPDATE GPS LOCATION ============
-router.put('/location', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
+// ✅ Basic GPS active route
+router.get("/", (req, res) => {
+    try {
+        res.send("GPS tracking active!");
+    } catch (err) {
+        console.error("GPS error:", err);
+        res.status(500).send("Error: GPS service failed");
     }
+});
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { latitude, longitude } = req.body;
+// ✅ GPS linked with family member
+router.get("/:memberId", (req, res) => {
+    try {
+        const memberId = req.params.memberId;
 
-    if (latitude === undefined || longitude === undefined) {
-      return res.status(400).json({ error: 'Latitude and longitude are required' });
+        // 👉 यहाँ आप Supabase से family table verify कर सकते हो
+        // Example: SELECT * FROM family WHERE id = memberId
+        // अभी demo response दे रहा हूँ
+        res.send(`GPS location for family member ${memberId}`);
+    } catch (err) {
+        console.error("GPS family error:", err);
+        res.status(500).send("Error: Family GPS service failed");
     }
+});
 
-    // Update user location
-    const { data: user, error } = await supabase
-      .from('users')
-      .update({
-        location: { lat: latitude, lng: longitude }
-      })
-      .eq('id', decoded.id)
-      .select()
-      .single();
+// ✅ SOS alert linked with family
+router.post("/:memberId/sos", (req, res) => {
+    try {
+        const memberId = req.params.memberId;
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
+        // 👉 यहाँ आप Supabase से उस member को alert भेज सकते हो
+        // Example: Insert into alerts table (memberId, timestamp)
+        res.send(`SOS alert triggered for family member ${memberId}`);
+    } catch (err) {
+        console.error("SOS error:", err);
+        res.status(500).send("Error: SOS service failed");
     }
-
-    res.json({
-      message: 'Location updated successfully',
-      location: user.location
-    });
-  } catch (error) {
-    console.error('❌ Update location error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
 });
 
 module.exports = router;
