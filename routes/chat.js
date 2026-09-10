@@ -188,9 +188,10 @@ function detectMemorySave(message) {
   // my name is shekhar remember it
   // ---------------------------------------------------
 
-  const nameMatch = text.match(
-  (?:mera\s+(?:naam|name)|my\s+name\s+is)
-  );
+
+const nameMatch = text.match(
+  /(?:mera\s+(?:naam|name)|my\s+name\s+is)\s+([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{0,40}?)(?:\s+(?:hai|h|is)\b)/i
+);
 
   if (
     nameMatch &&
