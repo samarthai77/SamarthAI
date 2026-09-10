@@ -22,13 +22,34 @@ function getUserId(req) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded?.id || null;
-  } catch {
+  } catch (err) {
     return null;
   }
 }
 
 // =====================================================
-// GET USER FAMILY
+// PERSONAL MEMORY - GET ALL
+// =====================================================
+async function getPersonalMemories(userId) {
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from('personal_memory')
+    .select('key, value')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('Personal memory read error:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// =====================================================
+// FAMILY INFO
 // =====================================================
 async function getUserFamily(userId) {
   if (!userId) return null;
@@ -50,32 +71,9 @@ async function getUserFamily(userId) {
 }
 
 // =====================================================
-// GET PERSONAL MEMORY
-// =====================================================
-async function getPersonalMemories(userId) {
-  if (!userId) return [];
-
-  const { data, error } = await supabase
-    .from('personal_memory')
-    .select('key, value')
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
-    .limit(50);
-
-  if (error) {
-    console.error('Personal memory read error:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-// =====================================================
-// GET FAMILY MEMORY
+// FAMILY MEMORY - GET
 // =====================================================
 async function getFamilyMemories(userId) {
-  if (!userId) return [];
-
   const family = await getUserFamily(userId);
 
   if (!family?.family_id) return [];
@@ -99,8 +97,6 @@ async function getFamilyMemories(userId) {
 // SAVE PERSONAL MEMORY
 // =====================================================
 async function savePersonalMemory(userId, key, value) {
-  if (!userId || !key) return null;
-
   const { data: existing, error: findError } = await supabase
     .from('personal_memory')
     .select('id')
@@ -109,25 +105,22 @@ async function savePersonalMemory(userId, key, value) {
     .maybeSingle();
 
   if (findError) {
-    console.error('Personal memory find error:', findError);
-    return null;
+    console.error('Memory find error:', findError);
+    throw findError;
   }
 
   if (existing) {
     const { data, error } = await supabase
       .from('personal_memory')
       .update({
-        value,
+        value: value,
         updated_at: new Date().toISOString()
       })
       .eq('id', existing.id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Personal memory update error:', error);
-      return null;
-    }
+    if (error) throw error;
 
     return data;
   }
@@ -136,151 +129,65 @@ async function savePersonalMemory(userId, key, value) {
     .from('personal_memory')
     .insert([{
       user_id: userId,
-      key,
-      value
+      key: key,
+      value: value
     }])
     .select()
     .single();
 
-  if (error) {
-    console.error('Personal memory insert error:', error);
-    return null;
-  }
+  if (error) throw error;
 
   return data;
 }
 
 // =====================================================
-// SAVE FAMILY MEMORY
+// DETECT MEMORY SAVE REQUEST
 // =====================================================
-async function saveFamilyMemory(userId, key, value) {
-  if (!userId || !key) {
-    return {
-      success: false,
-      reason: 'invalid'
-    };
-  }
-
-  const family = await getUserFamily(userId);
-
-  if (!family?.family_id) {
-    return {
-      success: false,
-      reason: 'no_family'
-    };
-  }
-
-  // Only admin can modify shared family memory
-  if (family.role !== 'admin') {
-    return {
-      success: false,
-      reason: 'not_admin'
-    };
-  }
-
-  const { data: existing, error: findError } = await supabase
-    .from('family_memory')
-    .select('id')
-    .eq('family_id', family.family_id)
-    .eq('key', key)
-    .maybeSingle();
-
-  if (findError) {
-    console.error('Family memory find error:', findError);
-    return {
-      success: false,
-      reason: 'database'
-    };
-  }
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from('family_memory')
-      .update({
-        value,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existing.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Family memory update error:', error);
-      return {
-        success: false,
-        reason: 'database'
-      };
-    }
-
-    return {
-      success: true,
-      data
-    };
-  }
-
-  const { data, error } = await supabase
-    .from('family_memory')
-    .insert([{
-      family_id: family.family_id,
-      key,
-      value
-    }])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Family memory insert error:', error);
-    return {
-      success: false,
-      reason: 'database'
-    };
-  }
-
-  return {
-    success: true,
-    data
-  };
-}
-
-// =====================================================
-// DETECT PERSONAL MEMORY REQUEST
-// =====================================================
-function detectPersonalMemory(message) {
+function detectMemoryRequest(message) {
   const text = String(message || '').trim();
 
-  const saveWords =
-    /(memory|memor(y|ie)|yaad|save|store|remember)/i;
+  const wantsMemory =
+    /(memory|save|store|remember|yaad|याद|सहेज|save kr|save kar)/i
+      .test(text);
 
-  if (!saveWords.test(text)) {
-    return null;
-  }
+  if (!wantsMemory) return null;
 
-  // Example:
-  // mera name shekhar hai
-  // mera naam shekhar hai
-  // my name is shekhar
+  // -----------------------------------------------
+  // NAME
+  // -----------------------------------------------
+
   let match = text.match(
-    /(?:mera|meri)\s+(?:name|naam)\s+(?:hai|is)\s+(.+?)(?:\s+hai)?$/i
+    /mera\s+(?:naam|name)\s+(.+?)(?:\s+hai)?(?:\s+.*memory.*)?$/i
   );
 
   if (!match) {
     match = text.match(
-      /my\s+name\s+is\s+(.+?)(?:\s+please)?$/i
+      /my\s+name\s+is\s+(.+?)(?:\s+.*memory.*)?$/i
     );
   }
 
   if (match) {
-    return {
-      key: 'name',
-      value: match[1].trim()
-    };
+    let name = match[1].trim();
+
+    // Remove common trailing words
+    name = name
+      .replace(/\s+(ko|kr|kar|do|please)$/i, '')
+      .trim();
+
+    if (name) {
+      return {
+        key: 'name',
+        value: name
+      };
+    }
   }
 
-  // Generic:
-  // mera favourite color blue hai
-  // meri city prayagraj hai
+  // -----------------------------------------------
+  // GENERIC PERSONAL INFORMATION
+  // -----------------------------------------------
+
   match = text.match(
-    /(?:mera|meri)\s+(.+?)\s+(?:hai|is)\s+(.+?)(?:\s+memory.*)?$/i
+    /(?:mera|meri)\s+(.+?)\s+(?:hai|is)\s+(.+?)(?:\s+.*memory.*)?$/i
   );
 
   if (match) {
@@ -296,39 +203,46 @@ function detectPersonalMemory(message) {
 // =====================================================
 // GROQ AI
 // =====================================================
-async function callGroqAI(message, personalMemories, familyMemories) {
+async function callGroqAI(
+  message,
+  personalMemories,
+  familyMemories
+) {
 
   const personalText = personalMemories.length
     ? personalMemories
-        .map(item => `${item.key}: ${JSON.stringify(item.value)}`)
+        .map(item =>
+          `${item.key}: ${JSON.stringify(item.value)}`
+        )
         .join('\n')
     : 'No personal memory available.';
 
   const familyText = familyMemories.length
     ? familyMemories
-        .map(item => `${item.key}: ${JSON.stringify(item.value)}`)
+        .map(item =>
+          `${item.key}: ${JSON.stringify(item.value)}`
+        )
         .join('\n')
     : 'No family memory available.';
 
   const systemPrompt = `
 You are SamarthAI, a helpful personal AI assistant.
 
-Current date: ${new Date().toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })}
+IMPORTANT:
 
-IMPORTANT MEMORY RULES:
+Personal Memory belongs ONLY to the currently logged-in user.
 
-1. Personal Memory belongs only to the currently logged-in user.
-2. Never claim that you know a personal detail unless it is present in the memory context or current conversation.
-3. Family Memory is shared information for the user's family.
-4. Do not reveal another family member's private/personal memory.
-5. If the user asks their name and it exists in Personal Memory, answer it directly.
-6. If information is not available, honestly say you don't have it.
-7. Do not invent memories.
-8. Reply naturally in the language used by the user. Hindi/Hinglish users should normally receive Hindi/Hinglish replies.
+Family Memory is shared family information.
+
+Never invent memory.
+
+If the user's requested information exists in Personal Memory,
+use it directly.
+
+If the user asks their name and the Personal Memory contains
+key "name", answer with that name.
+
+Reply in Hindi/Hinglish when the user uses Hindi/Hinglish.
 
 PERSONAL MEMORY:
 ${personalText}
@@ -342,7 +256,8 @@ ${familyText}
     {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Authorization':
+          `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -371,11 +286,10 @@ ${familyText}
   );
 
   if (data.error) {
-    console.error('Groq API error:', data.error);
+    console.error('Groq error:', data.error);
 
-    return 'AI service error: ' + (
-      data.error.message || 'Unknown error'
-    );
+    return 'AI service error: ' +
+      (data.error.message || 'Unknown error');
   }
 
   return (
@@ -390,12 +304,6 @@ ${familyText}
 async function callGeminiVision(imageBase64) {
 
   try {
-
-    console.log('📸 Analyzing image...');
-    console.log(
-      '🔑 Gemini API Key exists?',
-      !!process.env.GEMINI_API_KEY
-    );
 
     if (!imageBase64 || imageBase64.length < 100) {
       return 'Invalid image. Please try again.';
@@ -432,14 +340,9 @@ async function callGeminiVision(imageBase64) {
 
     const data = await response.json();
 
-    console.log(
-      '📥 Gemini status:',
-      response.status
-    );
-
     if (data.error) {
       console.error(
-        '❌ Gemini API error:',
+        'Gemini error:',
         data.error
       );
 
@@ -447,19 +350,15 @@ async function callGeminiVision(imageBase64) {
         data.error.message;
     }
 
-    const description =
-      data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!description) {
-      return 'No description available. Please try again.';
-    }
-
-    return description;
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      'No description available.'
+    );
 
   } catch (error) {
 
     console.error(
-      '❌ Gemini vision error:',
+      'Gemini vision error:',
       error
     );
 
@@ -489,7 +388,7 @@ router.post('/', async (req, res) => {
     }
 
     // =================================================
-    // IMAGE CHAT
+    // IMAGE
     // =================================================
     if (image) {
 
@@ -498,7 +397,6 @@ router.post('/', async (req, res) => {
 
       let chatId = null;
 
-      // Save chat only for logged-in users
       if (userId) {
 
         const { data: chat, error } =
@@ -507,7 +405,7 @@ router.post('/', async (req, res) => {
             .insert([{
               user_id: userId,
               message: message || '[Image]',
-              response,
+              response: response,
               model: 'gemini-vision'
             }])
             .select()
@@ -530,38 +428,83 @@ router.post('/', async (req, res) => {
     }
 
     // =================================================
-    // PERSONAL MEMORY
+    // MEMORY SAVE REQUEST
     // =================================================
-    let memorySaved = false;
-    let savedMemory = null;
+    const memoryRequest =
+      detectMemoryRequest(message);
 
-    if (userId) {
+    if (memoryRequest && userId) {
 
-      const detectedMemory =
-        detectPersonalMemory(message);
+      console.log(
+        '🧠 Memory request detected:',
+        memoryRequest
+      );
 
-      if (detectedMemory) {
+      try {
 
-        savedMemory =
+        const saved =
           await savePersonalMemory(
             userId,
-            detectedMemory.key,
-            detectedMemory.value
+            memoryRequest.key,
+            memoryRequest.value
           );
 
-        if (savedMemory) {
-          memorySaved = true;
+        console.log(
+          '✅ Personal memory saved:',
+          saved
+        );
 
-          console.log(
-            '🧠 Personal memory saved:',
-            detectedMemory.key
+        const confirmation =
+          memoryRequest.key === 'name'
+            ? `Bilkul 😊 Maine aapka naam "${memoryRequest.value}" apni Personal Memory mein save kar liya hai.`
+            : `Bilkul 😊 Maine "${memoryRequest.key}" ki information apni Personal Memory mein save kar li hai.`;
+
+        // Save chat
+        const { data: chat, error } =
+          await supabase
+            .from('chats')
+            .insert([{
+              user_id: userId,
+              message: message,
+              response: confirmation,
+              model: 'memory'
+            }])
+            .select()
+            .single();
+
+        if (error) {
+          console.error(
+            'Memory chat save error:',
+            error
           );
         }
+
+        return res.json({
+          response: confirmation,
+          chat_id: chat?.id || null,
+          memory_saved: true,
+          memory: {
+            type: 'personal',
+            key: memoryRequest.key,
+            value: memoryRequest.value
+          }
+        });
+
+      } catch (memoryError) {
+
+        console.error(
+          '❌ Memory save failed:',
+          memoryError
+        );
+
+        return res.status(500).json({
+          error: 'Memory save failed'
+        });
       }
     }
 
     // =================================================
-    // LOAD MEMORY FOR AI
+    // LOAD MEMORY
     // =================================================
     const personalMemories =
       userId
@@ -595,8 +538,8 @@ router.post('/', async (req, res) => {
           .from('chats')
           .insert([{
             user_id: userId,
-            message,
-            response,
+            message: message,
+            response: response,
             model: 'groq'
           }])
           .select()
@@ -618,13 +561,7 @@ router.post('/', async (req, res) => {
     res.json({
       response,
       chat_id: chatId,
-      memory_saved: memorySaved,
-      memory: savedMemory
-        ? {
-            type: 'personal',
-            key: savedMemory.key
-          }
-        : null
+      memory_saved: false
     });
 
   } catch (error) {
