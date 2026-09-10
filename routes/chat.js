@@ -4,17 +4,12 @@ const { createClient } = require('@supabase/supabase-js');
 
 const router = express.Router();
 
-// =====================================================
-// SUPABASE
-// Server-side route -> SERVICE KEY
-// =====================================================
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
 const JWT_SECRET = process.env.JWT_SECRET || 'samarthai_secret';
-
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 
 // =====================================================
@@ -22,21 +17,13 @@ const GROQ_MODEL = 'openai/gpt-oss-20b';
 // =====================================================
 function getUserId(req) {
   const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return null;
-  }
+  if (!token) return null;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-
-    if (!decoded?.id) {
-      return null;
-    }
-
-    return decoded.id;
-  } catch (error) {
-    console.error('JWT error:', error.message);
+    return decoded?.id || null;
+  } catch (e) {
+    console.error('JWT error:', e.message);
     return null;
   }
 }
@@ -44,26 +31,25 @@ function getUserId(req) {
 // =====================================================
 // PERSONAL MEMORY
 // =====================================================
-
 async function getPersonalMemory(userId) {
   if (!userId) return [];
 
   try {
     const { data, error } = await supabase
       .from('personal_memory')
-      .select('key, value')
+      .select('key,value')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(50);
 
     if (error) {
-      console.error('Personal memory read error:', error);
+      console.error('Personal memory read:', error);
       return [];
     }
 
     return data || [];
-  } catch (error) {
-    console.error('Personal memory exception:', error);
+  } catch (e) {
+    console.error('Personal memory exception:', e);
     return [];
   }
 }
@@ -71,44 +57,35 @@ async function getPersonalMemory(userId) {
 // =====================================================
 // FAMILY MEMORY
 // =====================================================
-
 async function getFamilyMemory(userId) {
   if (!userId) return [];
 
   try {
-    const { data: familyMember, error: familyError } = await supabase
+    const { data: member, error: memberError } = await supabase
       .from('family_members')
-      .select('family_id, role, is_active')
+      .select('family_id,is_active')
       .eq('user_id', userId)
       .eq('is_active', true)
       .limit(1)
       .maybeSingle();
 
-    if (familyError) {
-      console.error('Family member lookup error:', familyError);
-      return [];
-    }
-
-    if (!familyMember?.family_id) {
-      return [];
-    }
+    if (memberError || !member?.family_id) return [];
 
     const { data, error } = await supabase
       .from('family_memory')
-      .select('key, value')
-      .eq('family_id', familyMember.family_id)
+      .select('key,value')
+      .eq('family_id', member.family_id)
       .order('updated_at', { ascending: false })
       .limit(50);
 
     if (error) {
-      console.error('Family memory read error:', error);
+      console.error('Family memory read:', error);
       return [];
     }
 
     return data || [];
-
-  } catch (error) {
-    console.error('Family memory exception:', error);
+  } catch (e) {
+    console.error('Family memory exception:', e);
     return [];
   }
 }
@@ -116,87 +93,65 @@ async function getFamilyMemory(userId) {
 // =====================================================
 // SAVE PERSONAL MEMORY
 // =====================================================
-
 async function savePersonalMemory(userId, key, value) {
-  if (!userId || !key) {
-    return null;
-  }
+  const { data: existing, error: findError } = await supabase
+    .from('personal_memory')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('key', key)
+    .limit(1)
+    .maybeSingle();
 
-  try {
-    const { data: existing, error: findError } = await supabase
-      .from('personal_memory')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('key', key)
-      .limit(1)
-      .maybeSingle();
+  if (findError) throw findError;
 
-    if (findError) {
-      throw findError;
-    }
-
-    if (existing) {
-      const { data, error } = await supabase
-        .from('personal_memory')
-        .update({
-          value,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    }
-
+  if (existing) {
     const { data, error } = await supabase
       .from('personal_memory')
-      .insert([{
-        user_id: userId,
-        key,
-        value
-      }])
+      .update({
+        value,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existing.id)
       .select()
       .single();
 
     if (error) throw error;
-
     return data;
-
-  } catch (error) {
-    console.error('Save personal memory error:', error);
-    throw error;
   }
+
+  const { data, error } = await supabase
+    .from('personal_memory')
+    .insert([{ user_id: userId, key, value }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 // =====================================================
-// DETECT MEMORY SAVE REQUEST
+// MEMORY SAVE DETECTOR
+// IMPORTANT: QUESTIONS MUST NOT SAVE MEMORY
 // =====================================================
-
 function detectMemorySave(message) {
   if (!message) return null;
 
   const text = message.trim();
 
-  // ---------------------------------------------------
-  // NAME
-  // Example:
-  // mera naam shekhar hai ise memory me save kr lo
-  // mera naam shekhar hai yaad rakho
-  // my name is shekhar remember it
-  // ---------------------------------------------------
+  // ---- Explicit save/remember intent only ----
+  const saveIntent =
+    /(?:memory\s*(?:me|mein|में)?\s*save|save\s*(?:this|it|karo|kar\s*lo)?|yaad\s+(?:rakho|rakhna)|याद\s+(?:रखो|रखना)|remember\s+(?:this|it))/i;
 
+  if (!saveIntent.test(text)) {
+    return null;
+  }
 
-const nameMatch = text.match(
-  /(?:mera\s+(?:naam|name)|my\s+name\s+is)\s+([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{0,40}?)(?:\s+(?:hai|h|is)\b)/i
-);
+  // ---- NAME ----
+  const nameMatch = text.match(
+    /(?:mera\s+(?:naam|name)|my\s+name\s+is)\s+([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{0,40}?)(?:\s+(?:hai|h|is)\b)/i
+  );
 
-  if (
-    nameMatch &&
-    /(?:save|saved|memory|yaad|rakh|remember|याद|रख|सेव)/i.test(text)
-  ) {
+  if (nameMatch) {
     const name = nameMatch[1].trim();
 
     if (name) {
@@ -207,22 +162,19 @@ const nameMatch = text.match(
     }
   }
 
-  // ---------------------------------------------------
-  // GENERAL MEMORY
-  // Examples:
-  // remember that I like tea
-  // yaad rakho mujhe chai pasand hai
-  // ise memory me save karo
-  // ---------------------------------------------------
+  // ---- GENERAL MEMORY ----
+  let note = text
+    .replace(saveIntent, '')
+    .trim();
 
-  const rememberMatch = text.match(
-    /(?:remember|yaad\s+rakho|याद\s+रखो|memory\s+me\s+save|memory\s+mein\s+save|मेमोरी\s+में\s+सेव)\s*(?:that|ki|कि)?\s*(.+)$/i
-  );
+  note = note
+    .replace(/^(?:ki|कि|that)\s+/i, '')
+    .trim();
 
-  if (rememberMatch) {
+  if (note) {
     return {
       key: 'note',
-      value: rememberMatch[1].trim()
+      value: note
     };
   }
 
@@ -230,40 +182,10 @@ const nameMatch = text.match(
 }
 
 // =====================================================
-// FORMAT MEMORY FOR AI
+// MEMORY FORMAT
 // =====================================================
-
-function formatMemory(personalMemory, familyMemory) {
-
-  let result = '';
-
-  if (personalMemory.length > 0) {
-    result += '\n\nPRIVATE PERSONAL MEMORY:\n';
-
-    for (const item of personalMemory) {
-      result += `- ${item.key}: ${formatValue(item.value)}\n`;
-    }
-  }
-
-  if (familyMemory.length > 0) {
-    result += '\nSHARED FAMILY MEMORY:\n';
-
-    for (const item of familyMemory) {
-      result += `- ${item.key}: ${formatValue(item.value)}\n`;
-    }
-  }
-
-  return result;
-}
-
-// =====================================================
-// FORMAT JSONB VALUE
-// =====================================================
-
 function formatValue(value) {
-  if (value === null || value === undefined) {
-    return '';
-  }
+  if (value === null || value === undefined) return '';
 
   if (typeof value === 'object') {
     try {
@@ -276,17 +198,38 @@ function formatValue(value) {
   return String(value);
 }
 
-// =====================================================
-// RECENT CHAT HISTORY
-// =====================================================
+function formatMemory(personal, family) {
+  let text = '';
 
+  if (personal.length) {
+    text += '\nPRIVATE PERSONAL MEMORY:\n';
+
+    personal.forEach(item => {
+      text += `- ${item.key}: ${formatValue(item.value)}\n`;
+    });
+  }
+
+  if (family.length) {
+    text += '\nSHARED FAMILY MEMORY:\n';
+
+    family.forEach(item => {
+      text += `- ${item.key}: ${formatValue(item.value)}\n`;
+    });
+  }
+
+  return text;
+}
+
+// =====================================================
+// CHAT HISTORY
+// =====================================================
 async function getRecentChatHistory(userId) {
   if (!userId) return [];
 
   try {
     const { data, error } = await supabase
       .from('chats')
-      .select('message, response, model')
+      .select('message,response,model,created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -296,38 +239,75 @@ async function getRecentChatHistory(userId) {
       return [];
     }
 
-    if (!data) return [];
-
-    return data.reverse();
-
-  } catch (error) {
-    console.error('Chat history exception:', error);
+    return (data || []).reverse();
+  } catch (e) {
+    console.error('Chat history exception:', e);
     return [];
   }
 }
 
 // =====================================================
-// GROQ AI
+// SHOW CHAT RECORD
 // =====================================================
+function isHistoryRequest(message) {
+  return /(?:pichhli|pichli|purani|previous|old).*(?:chat|baat|batcheet|conversation|record|history)|(?:chat|conversation|record|history).*(?:dikhao|dikhाओ|batao|bata|show)/i
+    .test(message || '');
+}
 
-async function callGroqAI(message, personalMemory, familyMemory, history) {
+function formatChatHistory(history) {
+  if (!history.length) {
+    return 'Abhi koi purani chat available nahi hai.';
+  }
 
+  let result = 'Aapki recent baatcheet:\n\n';
+
+  history.forEach(item => {
+    if (item.message) {
+      result += `Aap: ${item.message}\n`;
+    }
+
+    if (item.response) {
+      result += `SamarthAI: ${item.response}\n`;
+    }
+
+    result += '\n';
+  });
+
+  return result.trim();
+}
+
+// =====================================================
+// GROQ
+// =====================================================
+async function callGroqAI(
+  message,
+  personalMemory,
+  familyMemory,
+  history
+) {
   const systemPrompt = `
 You are SamarthAI, a helpful personal AI assistant.
 
-IMPORTANT MEMORY RULES:
+CONVERSATION RULES:
 
-1. PRIVATE PERSONAL MEMORY belongs only to the currently logged-in user.
-2. SHARED FAMILY MEMORY belongs to the user's family.
-3. Never reveal private personal memory of another family member.
-4. You may use the currently logged-in user's personal memory naturally.
-5. You may use shared family memory when relevant.
-6. Never claim that you remembered something unless it actually exists in the supplied memory.
-7. If the user asks "mera naam kya hai?" and the personal memory contains "name", answer using that value.
-8. If memory does not contain the requested information, honestly say that you don't have it.
-9. Do not invent names, dates, family information, or personal facts.
-10. Reply naturally in the language used by the user. Hindi/Hinglish is preferred when the user writes Hindi/Hinglish.
-11. Keep normal answers concise and useful.
+1. Be natural, polite and concise.
+2. Say only what is necessary.
+3. Do not unnecessarily repeat information.
+4. Do not irritate the user with long explanations.
+5. For simple questions, give a short answer.
+6. For yes/no questions, answer yes/no first.
+7. If the user asks their name, answer only the name.
+8. If the user asks "tumhe mera naam yaad hai?" or "mera naam yaad hai na?", answer only whether you remember it. Do NOT save memory.
+9. Never change memory just because the user asks a question.
+10. Memory can only be changed by an explicit save/remember request handled by the server.
+11. Never invent facts.
+12. Never act overconfident when information is uncertain.
+13. If you are not sure, say so briefly.
+14. PRIVATE PERSONAL MEMORY belongs only to the current user.
+15. SHARED FAMILY MEMORY can be used when relevant.
+16. Never reveal another person's private memory.
+17. If personal memory contains the user's name, use that name.
+18. Prefer Hindi/Hinglish when the user uses Hindi/Hinglish.
 
 CURRENT DATE:
 ${new Date().toLocaleDateString('en-IN', {
@@ -347,9 +327,7 @@ ${formatMemory(personalMemory, familyMemory)}
     }
   ];
 
-  // Add recent conversation
-  for (const item of history) {
-
+  history.forEach(item => {
     if (item.message) {
       messages.push({
         role: 'user',
@@ -363,9 +341,8 @@ ${formatMemory(personalMemory, familyMemory)}
         content: item.response
       });
     }
-  }
+  });
 
-  // Current user message
   messages.push({
     role: 'user',
     content: message
@@ -375,34 +352,25 @@ ${formatMemory(personalMemory, familyMemory)}
     'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
-
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json'
       },
-
       body: JSON.stringify({
         model: GROQ_MODEL,
         messages,
-        temperature: 0.7,
-        max_tokens: 700
+        temperature: 0.5,
+        max_tokens: 500
       })
     }
   );
 
   const data = await response.json();
 
-  console.log(
-    'Groq status:',
-    response.status
-  );
+  console.log('Groq status:', response.status);
 
   if (!response.ok) {
-    console.error(
-      'Groq API error:',
-      JSON.stringify(data)
-    );
-
+    console.error('Groq error:', JSON.stringify(data));
     throw new Error(
       data?.error?.message || 'Groq API request failed'
     );
@@ -410,177 +378,107 @@ ${formatMemory(personalMemory, familyMemory)}
 
   return (
     data.choices?.[0]?.message?.content ||
-    'Sorry, I could not process your request.'
+    'Mujhe iska jawab nahi mil paaya.'
   );
 }
 
 // =====================================================
 // GEMINI VISION
 // =====================================================
-
 async function callGeminiVision(imageBase64) {
-
   try {
-
-    console.log('📸 Analyzing image...');
-
-    console.log(
-      '🔑 Gemini API Key exists?',
-      !!process.env.GEMINI_API_KEY
-    );
-
     if (!imageBase64 || imageBase64.length < 100) {
-
-      console.error('❌ Invalid image data');
-
       return 'Invalid image. Please try again.';
     }
 
-    const base64Data =
-      imageBase64.includes(',')
-        ? imageBase64.split(',')[1]
-        : imageBase64;
+    const base64Data = imageBase64.includes(',')
+      ? imageBase64.split(',')[1]
+      : imageBase64;
 
-    const mimeMatch =
-      imageBase64.match(/^data:(.*?);base64,/);
+    const mimeMatch = imageBase64.match(
+      /^data:(.*?);base64,/
+    );
 
-    const mimeType =
-      mimeMatch?.[1] || 'image/png';
+    const mimeType = mimeMatch?.[1] || 'image/png';
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
-
         headers: {
           'Content-Type': 'application/json'
         },
-
         body: JSON.stringify({
-
-          contents: [
-            {
-              parts: [
-                {
-                  text:
-                    'Describe this image in simple Hindi. Be accurate and concise.'
-                },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data
-                  }
+          contents: [{
+            parts: [
+              {
+                text: 'Describe this image in simple Hindi. Be accurate and concise.'
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data
                 }
-              ]
-            }
-          ]
-
+              }
+            ]
+          }]
         })
       }
     );
 
     const data = await response.json();
 
-    console.log(
-      '📥 Gemini status:',
-      response.status
-    );
-
-    if (data.error) {
-
-      console.error(
-        '❌ Gemini API error:',
-        data.error
-      );
-
-      return (
-        'Gemini API error: ' +
-        data.error.message
-      );
+    if (!response.ok || data.error) {
+      console.error('Gemini error:', JSON.stringify(data));
+      return 'Image analysis failed.';
     }
-
-    const description =
-      data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!description) {
-
-      console.error(
-        '❌ No description found'
-      );
-
-      return 'No description available. Please try again.';
-    }
-
-    return description;
-
-  } catch (error) {
-
-    console.error(
-      '❌ Gemini vision error:',
-      error
-    );
 
     return (
-      'Image analysis failed: ' +
-      error.message
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      'Image ko samajh nahi paaya.'
     );
+
+  } catch (e) {
+    console.error('Gemini vision error:', e);
+    return 'Image analysis failed.';
   }
 }
 
 // =====================================================
 // MAIN CHAT
 // =====================================================
-
 router.post('/', async (req, res) => {
-
   try {
-
     const userId = getUserId(req);
-
-    const {
-      message,
-      image
-    } = req.body;
+    const { message, image } = req.body;
 
     if (!message && !image) {
-
       return res.status(400).json({
         error: 'Message or image required'
       });
     }
 
-    // =================================================
-    // IMAGE CHAT
-    // =================================================
-
+    // -------------------------------------------------
+    // IMAGE
+    // -------------------------------------------------
     if (image) {
-
-      const response =
-        await callGeminiVision(image);
+      const response = await callGeminiVision(image);
 
       let chatId = null;
 
       if (userId) {
+        const { data: chat, error } = await supabase
+          .from('chats')
+          .insert([{
+            user_id: userId,
+            message: message || '[Image]',
+            response,
+            model: 'gemini-vision'
+          }])
+          .select()
+          .single();
 
-        const { data: chat, error } =
-          await supabase
-            .from('chats')
-            .insert([{
-              user_id: userId,
-              message: message || '[Image]',
-              response,
-              model: 'gemini-vision'
-            }])
-            .select()
-            .single();
-
-        if (error) {
-          console.error(
-            'Chat save error:',
-            error
-          );
-        }
-
+        if (error) console.error('Chat save error:', error);
         chatId = chat?.id || null;
       }
 
@@ -590,23 +488,53 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // =================================================
-    // MEMORY SAVE DETECTION
-    // =================================================
+    // -------------------------------------------------
+    // LOAD HISTORY
+    // -------------------------------------------------
+    const history = await getRecentChatHistory(userId);
 
-    const memoryRequest =
-      detectMemorySave(message);
+    // -------------------------------------------------
+    // CHAT RECORD REQUEST
+    // -------------------------------------------------
+    if (userId && isHistoryRequest(message)) {
+      const response = formatChatHistory(history);
+
+      return res.json({
+        response,
+        chat_id: null,
+        memory_used: {
+          personal: 0,
+          family: 0
+        }
+      });
+    }
+
+    // -------------------------------------------------
+    // MEMORY SAVE
+    // -------------------------------------------------
+    const memoryRequest = detectMemorySave(message);
 
     if (memoryRequest && userId) {
-
       try {
+        const saved = await savePersonalMemory(
+          userId,
+          memoryRequest.key,
+          memoryRequest.value
+        );
 
-        const saved =
-          await savePersonalMemory(
-            userId,
-            memoryRequest.key,
-            memoryRequest.value
-          );
+        const response =
+          memoryRequest.key === 'name'
+            ? `Bilkul, yaad rakh liya.`
+            : `Bilkul, save kar liya.`;
+
+        await supabase
+          .from('chats')
+          .insert([{
+            user_id: userId,
+            message,
+            response,
+            model: 'memory'
+          }]);
 
         console.log(
           '✅ Personal memory saved:',
@@ -614,128 +542,73 @@ router.post('/', async (req, res) => {
           memoryRequest.value
         );
 
-        const confirmation =
-          memoryRequest.key === 'name'
-            ? `Bilkul. Maine yaad rakh liya hai ki aapka naam ${memoryRequest.value} hai.`
-            : `Bilkul. Maine ye baat aapki personal memory mein save kar li hai.`;
-
-        const { data: chat, error } =
-          await supabase
-            .from('chats')
-            .insert([{
-              user_id: userId,
-              message,
-              response: confirmation,
-              model: 'memory'
-            }])
-            .select()
-            .single();
-
-        if (error) {
-          console.error(
-            'Memory chat save error:',
-            error
-          );
-        }
-
         return res.json({
-          response: confirmation,
-          chat_id: chat?.id || null,
+          response,
+          chat_id: null,
           memory_saved: true,
           memory: saved
         });
 
-      } catch (memoryError) {
-
-        console.error(
-          '❌ Memory save failed:',
-          memoryError
-        );
+      } catch (e) {
+        console.error('Memory save failed:', e);
 
         return res.status(500).json({
-          error:
-            'Memory save failed: ' +
-            memoryError.message
+          error: 'Memory save failed'
         });
       }
     }
 
-    // =================================================
+    // -------------------------------------------------
     // LOAD MEMORY
-    // =================================================
-
+    // -------------------------------------------------
     const [
+      personalMemory,
+      familyMemory
+    ] = await Promise.all([
+      getPersonalMemory(userId),
+      getFamilyMemory(userId)
+    ]);
+
+    console.log('🧠 Context:', {
+      userId,
+      personal: personalMemory.length,
+      family: familyMemory.length,
+      history: history.length
+    });
+
+    // -------------------------------------------------
+    // AI
+    // -------------------------------------------------
+    const response = await callGroqAI(
+      message,
       personalMemory,
       familyMemory,
       history
-    ] = await Promise.all([
-
-      getPersonalMemory(userId),
-
-      getFamilyMemory(userId),
-
-      getRecentChatHistory(userId)
-
-    ]);
-
-    console.log(
-      '🧠 Memory:',
-      {
-        userId,
-        personal: personalMemory.length,
-        family: familyMemory.length,
-        history: history.length
-      }
     );
 
-    // =================================================
-    // CALL GROQ WITH MEMORY
-    // =================================================
-
-    const response =
-      await callGroqAI(
-        message,
-        personalMemory,
-        familyMemory,
-        history
-      );
-
-    // =================================================
+    // -------------------------------------------------
     // SAVE CHAT
-    // =================================================
-
+    // -------------------------------------------------
     let chatId = null;
 
     if (userId) {
-
-      const { data: chat, error } =
-        await supabase
-          .from('chats')
-          .insert([{
-            user_id: userId,
-            message,
-            response,
-            model: 'groq'
-          }])
-          .select()
-          .single();
+      const { data: chat, error } = await supabase
+        .from('chats')
+        .insert([{
+          user_id: userId,
+          message,
+          response,
+          model: 'groq'
+        }])
+        .select()
+        .single();
 
       if (error) {
-
-        console.error(
-          'Chat save error:',
-          error
-        );
-
+        console.error('Chat save error:', error);
       } else {
-
         chatId = chat?.id || null;
       }
     }
-
-    // =================================================
-    // RESPONSE
-    // =================================================
 
     res.json({
       response,
@@ -747,16 +620,10 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error(
-      '❌ Chat error:',
-      error
-    );
+    console.error('❌ Chat error:', error);
 
     res.status(500).json({
-      error:
-        error.message ||
-        'Internal server error'
+      error: error.message || 'Internal server error'
     });
   }
 });
