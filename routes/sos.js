@@ -63,7 +63,7 @@ if (!membershipError && membership?.family_id) {
                 member_id: member.id,
                 alert_type: 'sos',
                 message: `🚨 SOS emergency alert from ${decoded.id}`,
-                sos_id: sosAlert.id,
+                sos_id: sos.id,
                 is_read: false
             }));
 
