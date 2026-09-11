@@ -58,7 +58,7 @@ if (!membershipError && membership?.family_id) {
 
     if (!membersError && Array.isArray(familyMembers)) {
         const alerts = familyMembers
-            .filter(member => member.user_id !== decoded.id)
+        .filter(member => member.id !== membership.id)  
             .map(member => ({
                 member_id: member.id,
                 alert_type: 'sos',
