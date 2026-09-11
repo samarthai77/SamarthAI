@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
 // Create in-app alerts for other active family members
 const { data: membership, error: membershipError } = await supabase
     .from('family_members')
-    .select('family_id')
+  .select('id, family_id')
     .eq('user_id', decoded.id)
     .eq('is_active', true)
     .limit(1)
