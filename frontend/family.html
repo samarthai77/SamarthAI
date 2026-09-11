@@ -154,6 +154,11 @@
                 </div>
 
                 <div>
+                <button
+    onclick="trackFamilyMember('${escapeFamilyJS(member.id)}')"
+>
+    📍 Track Location
+</button>
                     <button
                         onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
                     >
@@ -200,7 +205,48 @@ function escapeFamilyJS(value) {
         .replace(/"/g, '\\"');
 
 }   
+async function trackFamilyMember(memberId) {
+    try {
+        const token = localStorage.getItem('token');
 
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/family/${memberId}/gps`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || data.message || 'Could not load location');
+            return;
+        }
+
+        const member = data.member || {};
+
+        const location = member.location || 'Location not available';
+
+        const updated = member.last_updated
+            ? new Date(member.last_updated).toLocaleString()
+            : 'Not available';
+
+        alert(
+            `📍 ${member.name || 'Family Member'}\n\n` +
+            `Location: ${location}\n` +
+            `Last Updated: ${updated}`
+        );
+
+    } catch (error) {
+        console.error('Tracker error:', error);
+        alert('❌ Could not load family member location');
+    }
+}
         async function deleteFamilyMember(id) {
             if (!confirm('Delete this member?')) return;
             try {
