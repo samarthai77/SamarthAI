@@ -9,11 +9,24 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 );
 
-const JWT_SECRET = process.env.JWT_SECRET || "samarthai_secret";
+const JWT_SECRET =
+    process.env.JWT_SECRET || "samarthai_secret";
 
-/* =========================================================
-   AUTH
-========================================================= */
+/*
+=========================================================
+CONFIG
+=========================================================
+Family limit:
+1 Admin + 10 Members = maximum 11 active members
+*/
+const MAX_FAMILY_MEMBERS = 11;
+
+
+/*
+=========================================================
+AUTH
+=========================================================
+*/
 
 function getUserId(req) {
     const auth = req.headers.authorization || "";
@@ -22,10 +35,15 @@ function getUserId(req) {
         throw new Error("Authentication required");
     }
 
-    const token = auth.split(" ")[1];
+    const token = auth.substring(7).trim();
+
+    if (!token) {
+        throw new Error("Authentication required");
+    }
+
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (!decoded?.id) {
+    if (!decoded || !decoded.id) {
         throw new Error("Invalid authentication token");
     }
 
@@ -33,406 +51,851 @@ function getUserId(req) {
 }
 
 
-/* =========================================================
-   GET FAMILY
-   GET /api/family
-========================================================= */
+/*
+=========================================================
+AUTH ERROR HELPER
+=========================================================
+*/
+
+function isAuthError(err) {
+    return (
+        err?.name === "JsonWebTokenError" ||
+        err?.name === "TokenExpiredError" ||
+        err?.message === "Authentication required" ||
+        err?.message === "Invalid authentication token"
+    );
+}
+
+
+/*
+=========================================================
+GET CURRENT FAMILY MEMBERSHIP
+=========================================================
+*/
+
+async function getCurrentMembership(userId) {
+    const { data, error } = await supabase
+        .from("family_members")
+        .select(
+            "id, user_id, family_id, name, role, is_active"
+        )
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .order("created_at", {
+            ascending: true
+        })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        throw error;
+    }
+
+    return data || null;
+}
+
+
+/*
+=========================================================
+CREATE FAMILY FOR FIRST-TIME USER
+=========================================================
+*/
+
+async function createFamilyForUser(userId) {
+
+    /*
+    Double-check:
+    User may already have a family membership.
+    */
+    const existing =
+        await getCurrentMembership(userId);
+
+    if (existing?.family_id) {
+        return existing;
+    }
+
+
+    /*
+    Get user's name/email for a useful default family name.
+    */
+    let familyName = "My Family";
+
+    const { data: userData } = await supabase
+        .from("users")
+        .select("name, email")
+        .eq("id", userId)
+        .maybeSingle();
+
+    if (userData?.name) {
+        familyName =
+            `${String(userData.name).trim()}'s Family`;
+    }
+
+
+    /*
+    Create family.
+    */
+    const { data: family, error: familyError } =
+        await supabase
+            .from("families")
+            .insert([
+                {
+                    name: familyName,
+                    created_by: userId
+                }
+            ])
+            .select()
+            .single();
+
+    if (familyError) {
+        throw familyError;
+    }
+
+
+    /*
+    Create admin membership.
+    */
+    const { data: adminMember, error: memberError } =
+        await supabase
+            .from("family_members")
+            .insert([
+                {
+                    user_id: userId,
+                    family_id: family.id,
+                    name:
+                        userData?.name ||
+                        "Family Admin",
+                    phone: null,
+                    location: null,
+                    relation: "admin",
+                    role: "admin",
+                    is_active: true,
+                    last_updated:
+                        new Date().toISOString()
+                }
+            ])
+            .select()
+            .single();
+
+    if (memberError) {
+        /*
+        Do NOT silently leave an unusable family.
+        Return the real database error.
+        */
+        console.error(
+            "Admin membership creation error:",
+            memberError
+        );
+
+        throw memberError;
+    }
+
+    return adminMember;
+}
+
+
+/*
+=========================================================
+GET /api/family
+=========================================================
+*/
 
 router.get("/", async (req, res) => {
+
     try {
+
         const userId = getUserId(req);
 
-        // Find the active family membership of logged-in user
-        const { data: membership, error: memberError } = await supabase
-            .from("family_members")
-            .select("family_id, role")
-            .eq("user_id", userId)
-            .eq("is_active", true)
-            .limit(1)
+        let membership =
+            await getCurrentMembership(userId);
+
+
+        /*
+        First-time user:
+        automatically create their family.
+        */
+        if (!membership?.family_id) {
+
+            membership =
+                await createFamilyForUser(userId);
+        }
+
+
+        /*
+        Get family.
+        */
+        const {
+            data: family,
+            error: familyError
+        } = await supabase
+            .from("families")
+            .select(
+                "id, name, created_by, created_at"
+            )
+            .eq(
+                "id",
+                membership.family_id
+            )
             .maybeSingle();
 
-        if (memberError) throw memberError;
+        if (familyError) {
+            throw familyError;
+        }
 
-        if (!membership?.family_id) {
-            return res.json({
-                family: null,
-                members: [],
-                message: "You are not a member of any family yet."
+
+        if (!family) {
+            return res.status(404).json({
+                error: "Family not found"
             });
         }
 
-        // Get family details
-        const { data: family, error: familyError } = await supabase
-            .from("families")
-            .select("*")
-            .eq("id", membership.family_id)
-            .single();
 
-        if (familyError) throw familyError;
-
-        // Get family members
-        const { data: members, error: membersError } = await supabase
+        /*
+        Get active members.
+        */
+        const {
+            data: members,
+            error: membersError
+        } = await supabase
             .from("family_members")
             .select(
                 "id, user_id, family_id, name, phone, location, last_updated, created_at, relation, role, is_active"
             )
-            .eq("family_id", membership.family_id)
-            .eq("is_active", true)
-            .order("created_at", { ascending: true });
+            .eq(
+                "family_id",
+                membership.family_id
+            )
+            .eq(
+                "is_active",
+                true
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
 
-        if (membersError) throw membersError;
+        if (membersError) {
+            throw membersError;
+        }
 
-        res.json({
+
+        return res.json({
             family,
             members: members || [],
-            currentUserRole: membership.role
+            currentUserRole:
+                membership.role || "member"
         });
 
     } catch (err) {
-        console.error("Family fetch error:", err);
 
-        if (
-            err.name === "JsonWebTokenError" ||
-            err.name === "TokenExpiredError" ||
-            err.message === "Authentication required"
-        ) {
+        console.error(
+            "Family fetch error:",
+            err
+        );
+
+        if (isAuthError(err)) {
             return res.status(401).json({
                 error: "Unauthorized"
             });
         }
 
-        res.status(500).json({
-            error: "Could not fetch family members"
+        return res.status(500).json({
+            error:
+                "Could not fetch family members"
         });
     }
 });
 
 
-/* =========================================================
-   ADD FAMILY MEMBER
-   POST /api/family
-========================================================= */
+/*
+=========================================================
+POST /api/family
+ADD FAMILY MEMBER
+=========================================================
+*/
 
 router.post("/", async (req, res) => {
+
     try {
+
         const userId = getUserId(req);
 
         const {
             name,
-            phone,
+            phone = null,
             location = null,
-            relation = null,
-            role = "member"
+            relation = null
         } = req.body || {};
 
-        if (!name || !String(name).trim()) {
+
+        /*
+        Validate name.
+        */
+        if (
+            !name ||
+            !String(name).trim()
+        ) {
             return res.status(400).json({
                 error: "Name is required"
             });
         }
 
-        // Find logged-in user's family
-        const { data: currentMember, error: currentError } = await supabase
-            .from("family_members")
-            .select("family_id, role")
-            .eq("user_id", userId)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
 
-        if (currentError) throw currentError;
+        /*
+        Get current membership.
+        */
+        let currentMember =
+            await getCurrentMembership(userId);
 
+
+        /*
+        If first-time user somehow reaches POST
+        before GET, create family here too.
+        */
         if (!currentMember?.family_id) {
-            return res.status(403).json({
-                error: "You are not a member of any family"
-            });
+
+            currentMember =
+                await createFamilyForUser(userId);
         }
 
-        // Only family admin can add members
+
+        /*
+        Only admin can add.
+        */
         if (currentMember.role !== "admin") {
             return res.status(403).json({
-                error: "Only family admin can add members"
+                error:
+                    "Only family admin can add members"
             });
         }
 
-        // Do not allow arbitrary admin creation
-        const safeRole = role === "admin" ? "member" : role;
 
-        const { data, error } = await supabase
+        /*
+        Count active members.
+        */
+        const {
+            count,
+            error: countError
+        } = await supabase
+            .from("family_members")
+            .select(
+                "id",
+                {
+                    count: "exact",
+                    head: true
+                }
+            )
+            .eq(
+                "family_id",
+                currentMember.family_id
+            )
+            .eq(
+                "is_active",
+                true
+            );
+
+        if (countError) {
+            throw countError;
+        }
+
+
+        /*
+        Maximum:
+        1 admin + 10 members
+        */
+        if (
+            Number(count || 0) >=
+            MAX_FAMILY_MEMBERS
+        ) {
+            return res.status(400).json({
+                error:
+                    "Family limit reached. Maximum 10 family members can be added besides the admin."
+            });
+        }
+
+
+        /*
+        IMPORTANT:
+        Do NOT assign admin's user_id to
+        another family member.
+
+        A member who does not have a SamarthAI
+        account yet gets user_id = null.
+
+        When that person creates/joins an account,
+        account linking can be implemented separately.
+        */
+        const memberData = {
+            user_id: null,
+            family_id:
+                currentMember.family_id,
+            name:
+                String(name).trim(),
+            phone:
+                phone
+                    ? String(phone).trim()
+                    : null,
+            location:
+                location
+                    ? String(location).trim()
+                    : null,
+            relation:
+                relation
+                    ? String(relation).trim()
+                    : null,
+            role: "member",
+            is_active: true,
+            last_updated:
+                new Date().toISOString()
+        };
+
+
+        const {
+            data,
+            error
+        } = await supabase
             .from("family_members")
             .insert([
-                {
-                    user_id: userId,
-                    family_id: currentMember.family_id,
-                    name: String(name).trim(),
-                    phone: phone || null,
-                    location: location || null,
-                    relation: relation || null,
-                    role: safeRole,
-                    is_active: true,
-                    last_updated: new Date().toISOString()
-                }
+                memberData
             ])
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            throw error;
+        }
 
-        res.status(201).json({
-            message: "Family member added successfully",
+
+        return res.status(201).json({
+            message:
+                "Family member added successfully",
             member: data
         });
 
     } catch (err) {
-        console.error("Family insert error:", err);
 
-        if (
-            err.name === "JsonWebTokenError" ||
-            err.name === "TokenExpiredError" ||
-            err.message === "Authentication required"
-        ) {
+        console.error(
+            "Family insert error:",
+            err
+        );
+
+        if (isAuthError(err)) {
             return res.status(401).json({
                 error: "Unauthorized"
             });
         }
 
-        res.status(500).json({
-            error: "Could not add family member"
+        return res.status(500).json({
+            error:
+                "Could not add family member"
         });
     }
 });
 
 
-/* =========================================================
-   GPS FOR FAMILY MEMBER
-   GET /api/family/:memberId/gps
-========================================================= */
+/*
+=========================================================
+GET /api/family/:memberId/gps
+=========================================================
+*/
 
-router.get("/:memberId/gps", async (req, res) => {
-    try {
-        const userId = getUserId(req);
-        const memberId = req.params.memberId;
+router.get(
+    "/:memberId/gps",
+    async (req, res) => {
 
-        // Find current user's family
-        const { data: currentMember, error: currentError } = await supabase
-            .from("family_members")
-            .select("family_id")
-            .eq("user_id", userId)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
+        try {
 
-        if (currentError) throw currentError;
+            const userId =
+                getUserId(req);
 
-        if (!currentMember?.family_id) {
-            return res.status(403).json({
-                error: "Family access denied"
+            const memberId =
+                req.params.memberId;
+
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            /*
+            Target must belong to same family.
+            */
+            const {
+                data: member,
+                error
+            } = await supabase
+                .from("family_members")
+                .select(
+                    "id, name, location, last_updated"
+                )
+                .eq(
+                    "id",
+                    memberId
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                )
+                .maybeSingle();
+
+
+            if (error) {
+                throw error;
+            }
+
+
+            if (!member) {
+                return res.status(404).json({
+                    error:
+                        "Family member not found"
+                });
+            }
+
+
+            return res.json({
+                memberId:
+                    member.id,
+                name:
+                    member.name,
+                location:
+                    member.location,
+                last_updated:
+                    member.last_updated
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family GPS error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+                return res.status(401).json({
+                    error: "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not fetch GPS location"
             });
         }
-
-        // Only return member belonging to same family
-        const { data: member, error } = await supabase
-            .from("family_members")
-            .select("id, name, location, last_updated")
-            .eq("id", memberId)
-            .eq("family_id", currentMember.family_id)
-            .eq("is_active", true)
-            .single();
-
-        if (error) throw error;
-
-        res.json({
-            memberId: member.id,
-            name: member.name,
-            location: member.location,
-            last_updated: member.last_updated
-        });
-
-    } catch (err) {
-        console.error("Family GPS error:", err);
-
-        if (
-            err.name === "JsonWebTokenError" ||
-            err.name === "TokenExpiredError" ||
-            err.message === "Authentication required"
-        ) {
-            return res.status(401).json({
-                error: "Unauthorized"
-            });
-        }
-
-        res.status(500).json({
-            error: "Could not fetch GPS location"
-        });
     }
-});
+);
 
 
-/* =========================================================
-   SOS FOR FAMILY MEMBER
-   POST /api/family/:memberId/sos
-========================================================= */
+/*
+=========================================================
+POST /api/family/:memberId/sos
+=========================================================
+*/
 
-router.post("/:memberId/sos", async (req, res) => {
-    try {
-        const userId = getUserId(req);
-        const memberId = req.params.memberId;
+router.post(
+    "/:memberId/sos",
+    async (req, res) => {
 
-        const {
-            location = null
-        } = req.body || {};
+        try {
 
-        // Find current user's family
-        const { data: currentMember, error: currentError } = await supabase
-            .from("family_members")
-            .select("family_id")
-            .eq("user_id", userId)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
+            const userId =
+                getUserId(req);
 
-        if (currentError) throw currentError;
+            const memberId =
+                req.params.memberId;
 
-        if (!currentMember?.family_id) {
-            return res.status(403).json({
-                error: "Family access denied"
+            const {
+                location = null
+            } = req.body || {};
+
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            /*
+            Verify target member belongs
+            to the same family.
+            */
+            const {
+                data: targetMember,
+                error: targetError
+            } = await supabase
+                .from("family_members")
+                .select(
+                    "id, name, user_id"
+                )
+                .eq(
+                    "id",
+                    memberId
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                )
+                .maybeSingle();
+
+
+            if (targetError) {
+                throw targetError;
+            }
+
+
+            if (!targetMember) {
+                return res.status(404).json({
+                    error:
+                        "Family member not found"
+                });
+            }
+
+
+            /*
+            For a member without an account,
+            use the requesting user's ID so
+            sos_alerts.user_id remains valid.
+            */
+            const sosUserId =
+                targetMember.user_id ||
+                userId;
+
+
+            const {
+                data: sos,
+                error: sosError
+            } = await supabase
+                .from("sos_alerts")
+                .insert([
+                    {
+                        user_id:
+                            sosUserId,
+                        location:
+                            location,
+                        contacts: [],
+                        status:
+                            "active"
+                    }
+                ])
+                .select()
+                .single();
+
+
+            if (sosError) {
+                throw sosError;
+            }
+
+
+            return res.status(201).json({
+                message:
+                    `SOS alert triggered for ${targetMember.name}`,
+                alert: sos
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family SOS error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+                return res.status(401).json({
+                    error: "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not trigger SOS alert"
             });
         }
-
-        // Verify target member belongs to same family
-        const { data: targetMember, error: targetError } = await supabase
-            .from("family_members")
-            .select("id, name, user_id")
-            .eq("id", memberId)
-            .eq("family_id", currentMember.family_id)
-            .eq("is_active", true)
-            .single();
-
-        if (targetError) throw targetError;
-
-        // Create SOS in the existing SOS table
-        const { data: sos, error: sosError } = await supabase
-            .from("sos_alerts")
-            .insert([
-                {
-                    user_id: targetMember.user_id || userId,
-                    location: location,
-                    contacts: [],
-                    status: "active"
-                }
-            ])
-            .select()
-            .single();
-
-        if (sosError) throw sosError;
-
-        res.status(201).json({
-            message: `SOS alert triggered for ${targetMember.name}`,
-            alert: sos
-        });
-
-    } catch (err) {
-        console.error("Family SOS error:", err);
-
-        if (
-            err.name === "JsonWebTokenError" ||
-            err.name === "TokenExpiredError" ||
-            err.message === "Authentication required"
-        ) {
-            return res.status(401).json({
-                error: "Unauthorized"
-            });
-        }
-
-        res.status(500).json({
-            error: "Could not trigger SOS alert"
-        });
     }
-});
+);
 
 
-/* =========================================================
-   DELETE /api/family/:memberId
-   Soft delete — database row physically delete nahi hoti
-========================================================= */
+/*
+=========================================================
+DELETE /api/family/:memberId
+SOFT DELETE
+=========================================================
+*/
 
-router.delete("/:memberId", async (req, res) => {
-    try {
-        const userId = getUserId(req);
-        const memberId = req.params.memberId;
+router.delete(
+    "/:memberId",
+    async (req, res) => {
 
-        // Current user's family + role
-        const { data: currentMember, error: currentError } = await supabase
-            .from("family_members")
-            .select("family_id, role")
-            .eq("user_id", userId)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
+        try {
 
-        if (currentError) throw currentError;
+            const userId =
+                getUserId(req);
 
-        if (!currentMember?.family_id) {
-            return res.status(403).json({
-                error: "Family access denied"
+            const memberId =
+                req.params.memberId;
+
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            if (
+                currentMember.role !==
+                "admin"
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Only family admin can remove members"
+                });
+            }
+
+
+            /*
+            Find target in same family.
+            */
+            const {
+                data: targetMember,
+                error: targetError
+            } = await supabase
+                .from("family_members")
+                .select(
+                    "id, role, user_id"
+                )
+                .eq(
+                    "id",
+                    memberId
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                )
+                .maybeSingle();
+
+
+            if (targetError) {
+                throw targetError;
+            }
+
+
+            if (!targetMember) {
+                return res.status(404).json({
+                    error:
+                        "Family member not found"
+                });
+            }
+
+
+            /*
+            Admin cannot remove admin.
+            */
+            if (
+                targetMember.role ===
+                "admin"
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Family admin cannot be removed"
+                });
+            }
+
+
+            /*
+            Soft delete only.
+            */
+            const {
+                error: updateError
+            } = await supabase
+                .from("family_members")
+                .update({
+                    is_active: false,
+                    last_updated:
+                        new Date().toISOString()
+                })
+                .eq(
+                    "id",
+                    memberId
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                );
+
+
+            if (updateError) {
+                throw updateError;
+            }
+
+
+            return res.json({
+                message:
+                    "Family member removed successfully"
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family delete error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+                return res.status(401).json({
+                    error: "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not remove family member"
             });
         }
-
-        if (currentMember.role !== "admin") {
-            return res.status(403).json({
-                error: "Only family admin can remove members"
-            });
-        }
-
-        // Do not remove the admin himself through this route
-        const { data: targetMember, error: targetError } = await supabase
-            .from("family_members")
-            .select("id, role")
-            .eq("id", memberId)
-            .eq("family_id", currentMember.family_id)
-            .single();
-
-        if (targetError) throw targetError;
-
-        if (targetMember.role === "admin") {
-            return res.status(400).json({
-                error: "Family admin cannot be removed"
-            });
-        }
-
-        // Soft delete
-        const { error: updateError } = await supabase
-            .from("family_members")
-            .update({
-                is_active: false
-            })
-            .eq("id", memberId)
-            .eq("family_id", currentMember.family_id);
-
-        if (updateError) throw updateError;
-
-        res.json({
-            message: "Family member removed successfully"
-        });
-
-    } catch (err) {
-        console.error("Family delete error:", err);
-
-        if (
-            err.name === "JsonWebTokenError" ||
-            err.name === "TokenExpiredError" ||
-            err.message === "Authentication required"
-        ) {
-            return res.status(401).json({
-                error: "Unauthorized"
-            });
-        }
-
-        res.status(500).json({
-            error: "Could not remove family member"
-        });
     }
-});
+);
 
 
 module.exports = router;
