@@ -66,13 +66,16 @@ if (!membershipError && membership?.family_id) {
                 sos_id: sos.id,
                 is_read: false
             }));
+console.log('SOS ALERTS TO INSERT:', alerts);
+if (alerts.length > 0) {
+    const { error: alertError } = await supabase
+        .from('alerts')
+        .insert(alerts);
 
-        if (alerts.length > 0) {
-            await supabase
-                .from('alerts')
-                .insert(alerts);
-        }
+    if (alertError) {
+        console.error('ALERT INSERT ERROR:', alertError);
     }
+}       
 }
     res.status(201).json({
       message: 'SOS alert created successfully',
