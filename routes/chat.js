@@ -134,27 +134,34 @@ async function savePersonalMemory(userId, key, value) {
 // IMPORTANT: QUESTIONS MUST NOT SAVE MEMORY
 // =====================================================
 function detectMemorySave(message) {
-  if (!message) return null;
+  const text = String(message || '').trim();
 
-  const text = message.trim();
+  if (!text) return null;
 
-  // ---- Explicit save/remember intent only ----
-  const saveIntent =
-    /(?:memory\s*(?:me|mein|में)?\s*save|save\s*(?:this|it|karo|kar\s*lo)?|yaad\s+(?:rakho|rakhna)|याद\s+(?:रखो|रखना)|remember\s+(?:this|it))/i;
+  // Questions about memory/name must NEVER be treated as save requests.
+  const isMemoryQuery =
+    /(?:mera\s+(?:naam|name)|my\s+name|tumhe\s+mera\s+(?:naam|name)|mujhe\s+mera\s+(?:naam|name)).*(?:kya|kaun|batao|btao|yaad|pata|hai\s*na|h\s*na|\?)$/i.test(text);
 
-  if (!saveIntent.test(text)) {
+  if (isMemoryQuery) {
     return null;
   }
 
-  // ---- NAME ----
+  // Explicit name-memory request.
   const nameMatch = text.match(
-    /(?:mera\s+(?:naam|name)|my\s+name\s+is)\s+([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{0,40}?)(?:\s+(?:hai|h|is)\b)/i
+    /(?:mera\s+(?:naam|name)|my\s+name\s+is)\s+([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{0,40}?)(?=\s+(?:hai|h|is)\b)/i
   );
 
-  if (nameMatch) {
+  if (
+    nameMatch &&
+    /(?:save|saved|memory|yaad\s+(?:rakho|rakhna)|remember|याद\s+(?:रखो|रखना)|सेव)/i.test(text)
+  ) {
     const name = nameMatch[1].trim();
 
-    if (name) {
+    // Prevent conversational words from being stored as a name.
+    if (
+      name &&
+      !/^(to|yaad|hai|h|na|batao|btao|kya|pata)$/i.test(name)
+    ) {
       return {
         key: 'name',
         value: name
@@ -162,25 +169,27 @@ function detectMemorySave(message) {
     }
   }
 
-  // ---- GENERAL MEMORY ----
-  let note = text
-    .replace(saveIntent, '')
-    .trim();
+  // Explicit general memory request.
+  const rememberMatch = text.match(
+    /(?:remember|yaad\s+rakho|yaad\s+rakhna|याद\s+रखो|याद\s+रखना|memory\s+me\s+save|memory\s+mein\s+save|मेमोरी\s+में\s+सेव)\s*(?:that|ki|कि)?\s*(.+)$/i
+  );
 
-  note = note
-    .replace(/^(?:ki|कि|that)\s+/i, '')
-    .trim();
+  if (rememberMatch) {
+    const value = rememberMatch[1].trim();
 
-  if (note) {
-    return {
-      key: 'note',
-      value: note
-    };
+    if (
+      value &&
+      !/^(mera\s+(?:naam|name)|my\s+name|mera\s+(?:naam|name)\s+to\s+yaad)$/i.test(value)
+    ) {
+      return {
+        key: 'note',
+        value
+      };
+    }
   }
 
   return null;
 }
-
 // =====================================================
 // MEMORY FORMAT
 // =====================================================
