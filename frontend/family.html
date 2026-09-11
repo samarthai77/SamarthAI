@@ -79,35 +79,127 @@
             }
         }
 
-        async function loadFamily() {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(`${API_BASE}/family`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                const list = document.getElementById('familyList');
-                list.innerHTML = '';
-                if (Array.isArray(data)) {
-                    data.forEach(member => {
-                        list.innerHTML += `
-                            <div class="family-item">
-                                <div>
-                                    <strong>${member.name}</strong><br />
-                                    📞 ${member.phone}<br />
-                                    📍 ${member.location || 'N/A'}
-                                </div>
-                                <div>
-                                    <button onclick="deleteFamilyMember('${member.id}')">Delete</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading family:', error);
-            }
+    async function loadFamily() {
+    try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            console.error('No login token found');
+            return;
         }
+
+        const res = await fetch(`${API_BASE}/family`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        const list = document.getElementById('familyList');
+
+        list.innerHTML = '';
+
+        if (!res.ok) {
+            list.innerHTML = `
+                <div class="family-item">
+                    <div>
+                        ❌ ${data.error || data.message || 'Could not load family'}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // New backend response:
+        // data.members = [...]
+        const members = Array.isArray(data.members)
+            ? data.members
+            : [];
+
+        if (members.length === 0) {
+            list.innerHTML = `
+                <div class="family-item">
+                    <div>
+                        👨‍👩‍👦 अभी कोई family member नहीं है।
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        members.forEach(member => {
+
+            const item = document.createElement('div');
+
+            item.className = 'family-item';
+
+            item.innerHTML = `
+                <div>
+                    <strong>
+                        ${escapeFamilyHTML(member.name || 'Unknown')}
+                    </strong><br />
+
+                    📞 ${escapeFamilyHTML(member.phone || 'N/A')}<br />
+
+                    📍 ${escapeFamilyHTML(member.location || 'N/A')}<br />
+
+                    ${
+                        member.relation
+                            ? `👤 ${escapeFamilyHTML(member.relation)}<br />`
+                            : ''
+                    }
+
+                    🛡️ ${escapeFamilyHTML(member.role || 'member')}
+                </div>
+
+                <div>
+                    <button
+                        onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
+                    >
+                        Delete
+                    </button>
+                </div>
+            `;
+
+            list.appendChild(item);
+        });
+
+    } catch (error) {
+
+        console.error('Error loading family:', error);
+
+        document.getElementById('familyList').innerHTML = `
+            <div class="family-item">
+                <div>
+                    ❌ Family load failed
+                </div>
+            </div>
+        `;
+    }
+}
+
+
+function escapeFamilyHTML(value) {
+
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+}
+
+
+function escapeFamilyJS(value) {
+
+    return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"');
+
+}   
 
         async function deleteFamilyMember(id) {
             if (!confirm('Delete this member?')) return;
