@@ -40,7 +40,40 @@ router.post('/', async (req, res) => {
     if (error) {
       return res.status(400).json({ error: error.message });
     }
+// Create in-app alerts for other active family members
+const { data: membership, error: membershipError } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', decoded.id)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle();
 
+if (!membershipError && membership?.family_id) {
+    const { data: familyMembers, error: membersError } = await supabase
+        .from('family_members')
+        .select('id, user_id, name')
+        .eq('family_id', membership.family_id)
+        .eq('is_active', true);
+
+    if (!membersError && Array.isArray(familyMembers)) {
+        const alerts = familyMembers
+            .filter(member => member.user_id !== decoded.id)
+            .map(member => ({
+                member_id: member.id,
+                alert_type: 'sos',
+                message: `🚨 SOS emergency alert from ${decoded.id}`,
+                sos_id: sosAlert.id,
+                is_read: false
+            }));
+
+        if (alerts.length > 0) {
+            await supabase
+                .from('alerts')
+                .insert(alerts);
+        }
+    }
+}
     res.status(201).json({
       message: 'SOS alert created successfully',
       sos
