@@ -228,16 +228,14 @@ async function trackFamilyMember(memberId) {
             return;
         }
 
-        const member = data.member || {};
+        const location = data.location || 'Location not available';
 
-        const location = member.location || 'Location not available';
-
-        const updated = member.last_updated
-            ? new Date(member.last_updated).toLocaleString()
+        const updated = data.last_updated
+            ? new Date(data.last_updated).toLocaleString()
             : 'Not available';
 
         alert(
-            `📍 ${member.name || 'Family Member'}\n\n` +
+            `📍 ${data.name || 'Family Member'}\n\n` +
             `Location: ${location}\n` +
             `Last Updated: ${updated}`
         );
