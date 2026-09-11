@@ -76,7 +76,7 @@ if (alerts.length > 0) {
         console.error('ALERT INSERT ERROR:', alertError);
     }
 }       
-    }
+    
     res.status(201).json({
       message: 'SOS alert created successfully',
       sos
