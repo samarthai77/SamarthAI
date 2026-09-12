@@ -189,7 +189,33 @@
 
         .input-area button:hover { transform: scale(1.05); }
         .input-area button:disabled { opacity: 0.6; cursor: not-allowed; }
+#micBtn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    background: #003366;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    transition: transform 0.2s, background 0.2s;
+}
 
+#micBtn:hover {
+    transform: scale(1.05);
+}
+
+#micBtn.listening {
+    background: #d32f2f;
+    animation: micPulse 1.2s infinite;
+}
+
+@keyframes micPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
         .quick-questions {
             padding: 0.8rem 1.2rem;
             background: white;
@@ -265,11 +291,17 @@
         <button class="quick-btn" onclick="quickAsk('Koi joke sunao')">😄 Joke</button>
     </div>
 
-    <div class="input-area">
-        <input type="text" id="chatInput" 
-               placeholder="Kuch bhi puchiye... main hoon na! 😊" />
-        <button id="sendBtn" onclick="sendMessage()">Bhejo ➤</button>
-    </div>
+<div class="input-area">
+    <input type="text" id="chatInput" 
+           placeholder="Kuch bhi puchiye... main hoon na! 😊" />
+
+    <button id="micBtn" type="button"
+            onclick="startVoiceChat()"
+            title="Bolkar baat karein">🎙️</button>
+
+    <button id="sendBtn" onclick="sendMessage()">Bhejo ➤</button>
+</div>    
+
 </div>
 
 <footer>
@@ -279,7 +311,167 @@
 <script src="js/app.js"></script>
 <script>
     const CHAT_API = 'https://samarthai-backend.onrender.com/api/chat';
+let recognition = null;
+let voiceReplyEnabled = false;
+let isListening = false;
 
+function setupVoiceRecognition() {
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) return false;
+
+    recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+        isListening = true;
+
+        const micBtn = document.getElementById('micBtn');
+        if (micBtn) {
+            micBtn.classList.add('listening');
+            micBtn.textContent = '🔴';
+        }
+
+        const input = document.getElementById('chatInput');
+        if (input) input.placeholder = 'Sun raha hoon... boliye 🎙️';
+    };
+
+    recognition.onresult = (event) => {
+        const transcript =
+            event.results?.[0]?.[0]?.transcript?.trim();
+
+        if (!transcript) return;
+
+        const input = document.getElementById('chatInput');
+        if (!input) return;
+
+        input.value = transcript;
+        voiceReplyEnabled = true;
+
+        sendMessage();
+    };
+
+    recognition.onerror = (event) => {
+        console.warn('[VOICE]', event.error);
+
+        if (event.error === 'not-allowed' ||
+            event.error === 'service-not-allowed') {
+            addMessage(
+                'Microphone permission nahi mili. Browser settings me microphone permission allow karein.',
+                false
+            );
+        } else if (event.error !== 'no-speech' &&
+                   event.error !== 'aborted') {
+            addMessage(
+                'Awaaz samajhne me dikkat hui. Dobara bolkar try karein.',
+                false
+            );
+        }
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+
+        const micBtn = document.getElementById('micBtn');
+        if (micBtn) {
+            micBtn.classList.remove('listening');
+            micBtn.textContent = '🎙️';
+        }
+
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.placeholder = 'Kuch bhi puchiye... main hoon na! 😊';
+        }
+    };
+
+    return true;
+}
+
+function startVoiceChat() {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        addMessage('Pehle login kijiye, phir voice chat use karein.', false);
+        return;
+    }
+
+    if (!recognition && !setupVoiceRecognition()) {
+        addMessage(
+            'Is browser me voice input available nahi hai. Text se chat kar sakte hain.',
+            false
+        );
+        return;
+    }
+
+    if (isListening) {
+        recognition.stop();
+        return;
+    }
+
+    // Purani speech ko queue me jama hone se roko.
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+
+    try {
+        recognition.start();
+    } catch (error) {
+        console.warn('[VOICE START]', error);
+    }
+}
+
+function speakAIResponse(text) {
+    if (!voiceReplyEnabled) return;
+    if (!('speechSynthesis' in window)) return;
+    if (!text || !text.trim()) return;
+
+    window.speechSynthesis.cancel();
+
+    const cleanText = text
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/[*_#`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    utterance.lang = 'hi-IN';
+    utterance.rate = 0.92;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+
+    const hindiVoice =
+        voices.find(v => v.lang === 'hi-IN') ||
+        voices.find(v => v.lang?.toLowerCase().startsWith('hi'));
+
+    if (hindiVoice) {
+        utterance.voice = hindiVoice;
+    }
+
+    utterance.onend = () => {
+        voiceReplyEnabled = false;
+    };
+
+    utterance.onerror = () => {
+        voiceReplyEnabled = false;
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
+
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
+}
     function getTime() {
         return new Date().toLocaleTimeString('hi-IN', { 
             hour: '2-digit', minute: '2-digit' 
@@ -344,6 +536,7 @@
             const reply = data.response || 
                 'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
             addMessage(reply, false);
+           speakAIResponse(reply); 
         } catch (error) {
             showTyping(false);
             addMessage('Arre! Kuch gadbad ho gayi. Thodi der baad try karein. 🙏', false);
