@@ -201,7 +201,43 @@
             font-size: 0.75rem;
             margin-top: 5px;
         }
+.service-actions {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
 
+.service-action-btn {
+    flex: 1;
+    min-width: 90px;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.call-btn {
+    background: #e8f7ed;
+    color: #18733a;
+}
+
+.chat-btn {
+    background: #e8f0ff;
+    color: #174d9b;
+}
+
+.request-btn {
+    background: #fff0e6;
+    color: #d85b00;
+}
+
+.details-btn {
+    background: #f0f0f0;
+    color: #333;
+}
         .empty-state {
             background: white;
             border: 1px dashed #cbd4df;
@@ -495,42 +531,178 @@
         });
     }
 
-    function createServiceCard(service) {
-        const card = document.createElement('article');
-        card.className = 'service-card';
+  function createServiceCard(service) {
+    const card = document.createElement('article');
+    card.className = 'service-card';
 
-        const title = document.createElement('h3');
-        title.textContent = service.title || 'Service';
+    const title = document.createElement('h3');
+    title.textContent = service.title || 'Service';
 
-        const description = document.createElement('p');
-        description.textContent =
-            service.description || 'No description available.';
+    const description = document.createElement('p');
+    description.textContent =
+        service.description || 'No description available.';
 
-        const price = document.createElement('p');
-        price.className = 'service-price';
-        price.textContent =
-            service.price !== null && service.price !== undefined
-                ? `₹${service.price}`
-                : 'Price available on request';
+    const price = document.createElement('p');
+    price.className = 'service-price';
+    price.textContent =
+        service.price !== null && service.price !== undefined
+            ? `₹${service.price}`
+            : 'Price available on request';
 
-        const category = document.createElement('span');
-        category.className = 'category-tag';
-        category.textContent = service.category || 'Other';
+    const category = document.createElement('span');
+    category.className = 'category-tag';
+    category.textContent = service.category || 'Other';
 
-        const location = document.createElement('p');
-        location.className = 'service-meta';
-        location.textContent =
-            `📍 ${service.location || 'Location not specified'}`;
+    const location = document.createElement('p');
+    location.className = 'service-meta';
+    location.textContent =
+        `📍 ${service.location || 'Location not specified'}`;
 
-        card.appendChild(title);
-        card.appendChild(description);
-        card.appendChild(price);
-        card.appendChild(category);
-        card.appendChild(location);
+    const provider = service.users || {};
 
-        return card;
+    const providerName = document.createElement('p');
+    providerName.className = 'service-meta';
+    providerName.textContent =
+        `👤 ${provider.name || 'Service Provider'}`;
+
+    card.appendChild(title);
+    card.appendChild(description);
+    card.appendChild(price);
+    card.appendChild(category);
+    card.appendChild(location);
+    card.appendChild(providerName);
+
+    const actions = document.createElement('div');
+    actions.className = 'service-actions';
+
+    // Call
+    if (provider.phone) {
+        const callBtn = document.createElement('button');
+        callBtn.className = 'service-action-btn call-btn';
+        callBtn.textContent = '📞 Call';
+
+        callBtn.addEventListener('click', () => {
+            window.location.href = `tel:${provider.phone}`;
+        });
+
+        actions.appendChild(callBtn);
     }
 
+    // WhatsApp / Chat
+    if (provider.phone) {
+        const chatBtn = document.createElement('button');
+        chatBtn.className = 'service-action-btn chat-btn';
+        chatBtn.textContent = '💬 Chat';
+
+        chatBtn.addEventListener('click', () => {
+            const phone = String(provider.phone).replace(/\D/g, '');
+            const whatsappNumber =
+                phone.length === 10 ? `91${phone}` : phone;
+
+            const message =
+                `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+
+            window.open(
+                `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
+                '_blank'
+            );
+        });
+
+        actions.appendChild(chatBtn);
+    }
+
+    // Provider Details
+    const detailsBtn = document.createElement('button');
+    detailsBtn.className = 'service-action-btn details-btn';
+    detailsBtn.textContent = '👤 Details';
+
+    detailsBtn.addEventListener('click', () => {
+        const name = provider.name || 'Not available';
+        const phone = provider.phone || 'Not available';
+
+        alert(
+            `Provider Details\n\n` +
+            `Name: ${name}\n` +
+            `Phone: ${phone}\n` +
+            `Service: ${service.title || 'Not available'}\n` +
+            `Location: ${service.location || 'Not specified'}`
+        );
+    });
+
+    actions.appendChild(detailsBtn);
+
+    // Request Service
+    const requestBtn = document.createElement('button');
+    requestBtn.className = 'service-action-btn request-btn';
+    requestBtn.textContent = '🛠️ Request';
+
+    requestBtn.addEventListener('click', () => {
+        requestService(service);
+    });
+
+    actions.appendChild(requestBtn);
+
+    card.appendChild(actions);
+
+    return card;
+}
+
+
+async function requestService(service) {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
+
+    const location = prompt(
+        'Service kis location par chahiye?'
+    );
+
+    if (location === null) {
+        return;
+    }
+
+    const description =
+        `Service request: ${service.title || 'Service'}\n` +
+        `Provider: ${service.users?.name || 'Service Provider'}\n` +
+        `Details: ${service.description || ''}`;
+
+    try {
+        const response = await fetch(
+            'https://samarthai-backend.onrender.com/api/requests',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    category: service.category || 'Other',
+                    description,
+                    budget: service.price ?? null,
+                    location: location.trim() || service.location || null
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Request failed');
+        }
+
+        alert(
+            '✅ Service Request bhej di gayi.\n\n' +
+            'Provider se contact karne ke liye Call ya Chat use kar sakte hain.'
+        );
+
+    } catch (error) {
+        console.error('Service request error:', error);
+        alert('❌ Service request nahi ja paayi. Please try again.');
+    }
+}
     function renderServices() {
         const query = searchInput.value.trim().toLowerCase();
 
