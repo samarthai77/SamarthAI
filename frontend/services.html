@@ -1,165 +1,702 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#003366" />
     <title>Services — SamarthAI</title>
+
     <link rel="stylesheet" href="css/style.css" />
+
     <style>
-        .services-container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        :root {
+            --blue: #003366;
+            --blue2: #00509e;
+            --saffron: #ff6b00;
+            --gold: #ffd700;
+            --bg: #f5f8fc;
+            --card: #ffffff;
+            --text: #172033;
+            --muted: #687386;
+            --border: #e4e9f0;
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--blue), var(--blue2));
+            color: white;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+
+        header nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 8px;
+        }
+
+        .services-container {
+            width: min(1100px, 100%);
+            margin: auto;
+            padding: 18px 14px 35px;
+        }
+
+        /* Hero */
+        .services-hero {
+            background: linear-gradient(135deg, #003366, #00509e);
+            color: white;
+            border-radius: 20px;
+            padding: 24px 20px;
+            margin-bottom: 18px;
+            box-shadow: 0 8px 25px rgba(0, 51, 102, 0.16);
+        }
+
+        .services-hero h1 {
+            margin: 0 0 7px;
+            font-size: clamp(1.7rem, 5vw, 2.4rem);
+        }
+
+        .services-hero p {
+            margin: 0;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        /* Search */
+        .search-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        }
+
+        .search-box input {
+            width: 100%;
+            border: 0;
+            outline: none;
+            font-size: 1rem;
+            padding: 9px 6px;
+            background: transparent;
+            color: var(--text);
+        }
+
+        /* Categories */
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 2px 10px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--blue);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 9px;
+        }
+
+        .category-btn {
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 14px;
+            padding: 12px 7px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 0.82rem;
+            min-height: 75px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 14px rgba(0,0,0,0.08);
+        }
+
+        .category-icon {
+            display: block;
+            font-size: 1.55rem;
+            margin-bottom: 5px;
+        }
+
+        .category-btn.active {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 2px rgba(255,107,0,0.12);
+        }
+
+        /* Services */
         .service-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 13px;
         }
+
         .service-card {
-            background: white;
-            padding: 1.2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            padding: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
         }
+
         .service-card h3 {
-            color: #003366;
+            color: var(--blue);
+            margin: 0 0 7px;
         }
-        .service-card .price {
-            color: #ff6b00;
-            font-weight: bold;
-            font-size: 1.2rem;
+
+        .service-card p {
+            margin: 7px 0;
+            line-height: 1.45;
         }
-        .service-card .category {
-            background: #f0f0f0;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
+
+        .service-price {
+            color: var(--saffron);
+            font-weight: 800;
+            font-size: 1.15rem;
+        }
+
+        .service-meta {
+            color: var(--muted);
+            font-size: 0.84rem;
+        }
+
+        .category-tag {
             display: inline-block;
-            font-size: 0.8rem;
+            background: #eef4fa;
+            color: var(--blue);
+            border-radius: 20px;
+            padding: 5px 9px;
+            font-size: 0.75rem;
+            margin-top: 5px;
         }
+
+        .empty-state {
+            background: white;
+            border: 1px dashed #cbd4df;
+            border-radius: 16px;
+            padding: 28px 15px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        /* Add service */
         .add-service-form {
             background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            margin-top: 25px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
         }
+
+        .add-service-form h2 {
+            margin-top: 0;
+            color: var(--blue);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
         .add-service-form input,
-        .add-service-form textarea {
+        .add-service-form textarea,
+        .add-service-form select {
             width: 100%;
-            padding: 0.6rem;
-            margin-bottom: 0.8rem;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+            padding: 11px;
+            border: 1px solid #ccd4df;
+            border-radius: 10px;
+            outline: none;
+            font-size: 0.95rem;
         }
-        .add-service-form button {
-            background: #ff6b00;
+
+        .add-service-form textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .primary-btn {
+            background: var(--saffron);
             color: white;
-            padding: 0.6rem 1.5rem;
-            border: none;
-            border-radius: 30px;
+            border: 0;
+            border-radius: 25px;
+            padding: 11px 20px;
+            font-weight: 700;
             cursor: pointer;
-            font-weight: bold;
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                align-items: flex-start;
+            }
+
+            header nav {
+                width: 100%;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <header>
-        <div class="logo">SamarthAI</div>
-        <nav>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="chat.html">Chat</a>
-            <a href="services.html">Services</a>
-            <a href="profile.html">Profile</a>
-            <a href="#" onclick="logout()">Logout</a>
-        </nav>
-    </header>
+<header>
+    <div class="logo">SamarthAI</div>
 
-    <div class="services-container">
-        <h1>🛠️ Services</h1>
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="chat.html">Chat</a>
+        <a href="camera.html">Camera</a>
+        <a href="services.html">Services</a>
+        <a href="profile.html">Profile</a>
+        <a href="#" id="logoutBtn">Logout</a>
+    </nav>
+</header>
 
-        <!-- Add Service Form -->
-        <div class="add-service-form">
-            <h3>Add New Service</h3>
-            <input type="text" id="serviceTitle" placeholder="Title" />
-            <textarea id="serviceDesc" placeholder="Description"></textarea>
-            <input type="number" id="servicePrice" placeholder="Price (₹)" />
-            <input type="text" id="serviceCategory" placeholder="Category" />
-            <input type="text" id="serviceLocation" placeholder="Location" />
-            <button onclick="addService()">Add Service</button>
-        </div>
+<main class="services-container">
 
-        <!-- Service List -->
-        <div id="serviceList" class="service-grid"></div>
+    <section class="services-hero">
+        <h1>🛠️ Har Zaroorat Ki Service</h1>
+        <p>
+            Apne aas-paas ki useful services khojiye — simple, fast aur low-data.
+        </p>
+    </section>
+
+    <!-- Search -->
+    <div class="search-box">
+        <input
+            type="search"
+            id="serviceSearch"
+            placeholder="🔎 Plumber, Electrician, Painter..."
+            autocomplete="off"
+        />
     </div>
 
-    <footer>
-        <p>&copy; 2026 SamarthAI — Har Zaroorat Ka Sathi</p>
-    </footer>
+    <!-- Categories -->
+    <div class="section-title">
+        <h2>Popular Categories</h2>
+    </div>
 
-    <script src="js/app.js"></script>
-    <script>
-        const API_BASE = 'https://samarthai-backend.onrender.com/api';
+    <div class="category-grid" id="categoryGrid"></div>
 
-        async function loadServices() {
-            try {
-                const res = await fetch(`${API_BASE}/services`);
-                const data = await res.json();
-                const container = document.getElementById('serviceList');
-                container.innerHTML = '';
-                data.forEach(s => {
-                    container.innerHTML += `
-                        <div class="service-card">
-                            <h3>${s.title}</h3>
-                            <p>${s.description}</p>
-                            <p class="price">₹${s.price}</p>
-                            <span class="category">${s.category}</span>
-                            <p style="font-size:0.8rem; color:#666;">📍 ${s.location || 'N/A'}</p>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error('Error loading services:', error);
-            }
+    <!-- Service List -->
+    <div class="section-title">
+        <h2>Available Services</h2>
+    </div>
+
+    <div id="serviceList" class="service-grid">
+        <div class="empty-state">Services load ho rahi hain...</div>
+    </div>
+
+    <!-- Add Service -->
+    <section class="add-service-form">
+        <h2>➕ Apni Service Add Karein</h2>
+
+        <div class="form-grid">
+
+            <input
+                type="text"
+                id="serviceTitle"
+                placeholder="Service name"
+                maxlength="100"
+            />
+
+            <input
+                type="number"
+                id="servicePrice"
+                placeholder="Price (₹)"
+                min="0"
+                max="10000000"
+            />
+
+            <textarea
+                class="full"
+                id="serviceDesc"
+                placeholder="Service ke baare mein..."
+                maxlength="500"
+            ></textarea>
+
+            <select id="serviceCategory">
+                <option value="">Category select karein</option>
+            </select>
+
+            <input
+                type="text"
+                id="serviceLocation"
+                placeholder="Location"
+                maxlength="100"
+            />
+
+            <div class="full">
+                <button class="primary-btn" id="addServiceBtn">
+                    Add Service
+                </button>
+
+                <div id="addStatus" class="status"></div>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p style="text-align:center;">
+        &copy; 2026 SamarthAI — Har Zaroorat Ka Sathi
+    </p>
+</footer>
+
+<script src="js/app.js"></script>
+
+<script>
+    /*
+     * SamarthAI Services
+     * Lightweight design:
+     * - One API load
+     * - No background polling
+     * - No continuous GPS
+     * - Search/filter happens locally
+     * - No heavy images
+     */
+
+    const SERVICE_API = 'https://samarthai-backend.onrender.com/api/services';
+
+    const categories = [
+        { name: 'Plumber', icon: '🔧' },
+        { name: 'Electrician', icon: '⚡' },
+        { name: 'Construction', icon: '🧱' },
+        { name: 'Painter', icon: '🎨' },
+        { name: 'Carpenter', icon: '🪚' },
+        { name: 'Cleaning', icon: '🧹' },
+        { name: 'AC / Fridge', icon: '❄️' },
+        { name: 'Vehicle', icon: '🚗' },
+        { name: 'Computer', icon: '💻' },
+        { name: 'Home Repair', icon: '🏠' },
+        { name: 'Transport', icon: '🚚' },
+        { name: 'Gardening', icon: '🌳' },
+        { name: 'Packers', icon: '📦' },
+        { name: 'Technician', icon: '👨‍🔧' },
+        { name: 'Other', icon: '➕' }
+    ];
+
+    let allServices = [];
+    let activeCategory = '';
+
+    const serviceList = document.getElementById('serviceList');
+    const searchInput = document.getElementById('serviceSearch');
+    const categoryGrid = document.getElementById('categoryGrid');
+    const categorySelect = document.getElementById('serviceCategory');
+
+    function buildCategories() {
+        categoryGrid.textContent = '';
+        categorySelect.innerHTML = '<option value="">Category select karein</option>';
+
+        categories.forEach(category => {
+            const button = document.createElement('button');
+
+            button.type = 'button';
+            button.className = 'category-btn';
+            button.dataset.category = category.name;
+
+            const icon = document.createElement('span');
+            icon.className = 'category-icon';
+            icon.textContent = category.icon;
+
+            const label = document.createElement('span');
+            label.textContent = category.name;
+
+            button.appendChild(icon);
+            button.appendChild(label);
+
+            button.addEventListener('click', () => {
+                if (activeCategory === category.name) {
+                    activeCategory = '';
+                } else {
+                    activeCategory = category.name;
+                }
+
+                updateCategoryButtons();
+                renderServices();
+            });
+
+            categoryGrid.appendChild(button);
+
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    }
+
+    function updateCategoryButtons() {
+        document.querySelectorAll('.category-btn').forEach(button => {
+            button.classList.toggle(
+                'active',
+                button.dataset.category === activeCategory
+            );
+        });
+    }
+
+    function createServiceCard(service) {
+        const card = document.createElement('article');
+        card.className = 'service-card';
+
+        const title = document.createElement('h3');
+        title.textContent = service.title || 'Service';
+
+        const description = document.createElement('p');
+        description.textContent =
+            service.description || 'No description available.';
+
+        const price = document.createElement('p');
+        price.className = 'service-price';
+        price.textContent =
+            service.price !== null && service.price !== undefined
+                ? `₹${service.price}`
+                : 'Price available on request';
+
+        const category = document.createElement('span');
+        category.className = 'category-tag';
+        category.textContent = service.category || 'Other';
+
+        const location = document.createElement('p');
+        location.className = 'service-meta';
+        location.textContent =
+            `📍 ${service.location || 'Location not specified'}`;
+
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(price);
+        card.appendChild(category);
+        card.appendChild(location);
+
+        return card;
+    }
+
+    function renderServices() {
+        const query = searchInput.value.trim().toLowerCase();
+
+        const filtered = allServices.filter(service => {
+            const title = String(service.title || '').toLowerCase();
+            const description = String(service.description || '').toLowerCase();
+            const category = String(service.category || '').toLowerCase();
+            const location = String(service.location || '').toLowerCase();
+
+            const matchesSearch =
+                !query ||
+                title.includes(query) ||
+                description.includes(query) ||
+                category.includes(query) ||
+                location.includes(query);
+
+            const matchesCategory =
+                !activeCategory ||
+                category === activeCategory.toLowerCase();
+
+            return matchesSearch && matchesCategory;
+        });
+
+        serviceList.textContent = '';
+
+        if (!filtered.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent =
+                'Is category mein abhi koi service nahi mili.';
+            serviceList.appendChild(empty);
+            return;
         }
 
-        async function addService() {
-            const title = document.getElementById('serviceTitle').value;
-            const description = document.getElementById('serviceDesc').value;
-            const price = document.getElementById('servicePrice').value;
-            const category = document.getElementById('serviceCategory').value;
-            const location = document.getElementById('serviceLocation').value;
+        filtered.forEach(service => {
+            serviceList.appendChild(createServiceCard(service));
+        });
+    }
 
-            if (!title || !description || !price || !category) {
-                alert('Please fill all fields');
-                return;
+    async function loadServices() {
+        try {
+            const response = await fetch(SERVICE_API, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            if (!response.ok) {
+                throw new Error('Services load failed');
             }
 
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(`${API_BASE}/services`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ title, description, price: Number(price), category, location })
-                });
-                const data = await res.json();
-                alert(data.message || 'Service added!');
-                loadServices();
-                // Clear form
-                ['serviceTitle','serviceDesc','servicePrice','serviceCategory','serviceLocation'].forEach(id => document.getElementById(id).value = '');
-            } catch (error) {
-                console.error('Error adding service:', error);
-            }
+            const data = await response.json();
+
+            allServices = Array.isArray(data) ? data : [];
+
+            renderServices();
+
+        } catch (error) {
+            console.error('Services load error:', error);
+
+            serviceList.textContent = '';
+
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent =
+                'Services abhi load nahi ho pa rahi hain. Thodi der baad try karein.';
+
+            serviceList.appendChild(empty);
+        }
+    }
+
+    async function addService() {
+        const button = document.getElementById('addServiceBtn');
+        const status = document.getElementById('addStatus');
+
+        const title = document.getElementById('serviceTitle').value.trim();
+        const description = document.getElementById('serviceDesc').value.trim();
+        const priceValue = document.getElementById('servicePrice').value;
+        const category = document.getElementById('serviceCategory').value;
+        const location = document.getElementById('serviceLocation').value.trim();
+
+        if (!title || !description || !priceValue || !category) {
+            status.textContent =
+                '⚠️ Title, description, price aur category zaroori hain.';
+            return;
         }
 
-        // Load services on page load
-        document.addEventListener('DOMContentLoaded', loadServices);
-    </script>
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            status.textContent = '❌ Pehle login karein.';
+            return;
+        }
+
+        const price = Number(priceValue);
+
+        if (!Number.isFinite(price) || price < 0) {
+            status.textContent = '⚠️ Valid price enter karein.';
+            return;
+        }
+
+        button.disabled = true;
+        status.textContent = 'Service add ho rahi hai...';
+
+        try {
+            const response = await fetch(SERVICE_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    price,
+                    category,
+                    location
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Service add failed');
+            }
+
+            status.textContent = '✅ Service successfully add ho gayi.';
+
+            document.getElementById('serviceTitle').value = '';
+            document.getElementById('serviceDesc').value = '';
+            document.getElementById('servicePrice').value = '';
+            document.getElementById('serviceCategory').value = '';
+            document.getElementById('serviceLocation').value = '';
+
+            await loadServices();
+
+        } catch (error) {
+            console.error('Add service error:', error);
+            status.textContent =
+                '❌ Service add nahi ho paayi. Please try again.';
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    searchInput.addEventListener('input', renderServices);
+
+    document
+        .getElementById('addServiceBtn')
+        .addEventListener('click', addService);
+
+    document
+        .getElementById('logoutBtn')
+        .addEventListener('click', event => {
+            event.preventDefault();
+
+            if (typeof logout === 'function') {
+                logout();
+            } else {
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        });
+
+    buildCategories();
+    loadServices();
+</script>
 
 </body>
 </html>
