@@ -9,7 +9,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const JWT_SECRET = process.env.JWT_SECRET || 'samarthai_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 // ============ CREATE REQUEST ============
 router.post('/', async (req, res) => {
