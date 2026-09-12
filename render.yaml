@@ -11,4 +11,5 @@ services:
       - key: SUPABASE_ANON_KEY
         value: sb_publishable_bQxJArHzqVUuHD-wMGkvqQ_EdPf04
       - key: SUPABASE_SERVICE_KEY
+      sync: false
         value: sb_secret_VjrJhMAOPUiMZtot610BvW_L39FSWmI
