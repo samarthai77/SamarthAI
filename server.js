@@ -47,7 +47,8 @@ const gpsRoutes = require('./routes/gps');
 app.use('/api/gps', gpsRoutes);
 const memoryRoutes = require('./routes/memory');
 app.use('/api/memory', memoryRoutes);
-
+const scannerRoutes = require('./routes/scanner');
+app.use('/api/scanner', scannerRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
