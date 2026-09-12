@@ -603,7 +603,7 @@
                 `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
 
             window.open(
-                `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
+            `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`
                 '_blank'
             );
         });
