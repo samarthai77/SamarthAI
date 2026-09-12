@@ -4,14 +4,16 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is required");
 }
 
-// =====================================================
-// AUTH
-// =====================================================
+if (!GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY environment variable is required");
+}
+
 function authenticate(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -31,9 +33,6 @@ function authenticate(req, res, next) {
   }
 }
 
-// =====================================================
-// SCANNER STATUS
-// =====================================================
 router.get("/", (req, res) => {
   res.json({
     success: true,
@@ -42,9 +41,6 @@ router.get("/", (req, res) => {
   });
 });
 
-// =====================================================
-// IMAGE ANALYSIS
-// =====================================================
 router.post("/analyze", authenticate, async (req, res) => {
   try {
     const { image } = req.body;
@@ -69,25 +65,26 @@ router.post("/analyze", authenticate, async (req, res) => {
     const mimeType = mimeMatch?.[1] || "image/png";
 
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY
         },
         body: JSON.stringify({
           contents: [
             {
               parts: [
                 {
-                  text:
-                    "इस image को ध्यान से analyze करो। जो दिखाई दे रहा है केवल उसी के आधार पर simple Hindi में accurate और concise जवाब दो। अगर कोई text दिखाई दे रहा है तो उसे भी पढ़कर बताओ।"
-                },
-                {
                   inline_data: {
                     mime_type: mimeType,
                     data: base64Data
                   }
+                },
+                {
+                  text:
+                    "इस image को ध्यान से analyze करो। केवल image में दिखाई देने वाली जानकारी के आधार पर simple Hindi में accurate और concise जवाब दो। अगर image में कोई text है तो उसे पढ़कर बताओ। वस्तु, व्यक्ति, document, जगह या अन्य दिखाई देने वाली चीजों का स्पष्ट वर्णन करो। जो दिखाई नहीं देता उसके बारे में अनुमान मत लगाओ।"
                 }
               ]
             }
@@ -110,7 +107,11 @@ router.post("/analyze", authenticate, async (req, res) => {
     }
 
     const result =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data.candidates?.[0]?.content?.parts
+        ?.map(part => part.text)
+        .filter(Boolean)
+        .join("\n")
+        ?.trim() ||
       "Image ko samajh nahi paaya.";
 
     return res.json({
