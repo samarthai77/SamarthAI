@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
   try {
     const { data: services, error } = await supabase
       .from('services')
-      .select('*, users(name, email, phone)')
+    .select('*, users(name, phone)')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
