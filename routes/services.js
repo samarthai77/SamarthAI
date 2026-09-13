@@ -23,13 +23,14 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { title, description, price, category, location } = req.body;
+ const decoded = jwt.verify(token, JWT_SECRET);
+const { title, description, price, category, location } = req.body;
 
-    
-      return res.status(400).json({ error: 'Title, description, price and category are required' });
-    }
 if (!title || !description || price === undefined || price === null || price === '' || !category) {
+    return res.status(400).json({
+        error: 'Title, description, price and category are required'
+    });
+}
     const { data: service, error } = await supabase
       .from('services')
       .insert([{
