@@ -83,11 +83,14 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+  const { data: users, error } = await supabase
+  .from('users')
+  .select('*')
+  .eq('email', email)
+  .order('created_at', { ascending: false })
+  .limit(1);
+
+const user = users?.[0];
 
     if (error || !user) {
       return res.status(401).json({ error: 'Invalid credentials' });
