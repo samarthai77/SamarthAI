@@ -104,7 +104,37 @@ router.get('/:userId', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
+// Check that the requested user belongs to the same active family
+const { data: senderMember, error: senderError } = await supabase
+  .from('family_members')
+  .select('family_id')
+  .eq('user_id', decoded.id)
+  .eq('is_active', true)
+  .maybeSingle();
 
+if (senderError) throw senderError;
+
+if (!senderMember) {
+  return res.status(403).json({
+    error: 'You are not an active family member'
+  });
+}
+
+const { data: receiverMember, error: receiverError } = await supabase
+  .from('family_members')
+  .select('id')
+  .eq('user_id', userId)
+  .eq('family_id', senderMember.family_id)
+  .eq('is_active', true)
+  .maybeSingle();
+
+if (receiverError) throw receiverError;
+
+if (!receiverMember) {
+  return res.status(403).json({
+    error: 'User is not an active member of your family'
+  });
+}
     const { data: messages, error } = await supabase
       .from('messages')
       .select('*')
