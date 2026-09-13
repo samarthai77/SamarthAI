@@ -58,11 +58,22 @@ router.post('/', async (req, res) => {
   }
 });
 // ============ GET ALL SERVICES ============
+// ============ GET ALL SERVICES ============
 router.get('/', async (req, res) => {
   try {
     const { data: services, error } = await supabase
       .from('services')
-    .select('*, users(name, phone)')
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        category,
+        location,
+        is_active,
+        created_at,
+        users(name)
+      `)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
@@ -70,7 +81,17 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json(services);
+    const safeServices = (services || []).map(service => ({
+      ...service,
+      provider_name: service.users?.name || 'Service Provider'
+    }));
+
+    safeServices.forEach(service => {
+      delete service.users;
+    });
+
+    res.json(safeServices);
+
   } catch (error) {
     console.error('❌ Get services error:', error);
     res.status(500).json({ error: 'Internal server error' });
