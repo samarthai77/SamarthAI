@@ -517,7 +517,11 @@ router.post('/', async (req, res) => {
     // -------------------------------------------------
     // LOAD HISTORY
     // -------------------------------------------------
-    const history = await getRecentChatHistory(userId);
+    const [history, personalMemory, familyMemory] = await Promise.all([
+  getRecentChatHistory(userId),
+  getPersonalMemory(userId),
+  getFamilyMemory(userId)
+]); 
 
     // -------------------------------------------------
     // CHAT RECORD REQUEST
@@ -584,16 +588,7 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // -------------------------------------------------
-    // LOAD MEMORY
-    // -------------------------------------------------
-    const [
-      personalMemory,
-      familyMemory
-    ] = await Promise.all([
-      getPersonalMemory(userId),
-      getFamilyMemory(userId)
-    ]);
+  
 
     console.log('🧠 Context:', {
       userId,
