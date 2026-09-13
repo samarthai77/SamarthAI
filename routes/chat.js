@@ -513,15 +513,51 @@ router.post('/', async (req, res) => {
         chat_id: chatId
       });
     }
-
+// =====================================================
+// SUPABASE TIMEOUT
+// =====================================================
+function withTimeout(promise, ms, fallbackValue, label = '') {
+  return Promise.race([
+    promise,
+    new Promise(resolve => {
+      setTimeout(() => {
+        console.warn(
+          `⚠️ ${label} request timed out after ${ms}ms`
+        );
+        resolve(fallbackValue);
+      }, ms);
+    })
+  ]).catch(error => {
+    console.error(
+      `❌ ${label} request failed:`,
+      error.message
+    );
+    return fallbackValue;
+  });
+}
     // -------------------------------------------------
     // LOAD HISTORY
     // -------------------------------------------------
-    const [history, personalMemory, familyMemory] = await Promise.all([
-  getRecentChatHistory(userId),
-  getPersonalMemory(userId),
-  getFamilyMemory(userId)
-]); 
+   const [history, personalMemory, familyMemory] = await Promise.all([
+  withTimeout(
+    getRecentChatHistory(userId),
+    1500,
+    [],
+    'Chat history'
+  ),
+  withTimeout(
+    getPersonalMemory(userId),
+    1500,
+    [],
+    'Personal memory'
+  ),
+  withTimeout(
+    getFamilyMemory(userId),
+    1500,
+    [],
+    'Family memory'
+  )
+]);
 
     // -------------------------------------------------
     // CHAT RECORD REQUEST
