@@ -29,15 +29,20 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user exists
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
+ const { data: existingUsers, error: existingUserError } = await supabase
+  .from('users')
+  .select('id')
+  .eq('email', email)
+  .limit(1);
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
+if (existingUserError) {
+  console.error('❌ User lookup error:', existingUserError);
+  return res.status(500).json({ error: 'Unable to check account' });
+}
+
+if (existingUsers && existingUsers.length > 0) {
+  return res.status(400).json({ error: 'User already exists' });
+}
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
