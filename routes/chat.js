@@ -471,6 +471,11 @@ async function callGeminiVision(imageBase64) {
 router.post('/', async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) {
+  return res.status(401).json({
+    error: 'Authentication required'
+  });
+}
     const { message, image } = req.body;
 
     if (!message && !image) {
