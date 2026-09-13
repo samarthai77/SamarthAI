@@ -29,7 +29,43 @@ router.post('/', async (req, res) => {
     if (!receiver_id || !message) {
       return res.status(400).json({ error: 'Receiver ID and message are required' });
     }
+// Receiver must be an active member of the sender's family
+const { data: senderMember, error: senderError } = await supabase
+  .from('family_members')
+  .select('family_id')
+  .eq('user_id', decoded.id)
+  .eq('is_active', true)
+  .maybeSingle();
 
+if (senderError) throw senderError;
+
+if (!senderMember) {
+  return res.status(403).json({
+    error: 'You are not an active family member'
+  });
+}
+
+if (receiver_id === decoded.id) {
+  return res.status(400).json({
+    error: 'You cannot send a message to yourself'
+  });
+}
+
+const { data: receiverMember, error: receiverError } = await supabase
+  .from('family_members')
+  .select('id, user_id, family_id')
+  .eq('user_id', receiver_id)
+  .eq('is_active', true)
+  .eq('family_id', senderMember.family_id)
+  .maybeSingle();
+
+if (receiverError) throw receiverError;
+
+if (!receiverMember) {
+  return res.status(403).json({
+    error: 'Receiver is not an active member of your family'
+  });
+}
     const { data, error } = await supabase
       .from('messages')
       .insert([{
