@@ -531,7 +531,7 @@
         });
     }
 
-  function createServiceCard(service) {
+ function createServiceCard(service) {
     const card = document.createElement('article');
     card.className = 'service-card';
 
@@ -558,14 +558,14 @@
     location.textContent =
         `📍 ${service.location || 'Location not specified'}`;
 
-const provider = {
-    name: service.provider_name || 'Service Provider'
-};
+    const provider = {
+        name: service.provider_name || 'Service Provider'
+    };
 
     const providerName = document.createElement('p');
     providerName.className = 'service-meta';
     providerName.textContent =
-        `👤 ${provider.name || 'Service Provider'}`;
+        `👤 ${provider.name}`;
 
     card.appendChild(title);
     card.appendChild(description);
@@ -578,94 +578,98 @@ const provider = {
     actions.className = 'service-actions';
 
     // Call
-    if (provider.phone) {
-    // Call
-const callBtn = document.createElement('button');
-callBtn.className = 'service-action-btn call-btn';
-callBtn.textContent = '📞 Call';
+    const callBtn = document.createElement('button');
+    callBtn.className = 'service-action-btn call-btn';
+    callBtn.textContent = '📞 Call';
 
-callBtn.addEventListener('click', async () => {
-    const token = localStorage.getItem('token');
+    callBtn.addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
 
-    if (!token) {
-        alert('Pehle login karein.');
-        return;
-    }
-
-    try {
-        const response = await fetch(
-            `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.phone) {
-            throw new Error(data.error || 'Phone number available nahi hai.');
+        if (!token) {
+            alert('Pehle login karein.');
+            return;
         }
 
-        window.location.href = `tel:${data.phone}`;
-    } catch (error) {
-        alert(error.message || 'Provider contact nahi mil paya.');
-    }
-});
-
-actions.appendChild(callBtn);  
-    }
-
-    // WhatsApp / Chat
-    if (provider.phone) {
-    // WhatsApp / Chat
-const chatBtn = document.createElement('button');
-chatBtn.className = 'service-action-btn chat-btn';
-chatBtn.textContent = '💬 Chat';
-
-chatBtn.addEventListener('click', async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert('Pehle login karein.');
-        return;
-    }
-
-    try {
-        const response = await fetch(
-            `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+        try {
+            const response = await fetch(
+                `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.phone) {
+                throw new Error(
+                    data.error || 'Phone number available nahi hai.'
+                );
             }
-        );
 
-        const data = await response.json();
+            window.location.href = `tel:${data.phone}`;
+        } catch (error) {
+            alert(
+                error.message ||
+                'Provider contact nahi mil paya.'
+            );
+        }
+    });
 
-        if (!response.ok || !data.phone) {
-            throw new Error(data.error || 'Phone number available nahi hai.');
+    actions.appendChild(callBtn);
+
+    // WhatsApp / Chat
+    const chatBtn = document.createElement('button');
+    chatBtn.className = 'service-action-btn chat-btn';
+    chatBtn.textContent = '💬 Chat';
+
+    chatBtn.addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            alert('Pehle login karein.');
+            return;
         }
 
-        const phone = String(data.phone).replace(/\D/g, '');
-        const whatsappNumber =
-            phone.length === 10 ? `91${phone}` : phone;
+        try {
+            const response = await fetch(
+                `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
 
-        const message =
-            `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+            const data = await response.json();
 
-        window.open(
-            `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
-            '_blank'
-        );
-    } catch (error) {
-        alert(error.message || 'Provider contact nahi mil paya.');
-    }
-});
+            if (!response.ok || !data.phone) {
+                throw new Error(
+                    data.error || 'Phone number available nahi hai.'
+                );
+            }
 
-actions.appendChild(chatBtn);    
-    }
+            const phone = String(data.phone).replace(/\D/g, '');
+            const whatsappNumber =
+                phone.length === 10 ? `91${phone}` : phone;
+
+            const message =
+                `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+
+            window.open(
+                `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
+                '_blank'
+            );
+        } catch (error) {
+            alert(
+                error.message ||
+                'Provider contact nahi mil paya.'
+            );
+        }
+    });
+
+    actions.appendChild(chatBtn);
 
     // Provider Details
     const detailsBtn = document.createElement('button');
@@ -673,13 +677,10 @@ actions.appendChild(chatBtn);
     detailsBtn.textContent = '👤 Details';
 
     detailsBtn.addEventListener('click', () => {
-        const name = provider.name || 'Not available';
-    const phone = 'Contact button se available hoga';
-
         alert(
             `Provider Details\n\n` +
-            `Name: ${name}\n` +
-            `Phone: ${phone}\n` +
+            `Name: ${provider.name}\n` +
+            `Phone: Call ya Chat button se available hoga.\n` +
             `Service: ${service.title || 'Not available'}\n` +
             `Location: ${service.location || 'Not specified'}`
         );
@@ -701,8 +702,7 @@ actions.appendChild(chatBtn);
     card.appendChild(actions);
 
     return card;
-}
-
+} 
 
 async function requestService(service) {
     const token = localStorage.getItem('token');
@@ -722,7 +722,7 @@ async function requestService(service) {
 
     const description =
         `Service request: ${service.title || 'Service'}\n` +
-        `Provider: ${service.users?.name || 'Service Provider'}\n` +
+       `Provider: ${service.provider_name || 'Service Provider'}\n` +
         `Details: ${service.description || ''}`;
 
     try {
