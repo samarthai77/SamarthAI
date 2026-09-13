@@ -69,7 +69,7 @@ router.get('/:service_id', async (req, res) => {
 
     const { data: reviews, error } = await supabase
       .from('reviews')
-      .select('*, users(name, email)')
+    .select('*, users(name)')
       .eq('service_id', service_id)
       .order('created_at', { ascending: false });
 
