@@ -26,10 +26,10 @@ router.post('/', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const { title, description, price, category, location } = req.body;
 
-    if (!title || !description || !price || !category) {
+    
       return res.status(400).json({ error: 'Title, description, price and category are required' });
     }
-
+if (!title || !description || price === undefined || price === null || price === '' || !category) {
     const { data: service, error } = await supabase
       .from('services')
       .insert([{
@@ -200,7 +200,7 @@ router.put('/:id', async (req, res) => {
       .update({
         title: title || existing.title,
         description: description || existing.description,
-        price: price || existing.price,
+      price: price !== undefined && price !== null && price !== '' ? price : existing.price,
         category: category || existing.category,
         location: location || existing.location,
         is_active: is_active !== undefined ? is_active : existing.is_active
