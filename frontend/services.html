@@ -558,7 +558,9 @@
     location.textContent =
         `📍 ${service.location || 'Location not specified'}`;
 
-    const provider = service.users || {};
+const provider = {
+    name: service.provider_name || 'Service Provider'
+};
 
     const providerName = document.createElement('p');
     providerName.className = 'service-meta';
@@ -577,41 +579,92 @@
 
     // Call
     if (provider.phone) {
-        const callBtn = document.createElement('button');
-        callBtn.className = 'service-action-btn call-btn';
-        callBtn.textContent = '📞 Call';
+    // Call
+const callBtn = document.createElement('button');
+callBtn.className = 'service-action-btn call-btn';
+callBtn.textContent = '📞 Call';
 
-        callBtn.addEventListener('click', () => {
-            window.location.href = `tel:${provider.phone}`;
-        });
+callBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('token');
 
-        actions.appendChild(callBtn);
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.phone) {
+            throw new Error(data.error || 'Phone number available nahi hai.');
+        }
+
+        window.location.href = `tel:${data.phone}`;
+    } catch (error) {
+        alert(error.message || 'Provider contact nahi mil paya.');
+    }
+});
+
+actions.appendChild(callBtn);  
     }
 
     // WhatsApp / Chat
     if (provider.phone) {
-        const chatBtn = document.createElement('button');
-        chatBtn.className = 'service-action-btn chat-btn';
-        chatBtn.textContent = '💬 Chat';
+    // WhatsApp / Chat
+const chatBtn = document.createElement('button');
+chatBtn.className = 'service-action-btn chat-btn';
+chatBtn.textContent = '💬 Chat';
 
-        chatBtn.addEventListener('click', () => {
-            const phone = String(provider.phone).replace(/\D/g, '');
-            const whatsappNumber =
-                phone.length === 10 ? `91${phone}` : phone;
+chatBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('token');
 
-            const message =
-                `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
 
-        
-      window.open(
-    `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
-    '_blank'
-);  
-            
-            
-        });
+    try {
+        const response = await fetch(
+            `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
 
-        actions.appendChild(chatBtn);
+        const data = await response.json();
+
+        if (!response.ok || !data.phone) {
+            throw new Error(data.error || 'Phone number available nahi hai.');
+        }
+
+        const phone = String(data.phone).replace(/\D/g, '');
+        const whatsappNumber =
+            phone.length === 10 ? `91${phone}` : phone;
+
+        const message =
+            `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+
+        window.open(
+            `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
+            '_blank'
+        );
+    } catch (error) {
+        alert(error.message || 'Provider contact nahi mil paya.');
+    }
+});
+
+actions.appendChild(chatBtn);    
     }
 
     // Provider Details
@@ -621,7 +674,7 @@
 
     detailsBtn.addEventListener('click', () => {
         const name = provider.name || 'Not available';
-        const phone = provider.phone || 'Not available';
+    const phone = 'Contact button se available hoga';
 
         alert(
             `Provider Details\n\n` +
