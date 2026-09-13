@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
-
+const JWT_EXPIRES_IN = '1h';
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
@@ -60,7 +60,11 @@ if (existingUsers && existingUsers.length > 0) {
     }
 
     // Generate JWT
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+    const token = jwt.sign(
+  { id: user.id, email: user.email },
+  JWT_SECRET,
+  { expiresIn: JWT_EXPIRES_IN }
+);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -101,7 +105,11 @@ const user = users?.[0];
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+  const token = jwt.sign(
+  { id: user.id, email: user.email },
+  JWT_SECRET,
+  { expiresIn: JWT_EXPIRES_IN }
+);  
 
     res.json({
       message: 'Login successful',
