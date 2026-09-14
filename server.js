@@ -43,7 +43,7 @@ const dns = require('dns').promises;
 
 const app = express();
 
-const app = express();
+
 app.use(cors({
   origin: true,
   credentials: true
