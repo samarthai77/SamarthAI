@@ -4,6 +4,45 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// ===== SUPABASE DIAGNOSTIC START =====
+const dns = require('dns').promises;
+
+(async () => {
+  try {
+    const url = new URL(process.env.SUPABASE_URL);
+    const host = url.hostname;
+
+    console.log('[SUPABASE DIAG] Host:', host);
+
+    const dnsResult = await dns.lookup(host);
+    console.log('[SUPABASE DIAG] DNS OK:', dnsResult);
+
+    const response = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/users?select=id&limit=1`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+        }
+      }
+    );
+
+    console.log('[SUPABASE DIAG] HTTP Status:', response.status);
+    console.log('[SUPABASE DIAG] Supabase connection OK');
+  } catch (err) {
+    console.error('[SUPABASE DIAG] FAILED:', {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      cause: err.cause?.message,
+      causeCode: err.cause?.code
+    });
+  }
+})();
+// ===== SUPABASE DIAGNOSTIC END =====
+
+const app = express();
+
 const app = express();
 app.use(cors({
   origin: true,
