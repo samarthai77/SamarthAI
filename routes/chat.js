@@ -356,8 +356,18 @@ async function getRecentChatHistory(userId) {
       console.error('Chat history error:', error);
       return [];
     }
+return (data || [])
+  .filter(item => {
+    const response = String(item.response || '').trim();
 
-    return (data || []).reverse();
+    return (
+      response &&
+      response !== 'Sorry, I could not process your request.' &&
+      !response.toLowerCase().includes('could not process your request')
+    );
+  })
+  .reverse();
+    
   } catch (e) {
     console.error('Chat history exception:', e);
     return [];
@@ -368,9 +378,19 @@ async function getRecentChatHistory(userId) {
 // HISTORY REQUEST
 // =====================================================
 function isHistoryRequest(message) {
-  return /(?:pichhli|pichli|purani|previous|old|last).*(?:chat|baat|batcheet|conversation|record|history)|(?:chat|conversation|record|history).*(?:dikhao|dikhाओ|batao|btao|show)/i
-    .test(message || '');
+  const text = String(message || '').trim().toLowerCase();
+
+  const hasHistoryWord =
+    /pichhli|pichli|pichhle|purani|previous|old|last|pehle|history|record|conversation|chat|baat.?cheet|baatcheet/i
+      .test(text);
+
+  const hasRequestWord =
+    /batao|btao|dikhao|dikhाओ|show|hui|huyi|thi|the|kya|kya.?kya/i
+      .test(text);
+
+  return hasHistoryWord && hasRequestWord;
 }
+
 
 // =====================================================
 // FORMAT HISTORY
