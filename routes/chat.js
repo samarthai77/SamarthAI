@@ -15,7 +15,7 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'gemma2-9b-it';
 
 // =====================================================
 // AUTH
