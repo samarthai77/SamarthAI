@@ -24,7 +24,15 @@ router.post('/', async (req, res) => {
     }
 
  const decoded = jwt.verify(token, JWT_SECRET);
-const { title, description, price, category, location } = req.body;
+const {
+  title,
+  description,
+  price,
+  category,
+  location,
+  latitude,
+  longitude
+} = req.body;
 
 if (!title || !description || price === undefined || price === null || price === '' || !category) {
     return res.status(400).json({
@@ -39,8 +47,16 @@ if (!title || !description || price === undefined || price === null || price ===
         description,
         price,
         category,
-        location: location || null,
-        is_active: true
+     location: location || null,
+latitude:
+  latitude !== undefined && latitude !== null
+    ? Number(latitude)
+    : null,
+longitude:
+  longitude !== undefined && longitude !== null
+    ? Number(longitude)
+    : null,
+is_active: true 
       }])
       .select()
       .single();
