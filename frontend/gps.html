@@ -36,16 +36,32 @@
     <script>
     
 
-        async function updateLocation() {
-            const status = document.getElementById('gpsStatus');
-            status.textContent = '⏳ Updating location...';
-            status.style.background = '#fff3cd';
+  async function updateLocation() {
+    const status = document.getElementById('gpsStatus');
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        status.textContent = '❌ Please login first.';
+        status.style.background = '#f8d7da';
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        status.textContent = '❌ This device/browser does not support GPS.';
+        status.style.background = '#f8d7da';
+        return;
+    }
+
+    status.textContent = '📍 Real GPS location le raha hoon...';
+    status.style.background = '#fff3cd';
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
 
             try {
-                const token = localStorage.getItem('token');
-                const latitude = 28.6139 + (Math.random() * 0.01);
-                const longitude = 77.2090 + (Math.random() * 0.01);
-
                 const res = await fetch(`${API_BASE}/gps/location`, {
                     method: 'PUT',
                     headers: {
@@ -54,20 +70,56 @@
                     },
                     body: JSON.stringify({ latitude, longitude })
                 });
-                const data = await res.json();
 
-                if (res.status === 200) {
-                    status.textContent = `✅ Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok && data.success) {
+                    status.textContent =
+                        `✅ Real location updated: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)`;
                     status.style.background = '#d4edda';
+                } else if (res.status === 401) {
+                    status.textContent =
+                        '❌ Login session expired. Please login again.';
+                    status.style.background = '#f8d7da';
                 } else {
-                    status.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    status.textContent =
+                        '❌ Failed: ' +
+                        (data.error || 'Could not update location');
                     status.style.background = '#f8d7da';
                 }
+
             } catch (error) {
-                status.textContent = '❌ Error: ' + error.message;
+                status.textContent =
+                    '❌ Network error: ' + error.message;
                 status.style.background = '#f8d7da';
             }
+        },
+
+        (error) => {
+            let message = 'Could not get GPS location.';
+
+            if (error.code === 1) {
+                message =
+                    '📍 Location permission denied. Browser settings me Location Allow karein.';
+            } else if (error.code === 2) {
+                message =
+                    '📍 Location unavailable. GPS/Location ON karke dobara try karein.';
+            } else if (error.code === 3) {
+                message =
+                    '📍 GPS request timed out. Dobara try karein.';
+            }
+
+            status.textContent = '❌ ' + message;
+            status.style.background = '#f8d7da';
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
         }
+    );
+}  
     </script>
 </body>
 </html>
