@@ -82,6 +82,8 @@ const reviewsRoutes = require('./routes/reviews');
 app.use('/api/reviews', reviewsRoutes);
 const messagesRoutes = require('./routes/messages');
 app.use('/api/messages', messagesRoutes);
+const notificationsRoutes = require('./routes/notifications');
+app.use('/api/notifications', notificationsRoutes);
 const gpsRoutes = require('./routes/gps');
 app.use('/api/gps', gpsRoutes);
 const memoryRoutes = require('./routes/memory');
