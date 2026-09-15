@@ -284,7 +284,7 @@
     </div>
 
     <div class="quick-questions">
-        <button class="quick-btn" onclick="quickAsk('Mausam kaisa rahega aaj?')">🌤️ Mausam</button>
+        <button class="quick-btn" onclick="getLiveWeather()">🌤️ Mausam</button>
         <button class="quick-btn" onclick="quickAsk('Koi achhi kahani sunao')">📖 Kahani</button>
         <button class="quick-btn" onclick="quickAsk('Koi motivational baat batao')">💪 Motivation</button>
         <button class="quick-btn" onclick="quickAsk('Aaj ka news kya hai?')">📰 News</button>
@@ -545,7 +545,112 @@ if ('speechSynthesis' in window) {
         btn.disabled = false;
         input.focus();
     }
+async function getLiveWeather() {
+    const token = localStorage.getItem('token');
 
+    if (!token) {
+        addMessage('Pehle login kijiye.', false);
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        addMessage('Aapke device me GPS location available nahi hai.', false);
+        return;
+    }
+
+    addMessage('📍 Aapki location lekar live mausam check kar raha hoon...', false);
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            try {
+                const url =
+                    'https://samarthai-backend.onrender.com/api/weather' +
+                    `?latitude=${encodeURIComponent(latitude)}` +
+                    `&longitude=${encodeURIComponent(longitude)}` +
+                    '&type=current';
+
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const result = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        result.error || 'Weather request failed'
+                    );
+                }
+
+                const weather = result.data;
+
+                const temperature =
+                    weather?.temperature?.degrees ??
+                    weather?.temperature ??
+                    '--';
+
+                const feelsLike =
+                    weather?.feelsLikeTemperature?.degrees ??
+                    '--';
+
+                const description =
+                    weather?.weatherCondition?.description?.text ||
+                    weather?.weatherCondition?.description ||
+                    'मौसम की जानकारी उपलब्ध है';
+
+                const humidity =
+                    weather?.relativeHumidity ??
+                    '--';
+
+                const wind =
+                    weather?.wind?.speed?.value ??
+                    '--';
+
+                const reply =
+                    `🌤️ Live Mausam\n\n` +
+                    `🌡️ Temperature: ${temperature}°C\n` +
+                    `🤗 Feels like: ${feelsLike}°C\n` +
+                    `☁️ Condition: ${description}\n` +
+                    `💧 Humidity: ${humidity}%\n` +
+                    `💨 Wind: ${wind} km/h`;
+
+                addMessage(reply, false);
+
+            } catch (error) {
+                console.error('[WEATHER]', error);
+                addMessage(
+                    'Live mausam ki information abhi nahi mil pa rahi. Dobara try karein. 🙏',
+                    false
+                );
+            }
+        },
+
+        (error) => {
+            console.warn('[GPS]', error);
+
+            if (error.code === 1) {
+                addMessage(
+                    '📍 Location permission allow kijiye, tab SamarthAI live mausam bata payega.',
+                    false
+                );
+            } else {
+                addMessage(
+                    '📍 Location nahi mil pa rahi. GPS on karke dobara try karein.',
+                    false
+                );
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 300000
+        }
+    );
+}
     function quickAsk(question) {
         document.getElementById('chatInput').value = question;
         sendMessage();
