@@ -82,6 +82,7 @@ router.get('/', async (req, res) => {
       .from('services')
       .select(`
       id,
+user_id,      
 title,
 description,
 price,
@@ -100,14 +101,16 @@ users(name)
       return res.status(400).json({ error: error.message });
     }
 
-    const safeServices = (services || []).map(service => ({
-      ...service,
-      provider_name: service.users?.name || 'Service Provider'
-    }));
+   const safeServices = (services || []).map(service => ({
+    ...service,
+    provider_id: service.user_id,
+    provider_name: service.users?.name || 'Service Provider'
+})); 
 
-    safeServices.forEach(service => {
-      delete service.users;
-    });
+  safeServices.forEach(service => {
+    delete service.users;
+    delete service.user_id;
+});
 
     res.json(safeServices);
 
