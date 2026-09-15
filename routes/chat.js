@@ -186,7 +186,7 @@ function detectMemorySave(message) {
       !/^(mera\s+(?:naam|name)|my\s+name|mera\s+(?:naam|name)\s+to\s+yaad)$/i.test(value)
     ) {
       return {
-     key: `note_${Date.now()}`   
+     key: `note_${Date.now()}`,   
         value
       };
     }
