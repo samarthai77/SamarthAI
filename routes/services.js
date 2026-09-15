@@ -81,15 +81,17 @@ router.get('/', async (req, res) => {
     const { data: services, error } = await supabase
       .from('services')
       .select(`
-        id,
-        title,
-        description,
-        price,
-        category,
-        location,
-        is_active,
-        created_at,
-        users(name)
+      id,
+title,
+description,
+price,
+category,
+location,
+latitude,
+longitude,
+is_active,
+created_at,
+users(name) 
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -195,11 +197,19 @@ router.put('/:id', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET); 
     const { id } = req.params;
-    const { title, description, price, category, location, is_active } = req.body;
-
-    // Check if service exists and belongs to user
+   const {
+  title,
+  description,
+  price,
+  category,
+  location,
+  latitude,
+  longitude,
+  is_active
+} = req.body;
+    heck if service exists and belongs to user
     const { data: existing, error: checkError } = await supabase
       .from('services')
       .select('*')
@@ -220,6 +230,15 @@ router.put('/:id', async (req, res) => {
       price: price !== undefined && price !== null && price !== '' ? price : existing.price,
         category: category || existing.category,
         location: location || existing.location,
+        latitude:
+  latitude !== undefined && latitude !== null
+    ? Number(latitude)
+    : existing.latitude,
+
+longitude:
+  longitude !== undefined && longitude !== null
+    ? Number(longitude)
+    : existing.longitude,
         is_active: is_active !== undefined ? is_active : existing.is_active
       })
       .eq('id', id)
