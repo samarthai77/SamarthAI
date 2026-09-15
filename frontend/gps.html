@@ -3,115 +3,409 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>GPS — SamarthAI</title>
+
     <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Leaflet Map -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <style>
-        .gps-container { max-width:600px; margin:2rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); text-align:center; }
-        .gps-btn { background:#003366; color:white; padding:1rem 2rem; border:none; border-radius:30px; cursor:pointer; font-weight:bold; margin:1rem 0; }
-        .gps-btn:hover { background:#002244; }
+        .gps-container {
+            max-width: 700px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .gps-btn {
+            background: #003366;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 1rem 0;
+            font-size: 16px;
+        }
+
+        .gps-btn:hover {
+            background: #002244;
+        }
+
+        #gpsMap {
+            width: 100%;
+            height: 400px;
+            margin-top: 1.5rem;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        #gpsStatus {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+
+        .gps-info {
+            margin-top: 1rem;
+            font-size: 15px;
+            color: #333;
+        }
     </style>
 </head>
-<body>
-    <header>
-        <div class="logo">SamarthAI</div>
-        <nav>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="chat.html">Chat</a>
-            <a href="services.html">Services</a>
-            <a href="sos.html">SOS</a>
-            <a href="gps.html">GPS</a>
-            <a href="profile.html">Profile</a>
-        </nav>
-    </header>
 
-    <div class="gps-container">
-        <h1>📍 GPS Tracking</h1>
-        <p>Update your location for family tracking</p>
-        <button class="gps-btn" onclick="updateLocation()">📍 Update Location</button>
-        <div id="gpsStatus" style="margin-top:1rem; padding:1rem; border-radius:8px; background:#f0f0f0;">Ready</div>
+<body>
+
+<header>
+    <div class="logo">SamarthAI</div>
+
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="chat.html">Chat</a>
+        <a href="services.html">Services</a>
+        <a href="sos.html">SOS</a>
+        <a href="gps.html">GPS</a>
+        <a href="profile.html">Profile</a>
+    </nav>
+</header>
+
+
+<div class="gps-container">
+
+    <h1>📍 GPS Tracking</h1>
+
+    <p>
+        Your real-time location for family tracking
+    </p>
+
+    <button
+        class="gps-btn"
+        onclick="updateLocation()"
+    >
+        📍 Update Location
+    </button>
+
+    <div id="gpsStatus">
+        Ready
     </div>
 
-    <footer><p>&copy; 2026 SamarthAI</p></footer>
-    <script src="js/app.js"></script>
-    <script>
-    
+    <div id="gpsMap"></div>
 
-  async function updateLocation() {
-    const status = document.getElementById('gpsStatus');
-    const token = localStorage.getItem('token');
+    <div
+        id="gpsInfo"
+        class="gps-info"
+    >
+        Location not updated yet.
+    </div>
+
+</div>
+
+
+<footer>
+    <p>&copy; 2026 SamarthAI</p>
+</footer>
+
+
+<script src="js/app.js"></script>
+
+<!-- Leaflet Map -->
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
+<script>
+
+let gpsMap = null;
+let gpsMarker = null;
+let gpsCircle = null;
+
+
+// =====================================================
+// INITIALIZE MAP
+// =====================================================
+
+function initializeMap(latitude = 26.8467, longitude = 80.9462) {
+
+    gpsMap = L.map('gpsMap').setView(
+        [latitude, longitude],
+        13
+    );
+
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            maxZoom: 19,
+            attribution:
+                '&copy; OpenStreetMap contributors'
+        }
+    ).addTo(gpsMap);
+}
+
+
+// =====================================================
+// UPDATE MAP LOCATION
+// =====================================================
+
+function updateMapLocation(
+    latitude,
+    longitude,
+    accuracy
+) {
+
+    if (!gpsMap) {
+        initializeMap(latitude, longitude);
+    }
+
+    gpsMap.setView(
+        [latitude, longitude],
+        16
+    );
+
+
+    // Remove old marker
+    if (gpsMarker) {
+        gpsMap.removeLayer(gpsMarker);
+    }
+
+
+    // Remove old accuracy circle
+    if (gpsCircle) {
+        gpsMap.removeLayer(gpsCircle);
+    }
+
+
+    // New location marker
+    gpsMarker = L.marker(
+        [latitude, longitude]
+    )
+        .addTo(gpsMap)
+        .bindPopup(
+            '<b>📍 Your Location</b><br>' +
+            'Accuracy: ±' +
+            Math.round(accuracy) +
+            ' meters'
+        )
+        .openPopup();
+
+
+    // Accuracy circle
+    gpsCircle = L.circle(
+        [latitude, longitude],
+        {
+            radius: accuracy
+        }
+    ).addTo(gpsMap);
+
+
+    document.getElementById(
+        'gpsInfo'
+    ).innerHTML =
+        '📍 Latitude: ' +
+        latitude.toFixed(6) +
+        '<br>' +
+        '📍 Longitude: ' +
+        longitude.toFixed(6) +
+        '<br>' +
+        '🎯 Accuracy: ±' +
+        Math.round(accuracy) +
+        ' meters';
+}
+
+
+// =====================================================
+// REAL DEVICE GPS
+// =====================================================
+
+async function updateLocation() {
+
+    const status =
+        document.getElementById('gpsStatus');
+
+    const info =
+        document.getElementById('gpsInfo');
+
+    const token =
+        localStorage.getItem('token');
+
 
     if (!token) {
-        status.textContent = '❌ Please login first.';
-        status.style.background = '#f8d7da';
+
+        status.textContent =
+            '❌ Please login first.';
+
+        status.style.background =
+            '#f8d7da';
+
         return;
     }
+
 
     if (!navigator.geolocation) {
-        status.textContent = '❌ This device/browser does not support GPS.';
-        status.style.background = '#f8d7da';
+
+        status.textContent =
+            '❌ GPS is not supported on this device.';
+
+        status.style.background =
+            '#f8d7da';
+
         return;
     }
 
-    status.textContent = '📍 Real GPS location le raha hoon...';
-    status.style.background = '#fff3cd';
+
+    status.textContent =
+        '📍 Real GPS location le raha hoon...';
+
+    status.style.background =
+        '#fff3cd';
+
 
     navigator.geolocation.getCurrentPosition(
+
         async (position) => {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
+
+            const latitude =
+                position.coords.latitude;
+
+            const longitude =
+                position.coords.longitude;
+
+            const accuracy =
+                position.coords.accuracy;
+
+
+            // Update map immediately
+            updateMapLocation(
+                latitude,
+                longitude,
+                accuracy
+            );
+
 
             try {
-                const res = await fetch(`${API_BASE}/gps/location`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ latitude, longitude })
-                });
 
-                const data = await res.json().catch(() => ({}));
+                const res = await fetch(
+                    `${API_BASE}/gps/location`,
+                    {
+                        method: 'PUT',
 
-                if (res.ok && data.success) {
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+
+                            'Authorization':
+                                `Bearer ${token}`
+                        },
+
+                        body: JSON.stringify({
+                            latitude,
+                            longitude
+                        })
+                    }
+                );
+
+
+                const data =
+                    await res.json()
+                    .catch(() => ({}));
+
+
+                if (
+                    res.ok &&
+                    data.success
+                ) {
+
                     status.textContent =
-                        `✅ Real location updated: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)`;
-                    status.style.background = '#d4edda';
-                } else if (res.status === 401) {
-                    status.textContent =
-                        '❌ Login session expired. Please login again.';
-                    status.style.background = '#f8d7da';
-                } else {
-                    status.textContent =
-                        '❌ Failed: ' +
-                        (data.error || 'Could not update location');
-                    status.style.background = '#f8d7da';
+                        `✅ Location updated successfully`;
+
+                    status.style.background =
+                        '#d4edda';
+
                 }
 
+                else if (
+                    res.status === 401
+                ) {
+
+                    status.textContent =
+                        '❌ Login session expired. Please login again.';
+
+                    status.style.background =
+                        '#f8d7da';
+
+                }
+
+                else {
+
+                    status.textContent =
+                        '❌ Failed: ' +
+                        (
+                            data.error ||
+                            'Could not update location'
+                        );
+
+                    status.style.background =
+                        '#f8d7da';
+                }
+
+
             } catch (error) {
+
                 status.textContent =
-                    '❌ Network error: ' + error.message;
-                status.style.background = '#f8d7da';
+                    '❌ Network error: ' +
+                    error.message;
+
+                status.style.background =
+                    '#f8d7da';
             }
         },
 
+
         (error) => {
-            let message = 'Could not get GPS location.';
+
+            let message =
+                'Could not get GPS location.';
+
 
             if (error.code === 1) {
+
                 message =
                     '📍 Location permission denied. Browser settings me Location Allow karein.';
-            } else if (error.code === 2) {
+
+            }
+
+            else if (error.code === 2) {
+
                 message =
                     '📍 Location unavailable. GPS/Location ON karke dobara try karein.';
-            } else if (error.code === 3) {
+
+            }
+
+            else if (error.code === 3) {
+
                 message =
                     '📍 GPS request timed out. Dobara try karein.';
             }
 
-            status.textContent = '❌ ' + message;
-            status.style.background = '#f8d7da';
+
+            status.textContent =
+                '❌ ' + message;
+
+            status.style.background =
+                '#f8d7da';
         },
+
 
         {
             enableHighAccuracy: true,
@@ -119,7 +413,21 @@
             maximumAge: 0
         }
     );
-}  
-    </script>
+}
+
+
+// =====================================================
+// PAGE LOAD
+// =====================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+        initializeMap();
+    }
+);
+
+</script>
+
 </body>
 </html>
