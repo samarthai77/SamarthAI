@@ -209,7 +209,7 @@ router.put('/:id', async (req, res) => {
   longitude,
   is_active
 } = req.body;
-    heck if service exists and belongs to user
+     // Check if service exists and belongs to user
     const { data: existing, error: checkError } = await supabase
       .from('services')
       .select('*')
