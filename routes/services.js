@@ -116,6 +116,123 @@ users(name)
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// ============ GET NEARBY SERVICES ============
+router.get('/nearby', async (req, res) => {
+  try {
+    const latitude = Number(req.query.latitude);
+    const longitude = Number(req.query.longitude);
+    const category = String(req.query.category || '').trim().toLowerCase();
+    const radius = Number(req.query.radius) || 20;
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+      return res.status(400).json({
+        error: 'Valid latitude and longitude are required'
+      });
+    }
+
+    if (latitude < -90 || latitude > 90 ||
+        longitude < -180 || longitude > 180) {
+      return res.status(400).json({
+        error: 'Invalid coordinates'
+      });
+    }
+
+    const { data: services, error } = await supabase
+      .from('services')
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        category,
+        location,
+        latitude,
+        longitude,
+        is_active,
+        created_at,
+        users(name)
+      `)
+      .eq('is_active', true)
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null);
+
+    if (error) {
+      return res.status(400).json({
+        error: error.message
+      });
+    }
+
+    const toRadians = degrees => degrees * Math.PI / 180;
+
+    const calculateDistance = (
+      lat1,
+      lon1,
+      lat2,
+      lon2
+    ) => {
+      const earthRadiusKm = 6371;
+
+      const dLat = toRadians(lat2 - lat1);
+      const dLon = toRadians(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+
+      const c =
+        2 * Math.atan2(
+          Math.sqrt(a),
+          Math.sqrt(1 - a)
+        );
+
+      return earthRadiusKm * c;
+    };
+
+    const nearbyServices = services
+      .filter(service => {
+        if (!category) return true;
+
+        return String(service.category || '')
+          .toLowerCase()
+          .includes(category);
+      })
+      .map(service => {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          Number(service.latitude),
+          Number(service.longitude)
+        );
+
+        return {
+          ...service,
+          provider_name:
+            service.users?.name || 'Service Provider',
+          distance_km: Number(distance.toFixed(2))
+        };
+      })
+      .filter(service => service.distance_km <= radius)
+      .sort((a, b) => a.distance_km - b.distance_km)
+      .map(service => {
+        delete service.users;
+        return service;
+      });
+
+    res.json(nearbyServices);
+
+  } catch (error) {
+    console.error('❌ Nearby services error:', error);
+
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
+});
 // ============ GET SERVICE CONTACT ============
 router.get('/:id/contact', async (req, res) => {
   try {
