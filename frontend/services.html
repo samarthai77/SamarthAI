@@ -843,6 +843,7 @@ async function requestService(service) {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
+               provider_id: service.provider_id || null,     
                     category: service.category || 'Other',
                     description,
                     budget: service.price ?? null,
