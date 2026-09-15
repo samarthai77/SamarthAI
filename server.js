@@ -87,6 +87,8 @@ app.use('/api/gps', gpsRoutes);
 const memoryRoutes = require('./routes/memory');
 app.use('/api/memory', memoryRoutes);
 const scannerRoutes = require('./routes/scanner');
+const weatherRoutes = require('./routes/weather');
+app.use('/api/weather', weatherRoutes);
 app.use('/api/scanner', scannerRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
