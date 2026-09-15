@@ -186,7 +186,7 @@ function detectMemorySave(message) {
       !/^(mera\s+(?:naam|name)|my\s+name|mera\s+(?:naam|name)\s+to\s+yaad)$/i.test(value)
     ) {
       return {
-        key: 'note',
+     key: `note_${Date.now()}`   
         value
       };
     }
@@ -517,23 +517,27 @@ router.post('/', async (req, res) => {
 // SUPABASE TIMEOUT
 // =====================================================
 function withTimeout(promise, ms, fallbackValue, label = '') {
+  let timer;
+
   return Promise.race([
     promise,
     new Promise(resolve => {
-      setTimeout(() => {
+      timer = setTimeout(() => {
         console.warn(
           `⚠️ ${label} request timed out after ${ms}ms`
         );
         resolve(fallbackValue);
       }, ms);
     })
-  ]).catch(error => {
-    console.error(
-      `❌ ${label} request failed:`,
-      error.message
-    );
-    return fallbackValue;
-  });
+  ])
+    .finally(() => clearTimeout(timer))
+    .catch(error => {
+      console.error(
+        `❌ ${label} request failed:`,
+        error.message
+      );
+      return fallbackValue;
+    });
 }
     // -------------------------------------------------
     // LOAD HISTORY
