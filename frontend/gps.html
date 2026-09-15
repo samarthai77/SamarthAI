@@ -130,7 +130,7 @@
 let gpsMap = null;
 let gpsMarker = null;
 let gpsCircle = null;
-
+let familyMarkers = [];
 
 // =====================================================
 // INITIALIZE MAP
@@ -222,7 +222,81 @@ function updateMapLocation(
         Math.round(accuracy) +
         ' meters';
 }
+async function loadFamilyMarkers() {
+    const token = localStorage.getItem('token');
 
+    if (!token || !gpsMap) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/family`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !Array.isArray(data.members)) {
+            return;
+        }
+
+        // Remove old family markers
+        familyMarkers.forEach(marker => {
+            gpsMap.removeLayer(marker);
+        });
+
+        familyMarkers = [];
+
+        data.members.forEach(member => {
+            if (!member.location) return;
+
+            const parts = String(member.location)
+                .split(',')
+                .map(value => Number(value.trim()));
+
+            const latitude = parts[0];
+            const longitude = parts[1];
+
+            if (
+                !Number.isFinite(latitude) ||
+                !Number.isFinite(longitude) ||
+                latitude < -90 ||
+                latitude > 90 ||
+                longitude < -180 ||
+                longitude > 180
+            ) {
+                return;
+            }
+
+            // Don't duplicate current user's marker
+            if (
+                gpsMarker &&
+                Math.abs(gpsMarker.getLatLng().lat - latitude) < 0.000001 &&
+                Math.abs(gpsMarker.getLatLng().lng - longitude) < 0.000001
+            ) {
+                return;
+            }
+
+            const marker = L.marker([
+                latitude,
+                longitude
+            ])
+                .addTo(gpsMap)
+                .bindPopup(
+                    `<b>👨‍👩‍👧‍👦 ${member.name || 'Family Member'}</b><br>` +
+                    `📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                );
+
+            familyMarkers.push(marker);
+        });
+
+    } catch (error) {
+        console.error(
+            'Family map error:',
+            error
+        );
+    }
+}
 
 // =====================================================
 // REAL DEVICE GPS
@@ -320,20 +394,20 @@ async function updateLocation() {
                     await res.json()
                     .catch(() => ({}));
 
+if (
+    res.ok &&
+    data.success
+) {
 
-                if (
-                    res.ok &&
-                    data.success
-                ) {
+    status.textContent =
+        `✅ Location updated successfully`;
 
-                    status.textContent =
-                        `✅ Location updated successfully`;
+    status.style.background =
+        '#d4edda';
 
-                    status.style.background =
-                        '#d4edda';
-
-                }
-
+    await loadFamilyMarkers();
+}
+           
                 else if (
                     res.status === 401
                 ) {
@@ -422,8 +496,9 @@ async function updateLocation() {
 
 document.addEventListener(
     'DOMContentLoaded',
-    () => {
+    async () => {
         initializeMap();
+        await loadFamilyMarkers();
     }
 );
 
