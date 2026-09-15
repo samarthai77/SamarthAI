@@ -503,7 +503,7 @@ document.querySelector('.search-box').appendChild(nearbyButton);
 
 nearbyButton.addEventListener('click', async () => {
     const query = searchInput.value.trim();
-    const category = activeCategory || query;
+    const category = activeCategory;
 
     nearbyButton.disabled = true;
     nearbyButton.textContent = '📍 Location detect ho rahi hai...';
