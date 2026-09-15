@@ -53,7 +53,26 @@ router.post('/', async (req, res) => {
     if (error) {
       return res.status(400).json({ error: error.message });
     }
+// ============ PROVIDER NOTIFICATION ============
+    if (provider_id) {
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: provider_id,
+          title: '🛠️ New Service Request',
+          message: `Aapko ${category} ki nayi service request mili hai.`,
+          type: 'service_request',
+          related_id: request.id,
+          is_read: false
+        }]);
 
+      if (notificationError) {
+        console.error(
+          '❌ Provider notification error:',
+          notificationError
+        );
+      }
+    }
     res.status(201).json({
       message: 'Service request created successfully',
       request
