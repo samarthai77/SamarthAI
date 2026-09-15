@@ -24,7 +24,13 @@ router.post('/', async (req, res) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const { category, description, budget, location } = req.body;
+  const {
+  provider_id,
+  category,
+  description,
+  budget,
+  location
+} = req.body;  
 
     if (!category || !description) {
       return res.status(400).json({ error: 'Category and description are required' });
@@ -34,6 +40,7 @@ router.post('/', async (req, res) => {
       .from('service_requests')
       .insert([{
         user_id: decoded.id,
+        provider_id: provider_id || null,
         category,
         description,
         budget: budget || null,
