@@ -480,7 +480,115 @@
     const searchInput = document.getElementById('serviceSearch');
     const categoryGrid = document.getElementById('categoryGrid');
     const categorySelect = document.getElementById('serviceCategory');
+// ============ NEARBY SERVICE SEARCH ============
 
+const nearbyButton = document.createElement('button');
+
+nearbyButton.type = 'button';
+nearbyButton.textContent = '📍 Mere Paas Ki Services';
+nearbyButton.style.cssText = `
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    border: 0;
+    border-radius: 12px;
+    background: #003366;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+`;
+
+document.querySelector('.search-box').appendChild(nearbyButton);
+
+nearbyButton.addEventListener('click', async () => {
+    const query = searchInput.value.trim();
+    const category = activeCategory || query;
+
+    nearbyButton.disabled = true;
+    nearbyButton.textContent = '📍 Location detect ho rahi hai...';
+
+    try {
+        const position = await new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('GPS supported nahi hai.'));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
+        });
+
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        nearbyButton.textContent = '🔎 Nearby services search ho rahi hain...';
+
+        const params = new URLSearchParams({
+            latitude,
+            longitude,
+            radius: '20'
+        });
+
+        if (category) {
+            params.set('category', category);
+        }
+
+        const response = await fetch(
+            `${SERVICE_API}/nearby?${params.toString()}`,
+            {
+                method: 'GET',
+                cache: 'no-store'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Nearby search failed');
+        }
+
+        allServices = Array.isArray(data) ? data : [];
+
+        renderServices();
+
+        if (!allServices.length) {
+            alert(
+                category
+                    ? `20 km ke andar "${category}" service nahi mili.`
+                    : '20 km ke andar koi service nahi mili.'
+            );
+        }
+
+    } catch (error) {
+        console.error('Nearby service error:', error);
+
+        if (error.code === 1) {
+            alert('❌ Location permission allow karein.');
+        } else if (error.code === 2) {
+            alert('❌ Location available nahi hai.');
+        } else if (error.code === 3) {
+            alert('❌ Location detect karne mein timeout hua.');
+        } else {
+            alert(
+                `❌ Nearby service search failed: ${
+                    error.message || 'Please try again.'
+                }`
+            );
+        }
+
+    } finally {
+        nearbyButton.disabled = false;
+        nearbyButton.textContent = '📍 Mere Paas Ki Services';
+    }
+});
     function buildCategories() {
         categoryGrid.textContent = '';
         categorySelect.innerHTML = '<option value="">Category select karein</option>';
