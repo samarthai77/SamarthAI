@@ -329,6 +329,185 @@
      ========================================================= -->
 
 <script src="app.js"></script>
+<!-- ===== SAMARTHAI NOTIFICATION ===== -->
+<style>
+#notificationBell {
+    position: fixed;
+    right: 18px;
+    top: 18px;
+    z-index: 9999;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: #003366;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,.2);
+}
 
+#notificationCount {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: red;
+    color: white;
+    font-size: 12px;
+    line-height: 20px;
+    font-weight: bold;
+    display: none;
+}
+
+#notificationPanel {
+    position: fixed;
+    right: 15px;
+    top: 75px;
+    width: min(360px, calc(100vw - 30px));
+    max-height: 70vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    z-index: 9998;
+    display: none;
+    padding: 15px;
+}
+
+.notification-item {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-item:last-child {
+    border-bottom: 0;
+}
+
+.notification-title {
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #555;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 5px;
+}
+</style>
+
+<button id="notificationBell" onclick="toggleNotifications()">
+    🔔
+    <span id="notificationCount">0</span>
+</button>
+
+<div id="notificationPanel">
+    <h3 style="margin-top:0;">🔔 Notifications</h3>
+    <div id="notificationList">
+        Loading...
+    </div>
+</div>
+
+<script>
+async function loadNotifications() {
+
+    const token = localStorage.getItem('token');
+
+    if (!token) return;
+
+    try {
+
+        const response = await fetch(
+            'https://samarthai-backend.onrender.com/api/notifications',
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                cache: 'no-store'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Notification error:', data);
+            return;
+        }
+
+        const list = document.getElementById('notificationList');
+        const count = document.getElementById('notificationCount');
+
+        const notifications = Array.isArray(data) ? data : [];
+
+        const unread = notifications.filter(
+            n => n.is_read === false
+        ).length;
+
+        if (unread > 0) {
+            count.textContent = unread;
+            count.style.display = 'block';
+        } else {
+            count.style.display = 'none';
+        }
+
+        if (!notifications.length) {
+            list.innerHTML =
+                '<p style="text-align:center;color:#777;">Koi notification nahi hai.</p>';
+            return;
+        }
+
+        list.innerHTML = notifications.map(n => `
+            <div class="notification-item">
+                <div class="notification-title">
+                    ${n.title || 'Notification'}
+                </div>
+
+                <div class="notification-message">
+                    ${n.message || ''}
+                </div>
+
+                <div class="notification-time">
+                    ${n.created_at
+                        ? new Date(n.created_at).toLocaleString('hi-IN')
+                        : ''}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+
+        console.error(
+            'Notification load failed:',
+            error
+        );
+
+        document.getElementById('notificationList').innerHTML =
+            '<p style="color:red;">Notification load nahi ho saki.</p>';
+    }
+}
+
+function toggleNotifications() {
+
+    const panel =
+        document.getElementById('notificationPanel');
+
+    panel.style.display =
+        panel.style.display === 'block'
+            ? 'none'
+            : 'block';
+}
+
+loadNotifications();
+
+setInterval(loadNotifications, 30000);
+</script>
 </body>
 </html>
