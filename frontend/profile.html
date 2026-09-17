@@ -332,57 +332,80 @@
         }
 
 
-  // =========================
+ // =========================
 // SELECT PHOTO + PREVIEW
 // =========================
 
-function handleProfilePhotoSelect(input) {
+document.addEventListener('DOMContentLoaded', function () {
 
-    const file = input.files[0];
+    const photoInput =
+        document.getElementById('profilePhotoInput');
 
-    if (!file) {
+    if (!photoInput) {
+        console.error('profilePhotoInput not found');
         return;
     }
 
-    const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'image/webp'
-    ];
+    photoInput.addEventListener('change', function (event) {
 
-    if (!allowedTypes.includes(file.type)) {
-        alert(
-            'Only JPG, PNG and WebP images are allowed.'
+        const file = event.target.files &&
+                     event.target.files[0];
+
+        console.log('PHOTO SELECTED:', file);
+
+        if (!file) {
+            return;
+        }
+
+        const allowedTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+
+            alert(
+                'Only JPG, PNG and WebP images are allowed.'
+            );
+
+            photoInput.value = '';
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+
+            alert(
+                'Photo must be 5MB or smaller.'
+            );
+
+            photoInput.value = '';
+            return;
+        }
+
+        const previewUrl =
+            URL.createObjectURL(file);
+
+        showProfilePhoto(previewUrl);
+
+        const message =
+            document.getElementById('profileMessage');
+
+        if (message) {
+
+            message.style.color = '#003366';
+
+            message.textContent =
+                '✅ Photo selected successfully. Ab Upload Photo dabayein.';
+        }
+
+        console.log(
+            'PHOTO PREVIEW READY:',
+            previewUrl
         );
+    });
 
-        input.value = '';
-        return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-        alert(
-            'Photo must be 5MB or smaller.'
-        );
-
-        input.value = '';
-        return;
-    }
-
-    const previewUrl =
-        URL.createObjectURL(file);
-
-    showProfilePhoto(previewUrl);
-
-    const message =
-        document.getElementById(
-            'profileMessage'
-        );
-
-    message.style.color = '#003366';
-
-    message.textContent =
-        'Photo selected. Ab Upload Photo dabayein.';
-}
+});
         // =========================
         // UPLOAD PROFILE PHOTO
         // =========================
