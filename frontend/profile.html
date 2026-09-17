@@ -86,11 +86,11 @@
             margin-top: 0.6rem;
         }
 
-        .upload-photo-btn {
-            display: none;
-            background: #ff6b00 !important;
-            margin-top: 0.8rem !important;
-        }
+   .upload-photo-btn {
+    display: inline-block;
+    background: #ff6b00 !important;
+    margin-top: 0.8rem !important;
+}    
 
         .profile-card label {
             font-weight: bold;
@@ -175,11 +175,14 @@
     📷 Choose Profile Photo
 </button>
 
-                <input
-                    type="file"
-                    id="profilePhotoInput"
-                    accept="image/jpeg,image/png,image/webp"
-                />
+<input
+    type="file"
+    id="profilePhotoInput"
+    accept="image/jpeg,image/png,image/webp"
+    onchange="handleProfilePhotoSelect(this)"
+/> 
+    onchange="handleProfilePhotoSelect(this)"
+/>          
 
                 <div class="photo-info">
                     JPG, PNG या WebP • Maximum 5MB
@@ -328,74 +331,57 @@
         }
 
 
-        // =========================
-        // SELECT PHOTO + PREVIEW
-        // =========================
+  // =========================
+// SELECT PHOTO + PREVIEW
+// =========================
 
-        document
-            .getElementById('profilePhotoInput')
-            .addEventListener(
-                'change',
-                function () {
+function handleProfilePhotoSelect(input) {
 
-                    const file = this.files[0];
+    const file = input.files[0];
 
-                    if (!file) {
-                        return;
-                    }
+    if (!file) {
+        return;
+    }
 
-                    const allowedTypes = [
-                        'image/jpeg',
-                        'image/png',
-                        'image/webp'
-                    ];
+    const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp'
+    ];
 
-                    if (
-                        !allowedTypes.includes(
-                            file.type
-                        )
-                    ) {
-                        alert(
-                            'Only JPG, PNG and WebP images are allowed.'
-                        );
+    if (!allowedTypes.includes(file.type)) {
+        alert(
+            'Only JPG, PNG and WebP images are allowed.'
+        );
 
-                        this.value = '';
-                        return;
-                    }
+        input.value = '';
+        return;
+    }
 
-                    if (
-                        file.size >
-                        5 * 1024 * 1024
-                    ) {
-                        alert(
-                            'Photo must be 5MB or smaller.'
-                        );
+    if (file.size > 5 * 1024 * 1024) {
+        alert(
+            'Photo must be 5MB or smaller.'
+        );
 
-                        this.value = '';
-                        return;
-                    }
+        input.value = '';
+        return;
+    }
 
-                    const previewUrl =
-                        URL.createObjectURL(file);
+    const previewUrl =
+        URL.createObjectURL(file);
 
-                    showProfilePhoto(
-                        previewUrl
-                    );
+    showProfilePhoto(previewUrl);
 
-                    document.getElementById(
-                        'uploadPhotoBtn'
-                    ).style.display =
-                        'inline-block';
+    const message =
+        document.getElementById(
+            'profileMessage'
+        );
 
-                    document.getElementById(
-                        'profileMessage'
-                    ).textContent =
-                        'Photo selected. Click Upload Photo.';
+    message.style.color = '#003366';
 
-                }
-            );
-
-
+    message.textContent =
+        'Photo selected. Ab Upload Photo dabayein.';
+}
         // =========================
         // UPLOAD PROFILE PHOTO
         // =========================
