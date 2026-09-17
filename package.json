@@ -11,7 +11,7 @@
     "dotenv": "^16.0.3",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.0",
-    "@supabase/supabase-js": "^2.38.0"
-    "multer": "^2.0.2"  
+  "@supabase/supabase-js": "^2.38.0",
+"multer": "^2.0.2"  
   }
 }
