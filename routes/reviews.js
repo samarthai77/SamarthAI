@@ -14,7 +14,92 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
+// ============ PROVIDER RATING SUMMARY ============
+// Provider ki sabhi services ki overall rating
+router.get('/provider/:provider_id', async (req, res) => {
+  try {
+    const { provider_id } = req.params;
 
+    if (!provider_id) {
+      return res.status(400).json({
+        error: 'Provider ID is required'
+      });
+    }
+
+    // Provider ki services nikalo
+    const { data: services, error: servicesError } = await supabase
+      .from('services')
+      .select('id')
+      .eq('user_id', provider_id);
+
+    if (servicesError) {
+      return res.status(400).json({
+        error: servicesError.message
+      });
+    }
+
+    const serviceIds = (services || []).map(service => service.id);
+
+    if (!serviceIds.length) {
+      return res.json({
+        provider_id,
+        average_rating: 0,
+        rating_count: 0,
+        reviews: []
+      });
+    }
+
+    // In services ki reviews nikalo
+    const { data: reviews, error: reviewsError } = await supabase
+      .from('reviews')
+      .select('id, service_id, reviewer_id, rating, comment, created_at, users(name)')
+      .in('service_id', serviceIds)
+      .order('created_at', { ascending: false });
+
+    if (reviewsError) {
+      return res.status(400).json({
+        error: reviewsError.message
+      });
+    }
+
+    const safeReviews = (reviews || []).map(review => ({
+      id: review.id,
+      service_id: review.service_id,
+      reviewer_id: review.reviewer_id,
+      reviewer_name: review.users?.name || 'Customer',
+      rating: Number(review.rating),
+      comment: review.comment || '',
+      created_at: review.created_at
+    }));
+
+    const ratingCount = safeReviews.length;
+
+    const averageRating = ratingCount
+      ? Number(
+          (
+            safeReviews.reduce(
+              (sum, review) => sum + review.rating,
+              0
+            ) / ratingCount
+          ).toFixed(1)
+        )
+      : 0;
+
+    res.json({
+      provider_id,
+      average_rating: averageRating,
+      rating_count: ratingCount,
+      reviews: safeReviews
+    });
+
+  } catch (error) {
+    console.error('❌ Provider rating error:', error);
+
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
+});
 // ============ ADD REVIEW ============
 router.post('/', async (req, res) => {
   try {
