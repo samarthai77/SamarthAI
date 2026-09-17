@@ -495,18 +495,7 @@ async function loadNotifications() {
                 title + ' ' + message;
 
 
-          if (n.type === 'service_request') {
-
-    const requestId = n.related_id;
-
-    if (requestId) {
-        targetPage =
-            `services.html?request_id=${encodeURIComponent(requestId)}`;
-    } else {
-        targetPage = 'services.html';
-    }
-
-} else if (
+      
     text.includes('sos') ||
     text.includes('emergency')
 ) {
