@@ -71,7 +71,7 @@ app.use('/api/autonomous', autonomousEngineRouter);
 
 // ======= SERVICES ROUTE =========
 const servicesRoutes = require('./routes/services');
-const servicePortfolioRoutes = require('./routes/servicePortfolio');
+const servicePortfolioRoutes = require('./routes/serviceportfolio');
 app.use('/api/service-portfolio', servicePortfolioRoutes);
 app.use('/api/services', servicesRoutes);
 const requestsRoutes = require('./routes/requests');
