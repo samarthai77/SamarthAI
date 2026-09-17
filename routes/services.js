@@ -92,7 +92,7 @@ latitude,
 longitude,
 is_active,
 created_at,
-users(name) 
+users(name, profile_photo_url)
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -101,12 +101,12 @@ users(name)
       return res.status(400).json({ error: error.message });
     }
 
-   const safeServices = (services || []).map(service => ({
+ const safeServices = (services || []).map(service => ({
     ...service,
     provider_id: service.user_id,
-    provider_name: service.users?.name || 'Service Provider'
-})); 
-
+    provider_name: service.users?.name || 'Service Provider',
+    provider_photo_url: service.users?.profile_photo_url || null
+}));
   safeServices.forEach(service => {
     delete service.users;
     delete service.user_id;
@@ -156,7 +156,7 @@ router.get('/nearby', async (req, res) => {
         longitude,
         is_active,
         created_at,
-        users(name)
+      users(name, profile_photo_url)
       `)
       .eq('is_active', true)
       .not('latitude', 'is', null)
@@ -212,12 +212,14 @@ router.get('/nearby', async (req, res) => {
           Number(service.longitude)
         );
 
-        return {
-          ...service,
-          provider_name:
-            service.users?.name || 'Service Provider',
-          distance_km: Number(distance.toFixed(2))
-        };
+     return {
+    ...service,
+    provider_name:
+        service.users?.name || 'Service Provider',
+    provider_photo_url:
+        service.users?.profile_photo_url || null,
+    distance_km: Number(distance.toFixed(2))
+};  
       })
       .filter(service => service.distance_km <= radius)
       .sort((a, b) => a.distance_km - b.distance_km)
