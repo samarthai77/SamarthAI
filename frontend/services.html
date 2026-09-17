@@ -908,7 +908,83 @@ async function requestService(service) {
             serviceList.appendChild(createServiceCard(service));
         });
     }
+async function loadNotificationRequest() {
+    if (!notificationRequestId) return;
 
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const section = document.getElementById('notificationRequestSection');
+
+    try {
+        const response = await fetch(
+            'https://samarthai-backend.onrender.com/api/requests/provider',
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                cache: 'no-store'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Request load failed');
+        }
+
+        const request = Array.isArray(data)
+            ? data.find(
+                item => String(item.id) === String(notificationRequestId)
+            )
+            : null;
+
+        if (!request) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+
+        section.innerHTML = `
+            <div class="service-card"
+                 style="border:2px solid #ff6b00; box-shadow:0 6px 20px rgba(255,107,0,0.15);">
+
+                <div style="color:#ff6b00;font-weight:800;margin-bottom:8px;">
+                    🔔 Notification Se Aayi Request
+                </div>
+
+                <h3>🛠️ ${request.category || 'Service Request'}</h3>
+
+                <p>
+                    <strong>Request:</strong>
+                    ${request.description || 'Details available nahi hain.'}
+                </p>
+
+                ${
+                    request.budget !== null && request.budget !== undefined
+                    ? `<p class="service-price">💰 Budget: ₹${request.budget}</p>`
+                    : ''
+                }
+
+                ${
+                    request.location
+                    ? `<p class="service-meta">📍 ${request.location}</p>`
+                    : ''
+                }
+
+                <p class="service-meta">
+                    📌 Status: ${request.status || 'pending'}
+                </p>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Notification request load error:', error);
+        section.style.display = 'none';
+    }
+}
     async function loadServices() {
         try {
             const response = await fetch(SERVICE_API, {
