@@ -622,51 +622,6 @@ document.addEventListener('DOMContentLoaded', function () {
             loadProfileData
         );
     </script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
 
-    const photoInput = document.getElementById('profilePhotoInput');
-
-    if (!photoInput) {
-        console.error('profilePhotoInput not found');
-        return;
-    }
-
-    photoInput.addEventListener('change', function () {
-
-        const file = this.files && this.files[0];
-
-        if (!file) {
-            return;
-        }
-
-        console.log('PHOTO SELECTED:', file.name);
-
-        const previewUrl = URL.createObjectURL(file);
-
-        const preview =
-            document.getElementById('profilePhotoPreview');
-
-        const placeholder =
-            document.getElementById('photoPlaceholder');
-
-        preview.src = previewUrl;
-        preview.style.display = 'block';
-
-        if (placeholder) {
-            placeholder.style.display = 'none';
-        }
-
-        const message =
-            document.getElementById('profileMessage');
-
-        if (message) {
-            message.textContent =
-                '✅ Photo selected successfully. Ab Upload Photo dabayein.';
-        }
-    });
-
-});
-</script>
 </body>
 </html>
