@@ -454,7 +454,8 @@
      */
 
     const SERVICE_API = 'https://samarthai-backend.onrender.com/api/services';
-
+const urlParams = new URLSearchParams(window.location.search);
+const notificationRequestId = urlParams.get('request_id');
     const categories = [
         { name: 'Plumber', icon: '🔧' },
         { name: 'Electrician', icon: '⚡' },
