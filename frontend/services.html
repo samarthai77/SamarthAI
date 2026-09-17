@@ -844,7 +844,16 @@ card.appendChild(providerBox);
     });
 
     actions.appendChild(chatBtn);
+// Work / Portfolio Photos
+const portfolioBtn = document.createElement('button');
+portfolioBtn.className = 'service-action-btn details-btn';
+portfolioBtn.textContent = '📷 Work Photos';
 
+portfolioBtn.addEventListener('click', () => {
+    openPortfolio(service);
+});
+
+actions.appendChild(portfolioBtn);
     // Provider Details
     const detailsBtn = document.createElement('button');
     detailsBtn.className = 'service-action-btn details-btn';
@@ -934,6 +943,333 @@ async function requestService(service) {
         alert('❌ Service request nahi ja paayi. Please try again.');
     }
 }
+   // ============================================
+// SERVICE PORTFOLIO
+// ============================================
+
+function getLoggedInUserId() {
+    try {
+        const token = localStorage.getItem('token');
+
+        if (!token) return null;
+
+        const payload = JSON.parse(
+            atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+        );
+
+        return payload.id || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+async function openPortfolio(service) {
+    const oldModal = document.getElementById('portfolioModal');
+
+    if (oldModal) {
+        oldModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'portfolioModal';
+
+    modal.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.65);
+        z-index:9999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:15px;
+    `;
+
+    const box = document.createElement('div');
+
+    box.style.cssText = `
+        background:white;
+        width:min(700px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:18px;
+        padding:18px;
+        position:relative;
+    `;
+
+    const title = document.createElement('h2');
+    title.textContent = `📷 Work Photos — ${service.title || 'Service'}`;
+    title.style.color = 'var(--blue)';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = `
+        position:absolute;
+        right:12px;
+        top:12px;
+        border:0;
+        background:#eee;
+        border-radius:50%;
+        width:34px;
+        height:34px;
+        cursor:pointer;
+        font-size:18px;
+    `;
+
+    closeBtn.onclick = () => modal.remove();
+
+    const gallery = document.createElement('div');
+
+    gallery.style.cssText = `
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+        gap:10px;
+        margin-top:15px;
+    `;
+
+    const status = document.createElement('div');
+
+    status.style.cssText = `
+        margin-top:12px;
+        color:var(--muted);
+        font-size:0.9rem;
+    `;
+
+    box.appendChild(closeBtn);
+    box.appendChild(title);
+    box.appendChild(gallery);
+    box.appendChild(status);
+
+    // Provider upload section
+    const loggedInUserId = getLoggedInUserId();
+
+    if (
+        loggedInUserId &&
+        service.provider_id &&
+        String(loggedInUserId) === String(service.provider_id)
+    ) {
+        const uploadBox = document.createElement('div');
+
+        uploadBox.style.cssText = `
+            margin-top:18px;
+            padding:14px;
+            background:#f5f8fc;
+            border-radius:14px;
+        `;
+
+        uploadBox.innerHTML = `
+            <strong style="color:var(--blue);">
+                ➕ Apne kaam ki photo add karein
+            </strong>
+
+            <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">
+                Maximum 10 photos • JPG, PNG, WebP • 5 MB per photo
+            </div>
+        `;
+
+        const fileInput = document.createElement('input');
+
+        fileInput.type = 'file';
+        fileInput.accept = 'image/jpeg,image/png,image/webp';
+        fileInput.style.cssText = `
+            width:100%;
+            padding:8px;
+            background:white;
+            border:1px solid var(--border);
+            border-radius:10px;
+        `;
+
+        const captionInput = document.createElement('input');
+
+        captionInput.type = 'text';
+        captionInput.placeholder = 'Photo ke baare mein short caption';
+        captionInput.maxLength = 200;
+        captionInput.style.cssText = `
+            width:100%;
+            margin-top:8px;
+            padding:10px;
+            border:1px solid var(--border);
+            border-radius:10px;
+        `;
+
+        const uploadBtn = document.createElement('button');
+
+        uploadBtn.textContent = '📤 Upload Photo';
+        uploadBtn.className = 'primary-btn';
+        uploadBtn.style.marginTop = '8px';
+
+        uploadBtn.onclick = async () => {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Pehle photo select karein.');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Photo maximum 5 MB ki honi chahiye.');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Upload ho rahi hai...';
+
+            try {
+                const token = localStorage.getItem('token');
+
+                const formData = new FormData();
+                formData.append('photo', file);
+                formData.append(
+                    'caption',
+                    captionInput.value.trim()
+                );
+
+                const response = await fetch(
+                    `https://samarthai-backend.onrender.com/api/service-portfolio/${encodeURIComponent(service.id)}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || 'Upload failed'
+                    );
+                }
+
+                alert('✅ Work photo uploaded successfully.');
+
+                fileInput.value = '';
+                captionInput.value = '';
+
+                loadPortfolioPhotos();
+
+            } catch (error) {
+                console.error('Portfolio upload error:', error);
+
+                alert(
+                    `❌ Photo upload nahi hui.\n${error.message || ''}`
+                );
+
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '📤 Upload Photo';
+            }
+        };
+
+        uploadBox.appendChild(fileInput);
+        uploadBox.appendChild(captionInput);
+        uploadBox.appendChild(uploadBtn);
+
+        box.appendChild(uploadBox);
+    }
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+
+    async function loadPortfolioPhotos() {
+        gallery.innerHTML = '';
+        status.textContent = 'Photos load ho rahi hain...';
+
+        try {
+            const response = await fetch(
+                `https://samarthai-backend.onrender.com/api/service-portfolio/${encodeURIComponent(service.id)}`,
+                {
+                    method: 'GET',
+                    cache: 'no-store'
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || 'Photos load failed'
+                );
+            }
+
+            if (!Array.isArray(data) || !data.length) {
+                status.textContent =
+                    '📷 Abhi is service ki koi Work Photo nahi hai.';
+                return;
+            }
+
+            status.textContent =
+                `${data.length}/10 Work Photos`;
+
+            data.forEach(photo => {
+                const item = document.createElement('div');
+
+                item.style.cssText = `
+                    border:1px solid var(--border);
+                    border-radius:12px;
+                    overflow:hidden;
+                    background:white;
+                `;
+
+                const image = document.createElement('img');
+
+                image.src = photo.image_url;
+                image.alt = photo.caption || 'Work Photo';
+
+                image.style.cssText = `
+                    width:100%;
+                    height:150px;
+                    object-fit:cover;
+                    display:block;
+                    cursor:pointer;
+                `;
+
+                image.onclick = () => {
+                    window.open(
+                        photo.image_url,
+                        '_blank'
+                    );
+                };
+
+                item.appendChild(image);
+
+                if (photo.caption) {
+                    const caption = document.createElement('div');
+
+                    caption.textContent = photo.caption;
+
+                    caption.style.cssText = `
+                        padding:7px;
+                        font-size:0.78rem;
+                        color:var(--muted);
+                    `;
+
+                    item.appendChild(caption);
+                }
+
+                gallery.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error(
+                'Portfolio load error:',
+                error
+            );
+
+            status.textContent =
+                '❌ Work Photos load nahi ho paayi.';
+        }
+    }
+
+    loadPortfolioPhotos();
+} 
     function renderServices() {
         const query = searchInput.value.trim().toLowerCase();
 
