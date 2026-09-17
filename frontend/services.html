@@ -907,7 +907,16 @@ actions.appendChild(portfolioBtn);
     });
 
     actions.appendChild(detailsBtn);
+// Customer Reviews
+const reviewsBtn = document.createElement('button');
+reviewsBtn.className = 'service-action-btn details-btn';
+reviewsBtn.textContent = '💬 Reviews';
 
+reviewsBtn.addEventListener('click', () => {
+    openProviderReviews(service);
+});
+
+actions.appendChild(reviewsBtn);
     // Request Service
     const requestBtn = document.createElement('button');
     requestBtn.className = 'service-action-btn request-btn';
@@ -923,7 +932,230 @@ actions.appendChild(portfolioBtn);
 
     return card;
 } 
+// ============================================
+// PROVIDER REVIEWS / CUSTOMER COMMENTS
+// ============================================
 
+async function openProviderReviews(service) {
+    const providerId = service.provider_id;
+
+    if (!providerId) {
+        alert('Provider information available nahi hai.');
+        return;
+    }
+
+    const oldModal = document.getElementById('providerReviewsModal');
+
+    if (oldModal) {
+        oldModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'providerReviewsModal';
+
+    modal.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.65);
+        z-index:10000;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:15px;
+    `;
+
+    const box = document.createElement('div');
+
+    box.style.cssText = `
+        background:white;
+        width:min(650px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:18px;
+        padding:18px;
+        position:relative;
+    `;
+
+    const closeBtn = document.createElement('button');
+
+    closeBtn.textContent = '✕';
+
+    closeBtn.style.cssText = `
+        position:absolute;
+        right:12px;
+        top:12px;
+        border:0;
+        background:#eee;
+        border-radius:50%;
+        width:34px;
+        height:34px;
+        cursor:pointer;
+        font-size:18px;
+    `;
+
+    closeBtn.onclick = () => modal.remove();
+
+    const heading = document.createElement('h2');
+
+    heading.textContent =
+        `💬 Customer Reviews — ${service.provider_name || 'Provider'}`;
+
+    heading.style.cssText = `
+        color:var(--blue);
+        margin:0 45px 8px 0;
+    `;
+
+    const ratingSummary = document.createElement('div');
+
+    ratingSummary.textContent = '⭐ Rating load ho rahi hai...';
+
+    ratingSummary.style.cssText = `
+        margin-bottom:15px;
+        padding:10px;
+        background:#fff8e6;
+        border-radius:10px;
+        color:#b87900;
+        font-weight:700;
+    `;
+
+    const reviewsList = document.createElement('div');
+
+    reviewsList.textContent = 'Reviews load ho rahi hain...';
+
+    box.appendChild(closeBtn);
+    box.appendChild(heading);
+    box.appendChild(ratingSummary);
+    box.appendChild(reviewsList);
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+
+    try {
+        const response = await fetch(
+            `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(providerId)}`,
+            {
+                method: 'GET',
+                cache: 'no-store'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || 'Reviews load failed'
+            );
+        }
+
+        const rating = Number(data.average_rating || 0);
+        const count = Number(data.rating_count || 0);
+        const reviews = Array.isArray(data.reviews)
+            ? data.reviews
+            : [];
+
+        ratingSummary.textContent = count
+            ? `⭐ ${rating.toFixed(1)} / 5 — ${count} rating${count === 1 ? '' : 's'}`
+            : '⭐ No ratings yet';
+
+        reviewsList.innerHTML = '';
+
+        if (!reviews.length) {
+            const empty = document.createElement('div');
+
+            empty.textContent =
+                '💬 Abhi is provider ka koi customer review nahi hai.';
+
+            empty.style.cssText = `
+                padding:20px;
+                text-align:center;
+                color:var(--muted);
+                background:#f5f8fc;
+                border-radius:12px;
+            `;
+
+            reviewsList.appendChild(empty);
+            return;
+        }
+
+        reviews.forEach(review => {
+            const reviewBox = document.createElement('div');
+
+            reviewBox.style.cssText = `
+                border:1px solid var(--border);
+                border-radius:12px;
+                padding:12px;
+                margin-bottom:10px;
+                background:white;
+            `;
+
+            const customer = document.createElement('strong');
+
+            customer.textContent =
+                review.reviewer_name || 'Customer';
+
+            customer.style.color = 'var(--blue)';
+
+            const stars = document.createElement('div');
+
+            const reviewRating = Math.max(
+                0,
+                Math.min(5, Number(review.rating || 0))
+            );
+
+            stars.textContent =
+                '⭐'.repeat(reviewRating) +
+                '☆'.repeat(5 - reviewRating);
+
+            stars.style.cssText = `
+                margin-top:4px;
+                font-size:0.9rem;
+            `;
+
+            const comment = document.createElement('p');
+
+            comment.textContent =
+                review.comment || 'Customer ne comment nahi diya.';
+
+            comment.style.cssText = `
+                margin:8px 0 4px;
+                line-height:1.45;
+            `;
+
+            const date = document.createElement('small');
+
+            if (review.created_at) {
+                date.textContent =
+                    new Date(review.created_at).toLocaleDateString(
+                        'en-IN'
+                    );
+            }
+
+            date.style.color = 'var(--muted)';
+
+            reviewBox.appendChild(customer);
+            reviewBox.appendChild(stars);
+            reviewBox.appendChild(comment);
+            reviewBox.appendChild(date);
+
+            reviewsList.appendChild(reviewBox);
+        });
+
+    } catch (error) {
+        console.error('Provider reviews error:', error);
+
+        reviewsList.textContent =
+            '❌ Reviews load nahi ho paayi. Please try again.';
+
+        ratingSummary.textContent =
+            '⭐ Rating unavailable';
+    }
+}
 async function requestService(service) {
     const token = localStorage.getItem('token');
 
