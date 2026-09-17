@@ -495,14 +495,51 @@ async function loadNotifications() {
                 title + ' ' + message;
 
 
-            if (
-                text.includes('service') ||
-                text.includes('construction') ||
-                text.includes('plumber') ||
-                text.includes('electrician')
-            ) {
+          if (n.type === 'service_request') {
 
-                targetPage = 'services.html';
+    const requestId = n.related_id;
+
+    if (requestId) {
+        targetPage =
+            `services.html?request_id=${encodeURIComponent(requestId)}`;
+    } else {
+        targetPage = 'services.html';
+    }
+
+} else if (
+    text.includes('sos') ||
+    text.includes('emergency')
+) {
+
+    targetPage = 'sos.html';
+
+} else if (
+    text.includes('family')
+) {
+
+    targetPage = 'family.html';
+
+} else if (
+    text.includes('location') ||
+    text.includes('gps')
+) {
+
+    targetPage = 'gps.html';
+
+} else if (
+    text.includes('scanner') ||
+    text.includes('camera')
+) {
+
+    targetPage = 'camera.html';
+
+} else if (
+    text.includes('chat')
+) {
+
+    targetPage = 'chat.html';
+
+}
 
             } else if (
                 text.includes('sos') ||
