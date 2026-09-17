@@ -416,6 +416,237 @@
     </div>
 </div>
 
+<script>
 
+async function loadNotifications() {
+
+    const token = localStorage.getItem('token');
+
+    if (!token) return;
+
+    try {
+
+        const response = await fetch(
+            'https://samarthai-backend.onrender.com/api/notifications',
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                cache: 'no-store'
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Notification error:', data);
+            return;
+        }
+
+        const list =
+            document.getElementById('notificationList');
+
+        const count =
+            document.getElementById('notificationCount');
+
+        const notifications =
+            Array.isArray(data) ? data : [];
+
+        const unread =
+            notifications.filter(
+                n => n.is_read === false
+            ).length;
+
+        if (unread > 0) {
+
+            count.textContent = unread;
+            count.style.display = 'block';
+
+        } else {
+
+            count.style.display = 'none';
+
+        }
+
+        if (!notifications.length) {
+
+            list.innerHTML =
+                '<p style="text-align:center;color:#777;">Koi notification nahi hai.</p>';
+
+            return;
+        }
+
+        list.innerHTML = notifications.map(n => {
+
+            /*
+             * Notification type ke hisab se
+             * direct page decide hoga.
+             */
+
+            let targetPage = 'dashboard.html';
+
+            const title =
+                String(n.title || '').toLowerCase();
+
+            const message =
+                String(n.message || '').toLowerCase();
+
+            const text =
+                title + ' ' + message;
+
+
+            if (
+                text.includes('service') ||
+                text.includes('construction') ||
+                text.includes('plumber') ||
+                text.includes('electrician')
+            ) {
+
+                targetPage = 'services.html';
+
+            } else if (
+                text.includes('sos') ||
+                text.includes('emergency')
+            ) {
+
+                targetPage = 'sos.html';
+
+            } else if (
+                text.includes('family')
+            ) {
+
+                targetPage = 'family.html';
+
+            } else if (
+                text.includes('location') ||
+                text.includes('gps')
+            ) {
+
+                targetPage = 'gps.html';
+
+            } else if (
+                text.includes('scanner') ||
+                text.includes('camera')
+            ) {
+
+                targetPage = 'camera.html';
+
+            } else if (
+                text.includes('chat')
+            ) {
+
+                targetPage = 'chat.html';
+
+            }
+
+
+            return `
+
+                <div
+                    class="notification-item"
+                    onclick="openNotification('${targetPage}')"
+                    style="
+                        cursor:pointer;
+                        border-bottom:1px solid #eee;
+                    "
+                >
+
+                    <div class="notification-title">
+                        ${n.title || 'Notification'}
+                    </div>
+
+                    <div class="notification-message">
+                        ${n.message || ''}
+                    </div>
+
+                    <div class="notification-time">
+                        ${
+                            n.created_at
+                                ? new Date(
+                                    n.created_at
+                                ).toLocaleString('hi-IN')
+                                : ''
+                        }
+                    </div>
+
+                    <div
+                        style="
+                            margin-top:6px;
+                            font-size:12px;
+                            color:#003366;
+                            font-weight:600;
+                        "
+                    >
+                        Tap karke open karein →
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join('');
+
+
+    } catch (error) {
+
+        console.error(
+            'Notification load failed:',
+            error
+        );
+
+        document.getElementById(
+            'notificationList'
+        ).innerHTML =
+            '<p style="color:red;">Notification load nahi ho saki.</p>';
+    }
+}
+
+
+/* =========================================
+   NOTIFICATION CLICK
+   ========================================= */
+
+function openNotification(page) {
+
+    window.location.href = page;
+
+}
+
+
+/* =========================================
+   NOTIFICATION PANEL
+   ========================================= */
+
+function toggleNotifications() {
+
+    const panel =
+        document.getElementById(
+            'notificationPanel'
+        );
+
+    panel.style.display =
+        panel.style.display === 'block'
+            ? 'none'
+            : 'block';
+}
+
+
+/* =========================================
+   INITIAL LOAD
+   ========================================= */
+
+loadNotifications();
+
+
+/* =========================================
+   AUTO REFRESH
+   ========================================= */
+
+setInterval(
+    loadNotifications,
+    30000
+);
+
+</script>
 </body>
 </html>
