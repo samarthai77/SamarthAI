@@ -478,11 +478,6 @@ async function loadNotifications() {
 
         list.innerHTML = notifications.map(n => {
 
-            /*
-             * Notification type ke hisab se
-             * direct page decide hoga.
-             */
-
             let targetPage = 'dashboard.html';
 
             const title =
@@ -495,40 +490,37 @@ async function loadNotifications() {
                 title + ' ' + message;
 
 
-      
-    text.includes('sos') ||
-    text.includes('emergency')
-) {
+            /* SERVICE REQUEST */
 
-    targetPage = 'sos.html';
+            if (n.type === 'service_request') {
 
-} else if (
-    text.includes('family')
-) {
+                const requestId = n.related_id;
 
-    targetPage = 'family.html';
+                if (requestId) {
 
-} else if (
-    text.includes('location') ||
-    text.includes('gps')
-) {
+                    targetPage =
+                        `services.html?request_id=${encodeURIComponent(requestId)}`;
 
-    targetPage = 'gps.html';
+                } else {
 
-} else if (
-    text.includes('scanner') ||
-    text.includes('camera')
-) {
+                    targetPage = 'services.html';
 
-    targetPage = 'camera.html';
+                }
 
-} else if (
-    text.includes('chat')
-) {
 
-    targetPage = 'chat.html';
+            /* SERVICE */
 
-}
+            } else if (
+                text.includes('service') ||
+                text.includes('construction') ||
+                text.includes('plumber') ||
+                text.includes('electrician')
+            ) {
+
+                targetPage = 'services.html';
+
+
+            /* SOS */
 
             } else if (
                 text.includes('sos') ||
@@ -537,11 +529,17 @@ async function loadNotifications() {
 
                 targetPage = 'sos.html';
 
+
+            /* FAMILY */
+
             } else if (
                 text.includes('family')
             ) {
 
                 targetPage = 'family.html';
+
+
+            /* GPS */
 
             } else if (
                 text.includes('location') ||
@@ -550,12 +548,18 @@ async function loadNotifications() {
 
                 targetPage = 'gps.html';
 
+
+            /* SCANNER */
+
             } else if (
                 text.includes('scanner') ||
                 text.includes('camera')
             ) {
 
                 targetPage = 'camera.html';
+
+
+            /* CHAT */
 
             } else if (
                 text.includes('chat')
