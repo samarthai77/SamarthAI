@@ -737,7 +737,44 @@ providerName.style.cssText = `
 `;
 
 providerInfo.appendChild(providerName);
+const ratingBox = document.createElement('div');
 
+ratingBox.textContent = '⭐ Rating load ho rahi hai...';
+
+ratingBox.style.cssText = `
+    margin-top:4px;
+    font-size:0.82rem;
+    color:#d88900;
+    font-weight:700;
+`;
+
+providerInfo.appendChild(ratingBox);
+
+if (service.provider_id) {
+    fetch(
+        `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(service.provider_id)}`,
+        {
+            method: 'GET',
+            cache: 'no-store'
+        }
+    )
+    .then(response => response.json())
+    .then(data => {
+        const rating = Number(data.average_rating || 0);
+        const count = Number(data.rating_count || 0);
+
+        if (count > 0) {
+            ratingBox.textContent =
+                `⭐ ${rating.toFixed(1)} (${count} rating${count === 1 ? '' : 's'})`;
+        } else {
+            ratingBox.textContent = '⭐ No ratings yet';
+        }
+    })
+    .catch(error => {
+        console.error('Provider rating error:', error);
+        ratingBox.textContent = '⭐ Rating unavailable';
+    });
+}
 providerBox.appendChild(providerPhoto);
 providerBox.appendChild(providerInfo);
 
