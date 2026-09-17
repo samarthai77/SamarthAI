@@ -668,21 +668,85 @@ nearbyButton.addEventListener('click', async () => {
     location.textContent =
         `📍 ${service.location || 'Location not specified'}`;
 
-    const provider = {
-        name: service.provider_name || 'Service Provider'
-    };
+const provider = {
+    name: service.provider_name || 'Service Provider',
+    photo: service.provider_photo_url || ''
+};
 
-    const providerName = document.createElement('p');
-    providerName.className = 'service-meta';
-    providerName.textContent =
-        `👤 ${provider.name}`;
+const providerBox = document.createElement('div');
 
-    card.appendChild(title);
-    card.appendChild(description);
-    card.appendChild(price);
-    card.appendChild(category);
-    card.appendChild(location);
-    card.appendChild(providerName);
+providerBox.style.cssText = `
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px solid var(--border);
+`;
+
+const providerPhoto = document.createElement('img');
+
+providerPhoto.src = provider.photo || 'data:image/svg+xml;charset=UTF-8,' +
+    encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+            <rect width="60" height="60" rx="30" fill="#eef4fa"/>
+            <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
+        </svg>
+    `);
+
+providerPhoto.alt = `${provider.name} profile photo`;
+
+providerPhoto.style.cssText = `
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    object-fit:cover;
+    border:2px solid var(--saffron);
+    flex-shrink:0;
+`;
+
+providerPhoto.onerror = () => {
+    providerPhoto.src = 'data:image/svg+xml;charset=UTF-8,' +
+        encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+                <rect width="60" height="60" rx="30" fill="#eef4fa"/>
+                <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
+            </svg>
+        `);
+};
+
+const providerInfo = document.createElement('div');
+
+providerInfo.innerHTML = `
+    <div style="
+        font-size:0.72rem;
+        color:var(--muted);
+        margin-bottom:2px;
+    ">
+        Service Provider
+    </div>
+`;
+
+const providerName = document.createElement('strong');
+
+providerName.textContent = provider.name;
+
+providerName.style.cssText = `
+    color:var(--blue);
+    font-size:0.95rem;
+`;
+
+providerInfo.appendChild(providerName);
+
+providerBox.appendChild(providerPhoto);
+providerBox.appendChild(providerInfo);
+
+card.appendChild(title);
+card.appendChild(description);
+card.appendChild(price);
+card.appendChild(category);
+card.appendChild(location);
+card.appendChild(providerBox);   
 
     const actions = document.createElement('div');
     actions.className = 'service-actions';
