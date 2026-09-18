@@ -506,7 +506,20 @@ async function loadNotifications() {
                     targetPage = 'services.html';
 
                 }
+else if (n.type === 'service_complaint') {
 
+    const complaintId = n.related_id;
+
+    if (complaintId) {
+
+        targetPage =
+            `services.html?complaint_id=${encodeURIComponent(complaintId)}`;
+
+    } else {
+
+        targetPage = 'services.html';
+
+    }
 
             /* SERVICE */
 
