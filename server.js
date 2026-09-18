@@ -82,6 +82,8 @@ const familyRoutes = require('./routes/family');
 app.use('/api/family', familyRoutes);
 const reviewsRoutes = require('./routes/reviews');
 app.use('/api/reviews', reviewsRoutes);
+const complaintsRoutes = require('./routes/complaints');
+app.use('/api/complaints', complaintsRoutes);
 const messagesRoutes = require('./routes/messages');
 app.use('/api/messages', messagesRoutes);
 const notificationsRoutes = require('./routes/notifications');
