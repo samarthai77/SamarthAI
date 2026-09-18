@@ -670,280 +670,493 @@ nearbyButton.addEventListener('click', async () => {
     location.textContent =
         `📍 ${service.location || 'Location not specified'}`;
 
-const provider = {
-    name: service.provider_name || 'Service Provider',
-    photo: service.provider_photo_url || ''
-};
+    const provider = {
+        name: service.provider_name || 'Service Provider',
+        photo: service.provider_photo_url || ''
+    };
 
-const providerBox = document.createElement('div');
+    const providerBox = document.createElement('div');
 
-providerBox.style.cssText = `
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-top:12px;
-    padding-top:10px;
-    border-top:1px solid var(--border);
-`;
+    providerBox.style.cssText = `
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-top:12px;
+        padding-top:10px;
+        border-top:1px solid var(--border);
+    `;
 
-const providerPhoto = document.createElement('img');
+    const providerPhoto = document.createElement('img');
 
-providerPhoto.src = provider.photo || 'data:image/svg+xml;charset=UTF-8,' +
-    encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
-            <rect width="60" height="60" rx="30" fill="#eef4fa"/>
-            <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
-        </svg>
-    `);
-
-providerPhoto.alt = `${provider.name} profile photo`;
-
-providerPhoto.style.cssText =`
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    object-fit:cover;
-    border:2px solid var(--saffron);
-    flex-shrink:0;
-`;
-
-providerPhoto.onerror = () => {
-    providerPhoto.src = 'data:image/svg+xml;charset=UTF-8,' +
+    providerPhoto.src =
+        provider.photo ||
+        'data:image/svg+xml;charset=UTF-8,' +
         encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
                 <rect width="60" height="60" rx="30" fill="#eef4fa"/>
                 <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
             </svg>
         `);
-};
 
-const providerInfo = document.createElement('div');
+    providerPhoto.alt =
+        `${provider.name} profile photo`;
 
-providerInfo.innerHTML = `
-    <div style="
-        font-size:0.72rem;
-        color:var(--muted);
-        margin-bottom:2px;
-    ">
-        Service Provider
-    </div>
-`;
+    providerPhoto.style.cssText = `
+        width:52px;
+        height:52px;
+        border-radius:50%;
+        object-fit:cover;
+        border:2px solid var(--saffron);
+        flex-shrink:0;
+    `;
 
-const providerName = document.createElement('strong');
+    providerPhoto.onerror = () => {
+        providerPhoto.src =
+            'data:image/svg+xml;charset=UTF-8,' +
+            encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+                    <rect width="60" height="60" rx="30" fill="#eef4fa"/>
+                    <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
+                </svg>
+            `);
+    };
 
-providerName.textContent = provider.name;
+    const providerInfo = document.createElement('div');
 
-providerName.style.cssText = `
-    color:var(--blue);
-    font-size:0.95rem;
-`;
+    providerInfo.innerHTML = `
+        <div style="
+            font-size:0.72rem;
+            color:var(--muted);
+            margin-bottom:2px;
+        ">
+            Service Provider
+        </div>
+    `;
 
-providerInfo.appendChild(providerName);
-const ratingBox = document.createElement('div');
+    const providerName = document.createElement('strong');
 
-ratingBox.textContent = '⭐ Rating load ho rahi hai...';
+    providerName.textContent = provider.name;
 
-ratingBox.style.cssText = `
-    margin-top:4px;
-    font-size:0.82rem;
-    color:#d88900;
-    font-weight:700;
-`;
+    providerName.style.cssText = `
+        color:var(--blue);
+        font-size:0.95rem;
+    `;
 
-providerInfo.appendChild(ratingBox);
+    providerInfo.appendChild(providerName);
 
-if (service.provider_id) {
-    fetch(
-        `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(service.provider_id)}`,
-        {
-            method: 'GET',
-            cache: 'no-store'
-        }
-    )
-    .then(response => response.json())
-    .then(data => {
-        const rating = Number(data.average_rating || 0);
-        const count = Number(data.rating_count || 0);
+    const ratingBox = document.createElement('div');
 
-        if (count > 0) {
+    ratingBox.textContent =
+        '⭐ Rating load ho rahi hai...';
+
+    ratingBox.style.cssText = `
+        margin-top:4px;
+        font-size:0.82rem;
+        color:#d88900;
+        font-weight:700;
+    `;
+
+    providerInfo.appendChild(ratingBox);
+
+    if (service.provider_id) {
+
+        fetch(
+            `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(service.provider_id)}`,
+            {
+                method: 'GET',
+                cache: 'no-store'
+            }
+        )
+        .then(response => response.json())
+        .then(data => {
+
+            const rating =
+                Number(data.average_rating || 0);
+
+            const count =
+                Number(data.rating_count || 0);
+
+            if (count > 0) {
+
+                ratingBox.textContent =
+                    `⭐ ${rating.toFixed(1)} (${count} rating${count === 1 ? '' : 's'})`;
+
+            } else {
+
+                ratingBox.textContent =
+                    '⭐ No ratings yet';
+            }
+        })
+        .catch(error => {
+
+            console.error(
+                'Provider rating error:',
+                error
+            );
+
             ratingBox.textContent =
-                `⭐ ${rating.toFixed(1)} (${count} rating${count === 1 ? '' : 's'})`;
-        } else {
-            ratingBox.textContent = '⭐ No ratings yet';
-        }
-    })
-    .catch(error => {
-        console.error('Provider rating error:', error);
-        ratingBox.textContent = '⭐ Rating unavailable';
-    });
-}
-providerBox.appendChild(providerPhoto);
-providerBox.appendChild(providerInfo);
+                '⭐ Rating unavailable';
+        });
+    }
 
-card.appendChild(title);
-card.appendChild(description);
-card.appendChild(price);
-card.appendChild(category);
-card.appendChild(location);
-card.appendChild(providerBox);   
+    providerBox.appendChild(providerPhoto);
+    providerBox.appendChild(providerInfo);
+
+    card.appendChild(title);
+    card.appendChild(description);
+    card.appendChild(price);
+    card.appendChild(category);
+    card.appendChild(location);
+    card.appendChild(providerBox);
 
     const actions = document.createElement('div');
-    actions.className = 'service-actions';
 
-    // Call
-    const callBtn = document.createElement('button');
-    callBtn.className = 'service-action-btn call-btn';
-    callBtn.textContent = '📞 Call';
+    actions.className =
+        'service-actions';
 
-    callBtn.addEventListener('click', async () => {
-        const token = localStorage.getItem('token');
+    // ============================================
+    // CALL
+    // ============================================
 
-        if (!token) {
-            alert('Pehle login karein.');
-            return;
-        }
+    const callBtn =
+        document.createElement('button');
 
-        try {
-            const response = await fetch(
-                `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
+    callBtn.className =
+        'service-action-btn call-btn';
 
-            const data = await response.json();
+    callBtn.textContent =
+        '📞 Call';
 
-            if (!response.ok || !data.phone) {
-                throw new Error(
-                    data.error || 'Phone number available nahi hai.'
-                );
+    callBtn.addEventListener(
+        'click',
+        async () => {
+
+            const token =
+                localStorage.getItem('token');
+
+            if (!token) {
+                alert('Pehle login karein.');
+                return;
             }
 
-            window.location.href = `tel:${data.phone}`;
-        } catch (error) {
-            alert(
-                error.message ||
-                'Provider contact nahi mil paya.'
-            );
+            try {
+
+                const response =
+                    await fetch(
+                        `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+                        {
+                            headers: {
+                                'Authorization':
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !data.phone
+                ) {
+                    throw new Error(
+                        data.error ||
+                        'Phone number available nahi hai.'
+                    );
+                }
+
+                window.location.href =
+                    `tel:${data.phone}`;
+
+            } catch (error) {
+
+                alert(
+                    error.message ||
+                    'Provider contact nahi mil paya.'
+                );
+            }
         }
-    });
+    );
 
     actions.appendChild(callBtn);
 
-    // WhatsApp / Chat
-    const chatBtn = document.createElement('button');
-    chatBtn.className = 'service-action-btn chat-btn';
-    chatBtn.textContent = '💬 Chat';
+    // ============================================
+    // WHATSAPP / CHAT
+    // ============================================
 
-    chatBtn.addEventListener('click', async () => {
-        const token = localStorage.getItem('token');
+    const chatBtn =
+        document.createElement('button');
 
-        if (!token) {
-            alert('Pehle login karein.');
-            return;
-        }
+    chatBtn.className =
+        'service-action-btn chat-btn';
 
-        try {
-            const response = await fetch(
-                `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
+    chatBtn.textContent =
+        '💬 Chat';
 
-            const data = await response.json();
+    chatBtn.addEventListener(
+        'click',
+        async () => {
 
-            if (!response.ok || !data.phone) {
-                throw new Error(
-                    data.error || 'Phone number available nahi hai.'
-                );
+            const token =
+                localStorage.getItem('token');
+
+            if (!token) {
+                alert('Pehle login karein.');
+                return;
             }
 
-            const phone = String(data.phone).replace(/\D/g, '');
-            const whatsappNumber =
-                phone.length === 10 ? `91${phone}` : phone;
+            try {
 
-            const message =
-                `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+                const response =
+                    await fetch(
+                        `${SERVICE_API}/${encodeURIComponent(service.id)}/contact`,
+                        {
+                            headers: {
+                                'Authorization':
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
 
-            window.open(
-                `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
-                '_blank'
-            );
-        } catch (error) {
-            alert(
-                error.message ||
-                'Provider contact nahi mil paya.'
-            );
+                const data =
+                    await response.json();
+
+                if (
+                    !response.ok ||
+                    !data.phone
+                ) {
+                    throw new Error(
+                        data.error ||
+                        'Phone number available nahi hai.'
+                    );
+                }
+
+                const phone =
+                    String(data.phone)
+                        .replace(/\D/g, '');
+
+                const whatsappNumber =
+                    phone.length === 10
+                        ? `91${phone}`
+                        : phone;
+
+                const message =
+                    `Namaste, mujhe "${service.title || 'service'}" ke baare mein jankari chahiye.`;
+
+                window.open(
+                    `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`,
+                    '_blank'
+                );
+
+            } catch (error) {
+
+                alert(
+                    error.message ||
+                    'Provider contact nahi mil paya.'
+                );
+            }
         }
-    });
+    );
 
     actions.appendChild(chatBtn);
-// Work / Portfolio Photos
-const portfolioBtn = document.createElement('button');
-portfolioBtn.className = 'service-action-btn details-btn';
-portfolioBtn.textContent = '📷 Work Photos';
 
-portfolioBtn.addEventListener('click', () => {
-    openPortfolio(service);
-});
+    // ============================================
+    // WORK / PORTFOLIO PHOTOS
+    // ============================================
 
-actions.appendChild(portfolioBtn);
-    // Provider Details
-    const detailsBtn = document.createElement('button');
-    detailsBtn.className = 'service-action-btn details-btn';
-    detailsBtn.textContent = '👤 Details';
+    const portfolioBtn =
+        document.createElement('button');
 
-    detailsBtn.addEventListener('click', () => {
-        alert(
-            `Provider Details\n\n` +
-            `Name: ${provider.name}\n` +
-            `Phone: Call ya Chat button se available hoga.\n` +
-            `Service: ${service.title || 'Not available'}\n` +
-            `Location: ${service.location || 'Not specified'}`
-        );
-    });
+    portfolioBtn.className =
+        'service-action-btn details-btn';
+
+    portfolioBtn.textContent =
+        '📷 Work Photos';
+
+    portfolioBtn.addEventListener(
+        'click',
+        () => {
+            openPortfolio(service);
+        }
+    );
+
+    actions.appendChild(portfolioBtn);
+
+    // ============================================
+    // PROVIDER DETAILS
+    // ============================================
+
+    const detailsBtn =
+        document.createElement('button');
+
+    detailsBtn.className =
+        'service-action-btn details-btn';
+
+    detailsBtn.textContent =
+        '👤 Details';
+
+    detailsBtn.addEventListener(
+        'click',
+        () => {
+
+            alert(
+                `Provider Details\n\n` +
+                `Name: ${provider.name}\n` +
+                `Phone: Call ya Chat button se available hoga.\n` +
+                `Service: ${service.title || 'Not available'}\n` +
+                `Location: ${service.location || 'Not specified'}`
+            );
+        }
+    );
 
     actions.appendChild(detailsBtn);
-// Customer Reviews
-const reviewsBtn = document.createElement('button');
-reviewsBtn.className = 'service-action-btn details-btn';
-reviewsBtn.textContent = '💬 Reviews';
 
-reviewsBtn.addEventListener('click', () => {
-    openProviderReviews(service);
-});
+    // ============================================
+    // CUSTOMER REVIEWS
+    // ============================================
 
-actions.appendChild(reviewsBtn);
- // ============================================
-// CUSTOMER COMPLAINT / REPORT
-// ============================================
+    const reviewsBtn =
+        document.createElement('button');
 
-const reportBtn = document.createElement('button');
+    reviewsBtn.className =
+        'service-action-btn details-btn';
 
-reportBtn.className = 'service-action-btn details-btn';
-reportBtn.textContent = '🚩 Report';
+    reviewsBtn.textContent =
+        '💬 Reviews';
 
-reportBtn.addEventListener('click', () => {
-    openProviderComplaint(service);
-});
+    reviewsBtn.addEventListener(
+        'click',
+        () => {
+            openProviderReviews(service);
+        }
+    );
 
-actions.appendChild(reportBtn);    
-    // Request Service
-    const requestBtn = document.createElement('button');
-    requestBtn.className = 'service-action-btn request-btn';
-    requestBtn.textContent = '🛠️ Request';
+    actions.appendChild(reviewsBtn);
 
-    requestBtn.addEventListener('click', () => {
-        requestService(service);
-    });
+    // ============================================
+    // CUSTOMER COMPLAINT / REPORT
+    // ============================================
+
+    const reportBtn =
+        document.createElement('button');
+
+    reportBtn.className =
+        'service-action-btn details-btn';
+
+    reportBtn.textContent =
+        '🚩 Report';
+
+    reportBtn.addEventListener(
+        'click',
+        () => {
+            openProviderComplaint(service);
+        }
+    );
+
+    actions.appendChild(reportBtn);
+
+    // ============================================
+    // REQUEST SERVICE
+    // ============================================
+
+    const requestBtn =
+        document.createElement('button');
+
+    requestBtn.className =
+        'service-action-btn request-btn';
+
+    requestBtn.textContent =
+        '🛠️ Request';
+
+    requestBtn.addEventListener(
+        'click',
+        () => {
+            requestService(service);
+        }
+    );
 
     actions.appendChild(requestBtn);
 
+    // ============================================
+    // PROVIDER EDIT / DELETE
+    // ============================================
+
+    let currentUser = null;
+
+    try {
+        currentUser =
+            JSON.parse(
+                localStorage.getItem('user') || 'null'
+            );
+    } catch (error) {
+        currentUser = null;
+    }
+
+    const isOwner =
+        currentUser &&
+        currentUser.id &&
+        service.provider_id &&
+        String(currentUser.id) ===
+        String(service.provider_id);
+
+    if (isOwner) {
+
+        // ========================================
+        // EDIT SERVICE
+        // ========================================
+
+        const editBtn =
+            document.createElement('button');
+
+        editBtn.className =
+            'service-action-btn details-btn';
+
+        editBtn.textContent =
+            '✏️ Edit';
+
+        editBtn.addEventListener(
+            'click',
+            () => {
+                editService(service);
+            }
+        );
+
+        actions.appendChild(editBtn);
+
+        // ========================================
+        // DELETE SERVICE
+        // ========================================
+
+        const deleteBtn =
+            document.createElement('button');
+
+        deleteBtn.className =
+            'service-action-btn details-btn';
+
+        deleteBtn.textContent =
+            '🗑️ Delete';
+
+        deleteBtn.style.background =
+            '#ffe8e8';
+
+        deleteBtn.style.color =
+            '#b42318';
+
+        deleteBtn.addEventListener(
+            'click',
+            () => {
+                deleteService(service);
+            }
+        );
+
+        actions.appendChild(deleteBtn);
+    }
+
+    card.appendChild(actions);
+
+    return card;
+}
+  
     card.appendChild(actions);
 
     return card;
