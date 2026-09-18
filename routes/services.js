@@ -145,8 +145,9 @@ router.get('/nearby', async (req, res) => {
 
     const { data: services, error } = await supabase
       .from('services')
-      .select(`
+    .select(`
         id,
+        user_id,
         title,
         description,
         price,
@@ -156,7 +157,7 @@ router.get('/nearby', async (req, res) => {
         longitude,
         is_active,
         created_at,
-      users(name, profile_photo_url)
+        users(name, profile_photo_url)
       `)
       .eq('is_active', true)
       .not('latitude', 'is', null)
@@ -212,21 +213,23 @@ router.get('/nearby', async (req, res) => {
           Number(service.longitude)
         );
 
-     return {
+    return {
     ...service,
+    provider_id: service.user_id,
     provider_name:
         service.users?.name || 'Service Provider',
     provider_photo_url:
         service.users?.profile_photo_url || null,
     distance_km: Number(distance.toFixed(2))
-};  
+};
       })
       .filter(service => service.distance_km <= radius)
       .sort((a, b) => a.distance_km - b.distance_km)
-      .map(service => {
-        delete service.users;
-        return service;
-      });
+     .map(service => {
+    delete service.users;
+    delete service.user_id;
+    return service;
+});
 
     res.json(nearbyServices);
 
