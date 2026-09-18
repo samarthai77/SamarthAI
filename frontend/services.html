@@ -1161,7 +1161,203 @@ nearbyButton.addEventListener('click', async () => {
 
    return card;
 }
+// ============================================
+// PROVIDER EDIT SERVICE
+// ============================================
 
+async function editService(service) {
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
+
+    const title = prompt(
+        'Service Name:',
+        service.title || ''
+    );
+
+    if (title === null) return;
+
+    const description = prompt(
+        'Service Description:',
+        service.description || ''
+    );
+
+    if (description === null) return;
+
+    const priceInput = prompt(
+        'Price (₹):',
+        service.price !== null &&
+        service.price !== undefined
+            ? service.price
+            : ''
+    );
+
+    if (priceInput === null) return;
+
+    const category = prompt(
+        'Category:',
+        service.category || ''
+    );
+
+    if (category === null) return;
+
+    const location = prompt(
+        'Location:',
+        service.location || ''
+    );
+
+    if (location === null) return;
+
+    const price = Number(priceInput);
+
+    if (
+        !Number.isFinite(price) ||
+        price < 0
+    ) {
+        alert('❌ Valid price enter karein.');
+        return;
+    }
+
+    if (
+        !title.trim() ||
+        !description.trim() ||
+        !category.trim()
+    ) {
+        alert(
+            '❌ Title, description aur category zaroori hain.'
+        );
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${SERVICE_API}/${encodeURIComponent(service.id)}`,
+            {
+                method: 'PUT',
+
+                headers: {
+                    'Content-Type':
+                        'application/json',
+
+                    'Authorization':
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    title: title.trim(),
+                    description: description.trim(),
+                    price,
+                    category: category.trim(),
+                    location: location.trim()
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                'Service update failed'
+            );
+        }
+
+        alert(
+            '✅ Service successfully update ho gayi.'
+        );
+
+        await loadServices();
+
+    } catch (error) {
+
+        console.error(
+            'Edit service error:',
+            error
+        );
+
+        alert(
+            `❌ ${
+                error.message ||
+                'Service update nahi ho paayi.'
+            }`
+        );
+    }
+}
+
+
+// ============================================
+// PROVIDER DELETE SERVICE
+// ============================================
+
+async function deleteService(service) {
+
+    const token =
+        localStorage.getItem('token');
+
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
+
+    const confirmed = confirm(
+        `Kya aap "${service.title || 'Service'}" ko delete karna chahte hain?\n\nYe action undo nahi kiya ja sakta.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${SERVICE_API}/${encodeURIComponent(service.id)}`,
+            {
+                method: 'DELETE',
+
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                'Service delete failed'
+            );
+        }
+
+        alert(
+            '🗑️ Service successfully delete ho gayi.'
+        );
+
+        await loadServices();
+
+    } catch (error) {
+
+        console.error(
+            'Delete service error:',
+            error
+        );
+
+        alert(
+            `❌ ${
+                error.message ||
+                'Service delete nahi ho paayi.'
+            }`
+        );
+    }
+}
 // ============================================
 // PROVIDER REVIEWS / CUSTOMER COMMENTS
 // ============================================ 
