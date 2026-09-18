@@ -971,4 +971,229 @@ async function saveAdminAction() {
 
     if (!selectedComplaint) return;
 
-    co
+ const status =
+        document.getElementById(
+            'statusSelect'
+        ).value;
+
+    const note =
+        document.getElementById(
+            'adminNote'
+        ).value.trim();
+
+    await updateComplaint(
+        selectedComplaint.id,
+        status,
+        note
+    );
+
+    closeNoteModal();
+
+}
+
+
+/* =========================================
+   DISABLE SERVICE MODAL
+   ========================================= */
+
+function openDisableModal(
+    serviceId,
+    complaintId
+) {
+
+    selectedServiceId = serviceId;
+
+    selectedComplaint =
+        complaints.find(
+            c =>
+                String(c.id) ===
+                String(complaintId)
+        );
+
+    document.getElementById(
+        'disableServiceInfo'
+    ).innerHTML = `
+        <p>
+            🚫 Aap service
+            <strong>
+                ${escapeHtml(
+                    selectedComplaint?.service_title ||
+                    'Service'
+                )}
+            </strong>
+            disable karne wale hain.
+        </p>
+    `;
+
+    document.getElementById(
+        'disableReason'
+    ).value = '';
+
+    document.getElementById(
+        'disableModal'
+    ).style.display = 'flex';
+
+}
+
+
+function closeDisableModal() {
+
+    document.getElementById(
+        'disableModal'
+    ).style.display = 'none';
+
+    selectedServiceId = null;
+
+}
+
+
+/* =========================================
+   CONFIRM DISABLE
+   ========================================= */
+
+async function confirmDisableService() {
+
+    if (!selectedServiceId) return;
+
+    const token = getToken();
+
+    const reason =
+        document.getElementById(
+            'disableReason'
+        ).value.trim();
+
+    if (!reason) {
+
+        alert(
+            'Service disable karne ka reason likhiye.'
+        );
+
+        return;
+
+    }
+
+    const confirmed =
+        confirm(
+            'Kya aap is service ko disable karna chahte hain?'
+        );
+
+    if (!confirmed) return;
+
+    try {
+
+        const response = await fetch(
+            `${ADMIN_API}/services/${encodeURIComponent(
+                selectedServiceId
+            )}/disable`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json',
+
+                    'Authorization':
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    reason,
+                    complaint_id:
+                        selectedComplaint?.id ||
+                        null
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                'Service disable failed'
+            );
+
+        }
+
+        closeDisableModal();
+
+        showMessage(
+            '🚫 Service successfully disabled'
+        );
+
+        await loadComplaints();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   ESCAPE HTML
+   ========================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+}
+
+
+/* =========================================
+   CLOSE MODALS ON BACKDROP
+   ========================================= */
+
+document
+    .getElementById('noteModal')
+    .addEventListener(
+        'click',
+        function(event) {
+
+            if (event.target === this) {
+                closeNoteModal();
+            }
+
+        }
+    );
+
+
+document
+    .getElementById('disableModal')
+    .addEventListener(
+        'click',
+        function(event) {
+
+            if (event.target === this) {
+                closeDisableModal();
+            }
+
+        }
+    );
+
+
+/* =========================================
+   START
+   ========================================= */
+
+loadComplaints();
+
+</script>
+
+</body>
+</html>   
