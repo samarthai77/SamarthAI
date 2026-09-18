@@ -476,189 +476,185 @@ async function loadNotifications() {
             return;
         }
 
-        list.innerHTML = notifications.map(n => {
+        list.innerHTML = '';
+
+        notifications.forEach(n => {
 
             let targetPage = 'dashboard.html';
 
-            const title =
-                String(n.title || '').toLowerCase();
+            /*
+             * SERVICE REQUEST
+             */
 
-            const message =
-                String(n.message || '').toLowerCase();
+            if (n.type === 'service_request') {
 
-            const text =
-                title + ' ' + message;
+                const requestId = n.related_id;
 
-
-            /* SERVICE REQUEST */
-
- if (n.type === 'service_request') {
-
-    const requestId = n.related_id;
-
-    if (requestId) {
-
-        targetPage =
-            `services.html?request_id=${encodeURIComponent(requestId)}`;
-
-    } else {
-
-        targetPage = 'services.html';
-
-    }
-
-
-/* SERVICE COMPLAINT */
-
-} else if (n.type === 'service_complaint') {
-
-    const complaintId = n.related_id;
-
-    if (complaintId) {
-
-        targetPage =
-            `services.html?complaint_id=${encodeURIComponent(complaintId)}`;
-
-    } else {
-
-        targetPage = 'services.html';
-
-    }
-
-
-/* SERVICE */
-
-} else if (
-    text.includes('service') ||
-    text.includes('construction') ||
-    text.includes('plumber') ||
-    text.includes('electrician')
-) {
-
-    targetPage = 'services.html';         
-else if (n.type === 'service_complaint') {
-
-    const complaintId = n.related_id;
-
-    if (complaintId) {
-
-        targetPage =
-            `services.html?complaint_id=${encodeURIComponent(complaintId)}`;
-
-    } else {
-
-        targetPage = 'services.html';
-
-    }
-
-            /* SERVICE */
-
-            } else if (
-                text.includes('service') ||
-                text.includes('construction') ||
-                text.includes('plumber') ||
-                text.includes('electrician')
-            ) {
-
-                targetPage = 'services.html';
-
-
-            /* SOS */
-
-            } else if (
-                text.includes('sos') ||
-                text.includes('emergency')
-            ) {
-
-                targetPage = 'sos.html';
-
-
-            /* FAMILY */
-
-            } else if (
-                text.includes('family')
-            ) {
-
-                targetPage = 'family.html';
-
-
-            /* GPS */
-
-            } else if (
-                text.includes('location') ||
-                text.includes('gps')
-            ) {
-
-                targetPage = 'gps.html';
-
-
-            /* SCANNER */
-
-            } else if (
-                text.includes('scanner') ||
-                text.includes('camera')
-            ) {
-
-                targetPage = 'camera.html';
-
-
-            /* CHAT */
-
-            } else if (
-                text.includes('chat')
-            ) {
-
-                targetPage = 'chat.html';
+                targetPage = requestId
+                    ? `services.html?request_id=${encodeURIComponent(requestId)}`
+                    : 'services.html';
 
             }
 
+            /*
+             * SERVICE COMPLAINT
+             */
 
-            return `
+            else if (n.type === 'service_complaint') {
 
-                <div
-                    class="notification-item"
-                    onclick="openNotification('${targetPage}')"
-                    style="
-                        cursor:pointer;
-                        border-bottom:1px solid #eee;
-                    "
-                >
+                const complaintId = n.related_id;
 
-                    <div class="notification-title">
-                        ${n.title || 'Notification'}
-                    </div>
+                targetPage = complaintId
+                    ? `services.html?complaint_id=${encodeURIComponent(complaintId)}`
+                    : 'services.html';
 
-                    <div class="notification-message">
-                        ${n.message || ''}
-                    </div>
+            }
 
-                    <div class="notification-time">
-                        ${
-                            n.created_at
-                                ? new Date(
-                                    n.created_at
-                                ).toLocaleString('hi-IN')
-                                : ''
-                        }
-                    </div>
+            /*
+             * OTHER SERVICE NOTIFICATION
+             */
 
-                    <div
-                        style="
-                            margin-top:6px;
-                            font-size:12px;
-                            color:#003366;
-                            font-weight:600;
-                        "
-                    >
-                        Tap karke open karein →
-                    </div>
+            else {
 
-                </div>
+                const title =
+                    String(n.title || '').toLowerCase();
 
+                const message =
+                    String(n.message || '').toLowerCase();
+
+                const notificationText =
+                    title + ' ' + message;
+
+                if (
+                    notificationText.includes('service') ||
+                    notificationText.includes('construction') ||
+                    notificationText.includes('plumber') ||
+                    notificationText.includes('electrician')
+                ) {
+
+                    targetPage = 'services.html';
+
+                }
+
+                else if (
+                    notificationText.includes('sos') ||
+                    notificationText.includes('emergency')
+                ) {
+
+                    targetPage = 'sos.html';
+
+                }
+
+                else if (
+                    notificationText.includes('family')
+                ) {
+
+                    targetPage = 'family.html';
+
+                }
+
+                else if (
+                    notificationText.includes('location') ||
+                    notificationText.includes('gps')
+                ) {
+
+                    targetPage = 'gps.html';
+
+                }
+
+                else if (
+                    notificationText.includes('scanner') ||
+                    notificationText.includes('camera')
+                ) {
+
+                    targetPage = 'camera.html';
+
+                }
+
+                else if (
+                    notificationText.includes('chat')
+                ) {
+
+                    targetPage = 'chat.html';
+
+                }
+
+            }
+
+            /*
+             * CREATE NOTIFICATION ITEM
+             */
+
+            const item =
+                document.createElement('div');
+
+            item.className =
+                'notification-item';
+
+            item.style.cssText = `
+                cursor:pointer;
+                border-bottom:1px solid #eee;
             `;
 
-        }).join('');
+            const title =
+                document.createElement('div');
 
+            title.className =
+                'notification-title';
+
+            title.textContent =
+                n.title || 'Notification';
+
+            const message =
+                document.createElement('div');
+
+            message.className =
+                'notification-message';
+
+            message.textContent =
+                n.message || '';
+
+            const time =
+                document.createElement('div');
+
+            time.className =
+                'notification-time';
+
+            if (n.created_at) {
+
+                time.textContent =
+                    new Date(
+                        n.created_at
+                    ).toLocaleString('hi-IN');
+
+            }
+
+            const openText =
+                document.createElement('div');
+
+            openText.style.cssText = `
+                margin-top:6px;
+                font-size:12px;
+                color:#003366;
+                font-weight:600;
+            `;
+
+            openText.textContent =
+                'Tap karke open karein →';
+
+            item.appendChild(title);
+            item.appendChild(message);
+            item.appendChild(time);
+            item.appendChild(openText);
+
+            item.addEventListener(
+                'click',
+                () => openNotification(targetPage)
+            );
+
+            list.appendChild(item);
+
+        });
 
     } catch (error) {
 
@@ -667,16 +663,24 @@ else if (n.type === 'service_complaint') {
             error
         );
 
-        document.getElementById(
-            'notificationList'
-        ).innerHTML =
-            '<p style="color:red;">Notification load nahi ho saki.</p>';
+        const list =
+            document.getElementById(
+                'notificationList'
+            );
+
+        if (list) {
+
+            list.innerHTML =
+                '<p style="color:red;">Notification load nahi ho saki.</p>';
+
+        }
+
     }
 }
 
 
 /* =========================================
-   NOTIFICATION CLICK
+   OPEN NOTIFICATION
    ========================================= */
 
 function openNotification(page) {
@@ -687,7 +691,7 @@ function openNotification(page) {
 
 
 /* =========================================
-   NOTIFICATION PANEL
+   TOGGLE NOTIFICATION PANEL
    ========================================= */
 
 function toggleNotifications() {
@@ -697,10 +701,13 @@ function toggleNotifications() {
             'notificationPanel'
         );
 
+    if (!panel) return;
+
     panel.style.display =
         panel.style.display === 'block'
             ? 'none'
             : 'block';
+
 }
 
 
@@ -721,5 +728,7 @@ setInterval(
 );
 
 </script>
+
+
 </body>
 </html>
