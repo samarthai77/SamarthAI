@@ -64,5 +64,58 @@ router.get('/', async (req, res) => {
     }
 });
 
+// ================= MARK ALL NOTIFICATIONS AS READ =================
 
+router.put('/read-all', async (req, res) => {
+    try {
+
+        const token =
+            req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({
+                error: 'No token provided'
+            });
+        }
+
+        const decoded =
+            jwt.verify(token, JWT_SECRET);
+
+        const { error } =
+            await supabase
+                .from('notifications')
+                .update({
+                    is_read: true
+                })
+                .eq('user_id', decoded.id)
+                .eq('is_read', false);
+
+        if (error) {
+            console.error(
+                '❌ Mark notifications read error:',
+                error
+            );
+
+            return res.status(400).json({
+                error: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Notifications marked as read'
+        });
+
+    } catch (error) {
+
+        console.error(
+            '❌ Mark all notifications error:',
+            error
+        );
+
+        res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+});
 module.exports = router;
