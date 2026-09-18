@@ -917,6 +917,20 @@ reviewsBtn.addEventListener('click', () => {
 });
 
 actions.appendChild(reviewsBtn);
+ // ============================================
+// CUSTOMER COMPLAINT / REPORT
+// ============================================
+
+const reportBtn = document.createElement('button');
+
+reportBtn.className = 'service-action-btn details-btn';
+reportBtn.textContent = '🚩 Report';
+
+reportBtn.addEventListener('click', () => {
+    openProviderComplaint(service);
+});
+
+actions.appendChild(reportBtn);    
     // Request Service
     const requestBtn = document.createElement('button');
     requestBtn.className = 'service-action-btn request-btn';
@@ -1156,6 +1170,314 @@ async function openProviderReviews(service) {
             '⭐ Rating unavailable';
     }
 }
+async function openProviderComplaint(service) {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('Pehle login karein.');
+        return;
+    }
+
+    if (!service.provider_id) {
+        alert('Provider information available nahi hai.');
+        return;
+    }
+
+    const oldModal = document.getElementById(
+        'providerComplaintModal'
+    );
+
+    if (oldModal) {
+        oldModal.remove();
+    }
+
+    const modal = document.createElement('div');
+
+    modal.id = 'providerComplaintModal';
+
+    modal.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.65);
+        z-index:10001;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:15px;
+    `;
+
+    const box = document.createElement('div');
+
+    box.style.cssText = `
+        background:white;
+        width:min(550px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:18px;
+        padding:20px;
+        position:relative;
+    `;
+
+    const closeBtn = document.createElement('button');
+
+    closeBtn.textContent = '✕';
+
+    closeBtn.style.cssText = `
+        position:absolute;
+        right:12px;
+        top:12px;
+        border:0;
+        background:#eee;
+        border-radius:50%;
+        width:34px;
+        height:34px;
+        cursor:pointer;
+        font-size:18px;
+    `;
+
+    closeBtn.onclick = () => modal.remove();
+
+    const heading = document.createElement('h2');
+
+    heading.textContent =
+        `🚩 Report Provider`;
+
+    heading.style.cssText = `
+        color:var(--blue);
+        margin:0 45px 6px 0;
+    `;
+
+    const serviceInfo = document.createElement('div');
+
+    serviceInfo.textContent =
+        `${service.provider_name || 'Service Provider'} — ${service.title || 'Service'}`;
+
+    serviceInfo.style.cssText = `
+        color:var(--muted);
+        margin-bottom:16px;
+        font-size:0.9rem;
+    `;
+
+    const reasonLabel = document.createElement('label');
+
+    reasonLabel.textContent =
+        'Complaint ka reason';
+
+    reasonLabel.style.cssText = `
+        display:block;
+        font-weight:700;
+        margin-bottom:6px;
+    `;
+
+    const reasonSelect = document.createElement('select');
+
+    reasonSelect.style.cssText = `
+        width:100%;
+        padding:11px;
+        border:1px solid var(--border);
+        border-radius:10px;
+        background:white;
+        font-size:1rem;
+    `;
+
+    const reasons = [
+        'Select complaint reason',
+        'Fraud / Scam',
+        'Fake Service Information',
+        'Poor / Unsafe Work',
+        'Overcharging',
+        'Misbehaviour',
+        'No Service Provided',
+        'Other'
+    ];
+
+    reasons.forEach((reason, index) => {
+        const option = document.createElement('option');
+
+        option.value = index === 0 ? '' : reason;
+        option.textContent = reason;
+
+        reasonSelect.appendChild(option);
+    });
+
+    const descriptionLabel = document.createElement('label');
+
+    descriptionLabel.textContent =
+        'Complaint details';
+
+    descriptionLabel.style.cssText = `
+        display:block;
+        font-weight:700;
+        margin:14px 0 6px;
+    `;
+
+    const descriptionInput = document.createElement('textarea');
+
+    descriptionInput.placeholder =
+        'Problem ke baare mein details likhein...';
+
+    descriptionInput.maxLength = 1000;
+
+    descriptionInput.rows = 5;
+
+    descriptionInput.style.cssText = `
+        width:100%;
+        padding:11px;
+        border:1px solid var(--border);
+        border-radius:10px;
+        resize:vertical;
+        font-size:0.95rem;
+        box-sizing:border-box;
+    `;
+
+    const warning = document.createElement('div');
+
+    warning.textContent =
+        '⚠️ Sirf genuine complaint submit karein. Complaint moderation ke liye review ki ja sakti hai.';
+
+    warning.style.cssText = `
+        margin-top:12px;
+        padding:10px;
+        background:#fff8e6;
+        border-radius:10px;
+        color:#9a6a00;
+        font-size:0.82rem;
+        line-height:1.4;
+    `;
+
+    const submitBtn = document.createElement('button');
+
+    submitBtn.textContent =
+        '🚩 Submit Complaint';
+
+    submitBtn.className = 'primary-btn';
+
+    submitBtn.style.cssText = `
+        width:100%;
+        margin-top:14px;
+    `;
+
+    const status = document.createElement('div');
+
+    status.style.cssText = `
+        margin-top:10px;
+        text-align:center;
+        font-size:0.9rem;
+    `;
+
+    submitBtn.onclick = async () => {
+
+        const reason =
+            reasonSelect.value.trim();
+
+        const description =
+            descriptionInput.value.trim();
+
+        if (!reason) {
+            alert('Complaint reason select karein.');
+            return;
+        }
+
+        if (!description) {
+            alert('Complaint details likhna zaroori hai.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+
+        submitBtn.textContent =
+            '⏳ Complaint submit ho rahi hai...';
+
+        status.textContent = '';
+
+        try {
+
+            const response = await fetch(
+                'https://samarthai-backend.onrender.com/api/complaints',
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        service_id:
+                            service.id || null,
+
+                        provider_id:
+                            service.provider_id,
+
+                        reason,
+
+                        description
+                    })
+                }
+            );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error ||
+                    'Complaint submit failed'
+                );
+            }
+
+            status.textContent =
+                '✅ Complaint successfully submit ho gayi.';
+
+            status.style.color = 'green';
+
+            submitBtn.textContent =
+                '✅ Submitted';
+
+            setTimeout(() => {
+                modal.remove();
+            }, 1500);
+
+        } catch (error) {
+
+            console.error(
+                'Complaint submit error:',
+                error
+            );
+
+            status.textContent =
+                `❌ ${error.message || 'Complaint submit nahi ho paayi.'}`;
+
+            status.style.color = 'red';
+
+            submitBtn.disabled = false;
+
+            submitBtn.textContent =
+                '🚩 Submit Complaint';
+        }
+    };
+
+    box.appendChild(closeBtn);
+    box.appendChild(heading);
+    box.appendChild(serviceInfo);
+    box.appendChild(reasonLabel);
+    box.appendChild(reasonSelect);
+    box.appendChild(descriptionLabel);
+    box.appendChild(descriptionInput);
+    box.appendChild(warning);
+    box.appendChild(submitBtn);
+    box.appendChild(status);
+
+    modal.appendChild(box);
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+}    
 async function requestService(service) {
     const token = localStorage.getItem('token');
 
