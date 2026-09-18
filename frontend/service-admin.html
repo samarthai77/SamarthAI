@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Service Admin — SamarthAI</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .admin-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 15px 50px;
+        }
+
+        .admin-header {
+            background: #003366;
+            color: white;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .admin-header h1 {
+            margin: 0 0 8px;
+        }
+
+        .admin-header p {
+            margin: 0;
+            opacity: .85;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .toolbar button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: #003366;
+            color: white;
+        }
+
+        .dashboard-btn {
+            background: white;
+            color: #003366;
+            border: 1px solid #ccd5df !important;
+        }
+
+        #adminMessage {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .complaint-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.08);
+        }
+
+        .complaint-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .complaint-title {
+            font-size: 19px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .status {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            background: #eee;
+        }
+
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.reviewing {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status.resolved {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status.rejected {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .info {
+            margin: 7px 0;
+            color: #444;
+            line-height: 1.45;
+        }
+
+        .reason-box {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .description {
+            margin-top: 8px;
+            color: #555;
+        }
+
+        .admin-note {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff8e1;
+            border-radius: 9px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .actions button {
+            border: 0;
+            border-radius: 9px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .review-btn {
+            background: #e7f0ff;
+            color: #003366;
+        }
+
+        .resolve-btn {
+            background: #dff5e8;
+            color: #146c43;
+        }
+
+        .reject-btn {
+            background: #fde2e5;
+            color: #b02a37;
+        }
+
+        .note-btn {
+            background: #fff0c2;
+            color: #795300;
+        }
+
+        .disable-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .disabled-label {
+            color: #b02a37;
+            font-weight: 700;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 15px;
+        }
+
+        .modal-box {
+            width: min(550px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .modal-box h2 {
+            margin-top: 0;
+        }
+
+        .modal-box textarea,
+        .modal-box input,
+        .modal-box select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            margin: 7px 0 13px;
+            border: 1px solid #ccd5df;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal-actions button {
+            border: 0;
+            border-radius: 9px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .save-btn {
+            background: #003366;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #eee;
+        }
+
+        .empty {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            color: #777;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .complaint-top {
+                flex-direction: column;
+            }
+
+            .status {
+                align-self: flex-start;
+            }
+
+            .admin-header {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        SamarthAI
+    </div>
+
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="services.html">Services</a>
+        <a href="profile.html">Profile</a>
+    </nav>
+</header>
+
+
+<main class="admin-container">
+
+    <section class="admin-header">
+        <h1>🛡️ Service Admin Panel</h1>
+        <p>Customer complaints aur service moderation</p>
+    </section>
+
+
+    <div class="toolbar">
+        <button
+            class="refresh-btn"
+            onclick="loadComplaints()"
+        >
+            🔄 Refresh Complaints
+        </button>
+
+        <button
+            class="dashboard-btn"
+            onclick="location.href='dashboard.html'"
+        >
+            ← Dashboard
+        </button>
+    </div>
+
+
+    <div id="adminMessage"></div>
+
+    <div id="complaintsList">
+        <div class="loading">
+            ⏳ Complaints load ho rahi hain...
+        </div>
+    </div>
+
+</main>
+
+
+<!-- =========================================
+     NOTE MODAL
+     ========================================= -->
+
+<div
+    id="noteModal"
+    class="modal"
+>
+    <div class="modal-box">
+
+        <h2>📝 Admin Action</h2>
+
+        <div id="noteComplaintInfo"></div>
+
+        <label>
+            Status
+        </label>
+
+        <select id="statusSelect">
+            <option value="pending">
+                Pending
+            </option>
+
+            <option value="reviewing">
+                Reviewing
+            </option>
+
+            <option value="resolved">
+                Resolved
+            </option>
+
+            <option value="rejected">
+                Rejected
+            </option>
+        </select>
+
+        <label>
+            Admin Note / Warning
+        </label>
+
+        <textarea
+            id="adminNote"
+            rows="5"
+            placeholder="Provider ke liye warning ya admin note..."
+        ></textarea>
+
+        <div class="modal-actions">
+
+            <button
+                class="save-btn"
+                onclick="saveAdminAction()"
+            >
+                💾 Save Action
+            </button>
+
+            <button
+                class="cancel-btn"
+                onclick="closeNoteModal()"
+            >
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- =========================================
+     DISABLE SERVICE MODAL
+     ========================================= -->
+
+<div
+    id="disableModal"
+    class="modal"
+>
+    <div class="modal-box">
+
+        <h2>🚫 Disable Service</h2>
+
+        <div id="disableServiceInfo"></div>
+
+        <label>
+            Reason
+        </label>
+
+        <textarea
+            id="disableReason"
+            rows="5"
+            placeholder="Service disable karne ka reason..."
+        ></textarea>
+
+        <div class="modal-actions">
+
+            <button
+                class="disable-btn"
+                onclick="confirmDisableService()"
+            >
+                🚫 Disable Service
+            </button>
+
+            <button
+                class="cancel-btn"
+                onclick="closeDisableModal()"
+            >
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+
+const ADMIN_API =
+    'https://samarthai-backend.onrender.com/api/service-admin';
+
+let complaints = [];
+
+let selectedComplaint = null;
+
+let selectedServiceId = null;
+
+
+/* =========================================
+   TOKEN
+   ========================================= */
+
+function getToken() {
+
+    return localStorage.getItem('token');
+
+}
+
+
+/* =========================================
+   MESSAGE
+   ========================================= */
+
+function showMessage(message, isError = false) {
+
+    const box =
+        document.getElementById('adminMessage');
+
+    box.textContent = message;
+
+    box.style.color =
+        isError ? '#b02a37' : '#146c43';
+
+}
+
+
+/* =========================================
+   LOAD COMPLAINTS
+   ========================================= */
+
+async function loadComplaints() {
+
+    const token = getToken();
+
+    if (!token) {
+
+        location.href = 'index.html';
+
+        return;
+
+    }
+
+    const list =
+        document.getElementById('complaintsList');
+
+    list.innerHTML =
+        '<div class="loading">⏳ Loading...</div>';
+
+    try {
+
+        const response = await fetch(
+            `${ADMIN_API}/complaints`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                },
+                cache: 'no-store'
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                'Admin access denied'
+            );
+
+        }
+
+        complaints =
+            Array.isArray(data)
+                ? data
+                : [];
+
+        renderComplaints();
+
+        showMessage(
+            `${complaints.length} complaint(s) loaded`
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Admin complaints error:',
+            error
+        );
+
+        list.innerHTML = `
+            <div class="empty">
+                ❌ ${escapeHtml(error.message)}
+            </div>
+        `;
+
+        showMessage(
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   RENDER COMPLAINTS
+   ========================================= */
+
+function renderComplaints() {
+
+    const list =
+        document.getElementById(
+            'complaintsList'
+        );
+
+    if (!complaints.length) {
+
+        list.innerHTML = `
+            <div class="empty">
+                ✅ Abhi koi complaint nahi hai.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    list.innerHTML = '';
+
+    complaints.forEach(complaint => {
+
+        const card =
+            document.createElement('div');
+
+        card.className =
+            'complaint-card';
+
+        const status =
+            complaint.status || 'pending';
+
+        const serviceDisabled =
+            complaint.service_is_active === false;
+
+        card.innerHTML = `
+
+            <div class="complaint-top">
+
+                <div>
+
+                    <div class="complaint-title">
+                        🚩 ${escapeHtml(
+                            complaint.reason ||
+                            'Complaint'
+                        )}
+                    </div>
+
+                    <div class="info">
+                        🛠️ Service:
+                        <strong>
+                            ${escapeHtml(
+                                complaint.service_title ||
+                                'Service'
+                            )}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <span class="status ${escapeHtml(status)}">
+                    ${escapeHtml(
+                        status.toUpperCase()
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="info">
+                👤 Provider:
+                <strong>
+                    ${escapeHtml(
+                        complaint.provider_name ||
+                        'Service Provider'
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="info">
+                👤 Customer:
+                <strong>
+                    ${escapeHtml(
+                        complaint.customer_name ||
+                        'Customer'
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="reason-box">
+
+                <strong>
+                    Complaint Details
+                </strong>
+
+                <div class="description">
+                    ${escapeHtml(
+                        complaint.description ||
+                        'No additional details'
+                    )}
+                </div>
+
+            </div>
+
+
+            ${
+                complaint.admin_note
+                    ? `
+                        <div class="admin-note">
+                            📝 <strong>Admin Note:</strong><br>
+                            ${escapeHtml(
+                                complaint.admin_note
+                            )}
+                        </div>
+                    `
+                    : ''
+            }
+
+
+            <div class="info">
+
+                📅 ${
+                    complaint.created_at
+                        ? new Date(
+                            complaint.created_at
+                        ).toLocaleString('hi-IN')
+                        : ''
+                }
+
+            </div>
+
+
+            ${
+                serviceDisabled
+                    ? `
+                        <div class="disabled-label">
+                            🚫 Service Disabled
+                        </div>
+                    `
+                    : ''
+            }
+
+
+            <div class="actions">
+
+                <button
+                    class="review-btn"
+                    onclick="quickStatus(
+                        '${complaint.id}',
+                        'reviewing'
+                    )"
+                >
+                    🔎 Review
+                </button>
+
+
+                <button
+                    class="resolve-btn"
+                    onclick="quickStatus(
+                        '${complaint.id}',
+                        'resolved'
+                    )"
+                >
+                    ✅ Resolve
+                </button>
+
+
+                <button
+                    class="reject-btn"
+                    onclick="quickStatus(
+                        '${complaint.id}',
+                        'rejected'
+                    )"
+                >
+                    ❌ Reject
+                </button>
+
+
+                <button
+                    class="note-btn"
+                    onclick="openNoteModal(
+                        '${complaint.id}'
+                    )"
+                >
+                    📝 Note / Warning
+                </button>
+
+
+                ${
+                    complaint.service_id &&
+                    !serviceDisabled
+                        ? `
+                            <button
+                                class="disable-btn"
+                                onclick="openDisableModal(
+                                    '${complaint.service_id}',
+                                    '${complaint.id}'
+                                )"
+                            >
+                                🚫 Disable Service
+                            </button>
+                        `
+                        : ''
+                }
+
+            </div>
+        `;
+
+        list.appendChild(card);
+
+    });
+
+}
+
+
+/* =========================================
+   QUICK STATUS
+   ========================================= */
+
+async function quickStatus(
+    complaintId,
+    status
+) {
+
+    const complaint =
+        complaints.find(
+            c => String(c.id) === String(complaintId)
+        );
+
+    if (!complaint) return;
+
+    let note = '';
+
+    if (status === 'reviewing') {
+
+        note =
+            'Complaint review ke liye mark ki gayi hai.';
+
+    }
+
+    if (status === 'resolved') {
+
+        note =
+            'Complaint admin review ke baad resolved ki gayi hai.';
+
+    }
+
+    if (status === 'rejected') {
+
+        note =
+            'Complaint admin review ke baad rejected ki gayi hai.';
+
+    }
+
+    const confirmed =
+        confirm(
+            `Complaint ko "${status}" status dena hai?`
+        );
+
+    if (!confirmed) return;
+
+    await updateComplaint(
+        complaintId,
+        status,
+        note
+    );
+
+}
+
+
+/* =========================================
+   UPDATE COMPLAINT
+   ========================================= */
+
+async function updateComplaint(
+    complaintId,
+    status,
+    adminNote
+) {
+
+    const token = getToken();
+
+    try {
+
+        const response = await fetch(
+            `${ADMIN_API}/complaints/${encodeURIComponent(
+                complaintId
+            )}`,
+            {
+                method: 'PUT',
+
+                headers: {
+                    'Content-Type':
+                        'application/json',
+
+                    'Authorization':
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    status,
+                    admin_note: adminNote
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                'Complaint update failed'
+            );
+
+        }
+
+        showMessage(
+            '✅ Complaint updated successfully'
+        );
+
+        await loadComplaints();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            error.message,
+            true
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   NOTE MODAL
+   ========================================= */
+
+function openNoteModal(complaintId) {
+
+    selectedComplaint =
+        complaints.find(
+            c =>
+                String(c.id) ===
+                String(complaintId)
+        );
+
+    if (!selectedComplaint) return;
+
+    document.getElementById(
+        'noteComplaintInfo'
+    ).innerHTML = `
+        <p>
+            🛠️ <strong>Service:</strong>
+            ${escapeHtml(
+                selectedComplaint.service_title
+            )}
+        </p>
+
+        <p>
+            🚩 <strong>Reason:</strong>
+            ${escapeHtml(
+                selectedComplaint.reason
+            )}
+        </p>
+    `;
+
+    document.getElementById(
+        'statusSelect'
+    ).value =
+        selectedComplaint.status ||
+        'pending';
+
+    document.getElementById(
+        'adminNote'
+    ).value =
+        selectedComplaint.admin_note ||
+        '';
+
+    document.getElementById(
+        'noteModal'
+    ).style.display = 'flex';
+
+}
+
+
+function closeNoteModal() {
+
+    document.getElementById(
+        'noteModal'
+    ).style.display = 'none';
+
+}
+
+
+async function saveAdminAction() {
+
+    if (!selectedComplaint) return;
+
+    co
