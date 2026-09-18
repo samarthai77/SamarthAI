@@ -693,8 +693,7 @@ function openNotification(page) {
 /* =========================================
    TOGGLE NOTIFICATION PANEL
    ========================================= */
-
-function toggleNotifications() {
+async function toggleNotifications() {
 
     const panel =
         document.getElementById(
@@ -703,11 +702,65 @@ function toggleNotifications() {
 
     if (!panel) return;
 
-    panel.style.display =
-        panel.style.display === 'block'
-            ? 'none'
-            : 'block';
+    const isOpening =
+        panel.style.display !== 'block';
 
+    panel.style.display =
+        isOpening
+            ? 'block'
+            : 'none';
+
+    // Bell open hone par current unread
+    // notifications ko read mark karo
+    if (isOpening) {
+
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) return;
+
+        try {
+
+            const response = await fetch(
+                'https://samarthai-backend.onrender.com/api/notifications/read-all',
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                console.error(
+                    'Mark notifications read error:',
+                    data
+                );
+                return;
+            }
+
+            // Bell ka number turant hata do
+            const count =
+                document.getElementById(
+                    'notificationCount'
+                );
+
+            if (count) {
+                count.style.display = 'none';
+                count.textContent = '0';
+            }
+
+        } catch (error) {
+
+            console.error(
+                'Mark notifications read failed:',
+                error
+            );
+        }
+    }
 }
 
 
