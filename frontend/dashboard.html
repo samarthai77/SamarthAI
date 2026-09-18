@@ -492,20 +492,50 @@ async function loadNotifications() {
 
             /* SERVICE REQUEST */
 
-            if (n.type === 'service_request') {
+ if (n.type === 'service_request') {
 
-                const requestId = n.related_id;
+    const requestId = n.related_id;
 
-                if (requestId) {
+    if (requestId) {
 
-                    targetPage =
-                        `services.html?request_id=${encodeURIComponent(requestId)}`;
+        targetPage =
+            `services.html?request_id=${encodeURIComponent(requestId)}`;
 
-                } else {
+    } else {
 
-                    targetPage = 'services.html';
+        targetPage = 'services.html';
 
-                }
+    }
+
+
+/* SERVICE COMPLAINT */
+
+} else if (n.type === 'service_complaint') {
+
+    const complaintId = n.related_id;
+
+    if (complaintId) {
+
+        targetPage =
+            `services.html?complaint_id=${encodeURIComponent(complaintId)}`;
+
+    } else {
+
+        targetPage = 'services.html';
+
+    }
+
+
+/* SERVICE */
+
+} else if (
+    text.includes('service') ||
+    text.includes('construction') ||
+    text.includes('plumber') ||
+    text.includes('electrician')
+) {
+
+    targetPage = 'services.html';         
 else if (n.type === 'service_complaint') {
 
     const complaintId = n.related_id;
