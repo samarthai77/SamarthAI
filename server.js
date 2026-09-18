@@ -84,6 +84,8 @@ const reviewsRoutes = require('./routes/reviews');
 app.use('/api/reviews', reviewsRoutes);
 const complaintsRoutes = require('./routes/complaints');
 app.use('/api/complaints', complaintsRoutes);
+const serviceAdminRoutes = require('./routes/serviceadmin');
+app.use('/api/service-admin', serviceAdminRoutes);
 const messagesRoutes = require('./routes/messages');
 app.use('/api/messages', messagesRoutes);
 const notificationsRoutes = require('./routes/notifications');
