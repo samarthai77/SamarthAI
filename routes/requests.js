@@ -143,6 +143,123 @@ router.get('/provider', async (req, res) => {
     });
   }
 });
+// ============ PROVIDER ACCEPT / REJECT REQUEST ============
+router.put('/provider/:id/status', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'No token provided'
+      });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      'accepted',
+      'rejected'
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        error: 'Status must be accepted or rejected'
+      });
+    }
+
+    // Check request belongs to this provider
+    const { data: existing, error: checkError } =
+      await supabase
+        .from('service_requests')
+        .select('*')
+        .eq('id', id)
+        .eq('provider_id', decoded.id)
+        .single();
+
+    if (checkError || !existing) {
+      return res.status(404).json({
+        error: 'Request not found or unauthorized'
+      });
+    }
+
+    if (existing.status !== 'pending') {
+      return res.status(400).json({
+        error:
+          `Request already ${existing.status}`
+      });
+    }
+
+    // Update request status
+    const { data: updated, error: updateError } =
+      await supabase
+        .from('service_requests')
+        .update({
+          status
+        })
+        .eq('id', id)
+        .eq('provider_id', decoded.id)
+        .select()
+        .single();
+
+    if (updateError) {
+      return res.status(400).json({
+        error: updateError.message
+      });
+    }
+
+    // Notify customer
+    const notificationTitle =
+      status === 'accepted'
+        ? '✅ Service Request Accepted'
+        : '❌ Service Request Rejected';
+
+    const notificationMessage =
+      status === 'accepted'
+        ? 'Provider ne aapki service request accept kar li hai.'
+        : 'Provider ne aapki service request reject kar di hai.';
+
+    const { error: notificationError } =
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: existing.user_id,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: 'service_request',
+          related_id: existing.id,
+          is_read: false
+        }]);
+
+    if (notificationError) {
+      console.error(
+        '❌ Customer notification error:',
+        notificationError
+      );
+    }
+
+    res.json({
+      message:
+        status === 'accepted'
+          ? 'Request accepted successfully'
+          : 'Request rejected successfully',
+      request: updated
+    });
+
+  } catch (error) {
+
+    console.error(
+      '❌ Provider request status error:',
+      error
+    );
+
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
+});
 // ============ UPDATE REQUEST ============
 router.put('/:id', async (req, res) => {
   try {
