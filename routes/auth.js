@@ -514,8 +514,10 @@ if (!passwordMatches) {
       });
     }
 
+let storageCleanupWarning = false;
 
-    const portfolioPaths = [];
+const portfolioPaths = [];
+    
 
     const portfolioMarker =
       '/service-portfolio/';
@@ -596,7 +598,7 @@ if (!passwordMatches) {
           .remove(portfolioPaths);
 
         if (portfolioStorageError) {
-
+storageCleanupWarning = true;
           console.error(
             '⚠️ Portfolio storage cleanup error:',
             portfolioStorageError
@@ -605,7 +607,7 @@ if (!passwordMatches) {
         }
 
       } catch (storageError) {
-
+storageCleanupWarning = true;
         console.error(
           '⚠️ Portfolio storage cleanup exception:',
           storageError
@@ -648,7 +650,7 @@ if (!passwordMatches) {
           .remove(profilePaths);
 
         if (profileRemoveError) {
-
+storageCleanupWarning = true;
           console.error(
             '⚠️ Profile photo cleanup error:',
             profileRemoveError
@@ -658,7 +660,7 @@ if (!passwordMatches) {
       }
 
     } catch (storageError) {
-
+storageCleanupWarning = true;
       console.error(
         '⚠️ Profile photo cleanup exception:',
         storageError
@@ -671,16 +673,19 @@ if (!passwordMatches) {
     // FINAL RESPONSE
     // ------------------------------------------------
 
-    res.json({
-      success: true,
+ res.json({
+  success: true,
 
-      message:
-        'Your SamarthAI account and associated account data have been deleted.',
+  message: storageCleanupWarning
+    ? 'Your SamarthAI account and database data have been deleted. Some storage files could not be removed.'
+    : 'Your SamarthAI account and associated account data have been deleted.',
 
-      result:
-        deleteResult || null
-    });
+  storage_cleanup_warning:
+    storageCleanupWarning,
 
+  result:
+    deleteResult || null
+});
 
   } catch (error) {
 
