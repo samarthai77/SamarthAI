@@ -232,7 +232,37 @@
             </button>
 
             <p id="profileMessage"></p>
+<!-- DELETE ACCOUNT -->
+<div
+    style="
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #ddd;
+    "
+>
+    <h3 style="color:#b00020;">
+        ⚠️ Delete Account
+    </h3>
 
+    <p style="color:#666; line-height:1.5;">
+        Account delete karne par aapka SamarthAI
+        account aur associated personal data permanently
+        delete ho jayega.
+    </p>
+
+    <button
+        type="button"
+        onclick="deleteMyAccount()"
+        style="
+            background:#b00020;
+            color:white;
+            width:100%;
+            margin-top:1rem;
+        "
+    >
+        🗑️ Delete My Account
+    </button>
+</div>
         </div>
     </div>
 
@@ -610,7 +640,106 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+// =========================
+// DELETE ACCOUNT
+// =========================
 
+async function deleteMyAccount() {
+
+    const token =
+        localStorage.getItem('token');
+
+    if (!token) {
+        alert('Please login first.');
+        return;
+    }
+
+    const firstConfirm = confirm(
+        '⚠️ Kya aap apna SamarthAI account permanently delete karna chahte hain?\n\n' +
+        'Account aur associated personal data delete ho jayega.\n\n' +
+        'Ye action undo nahi kiya ja sakta.'
+    );
+
+    if (!firstConfirm) {
+        return;
+    }
+
+    const secondConfirm = confirm(
+        'FINAL CONFIRMATION\n\n' +
+        'Kya aap sach mein apna account DELETE karna chahte hain?'
+    );
+
+    if (!secondConfirm) {
+        return;
+    }
+
+    const button =
+        document.querySelector(
+            'button[onclick="deleteMyAccount()"]'
+        );
+
+    if (button) {
+        button.disabled = true;
+        button.textContent =
+            '⏳ Deleting Account...';
+    }
+
+    try {
+
+        const res = await fetch(
+            `${API_BASE}/auth/account`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+            throw new Error(
+                data.error ||
+                'Account deletion failed'
+            );
+        }
+
+        // Clear local account session
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        alert(
+            '✅ Your SamarthAI account has been permanently deleted.'
+        );
+
+        window.location.href =
+            'login.html';
+
+    } catch (error) {
+
+        console.error(
+            'Delete account error:',
+            error
+        );
+
+        alert(
+            '❌ ' +
+            (
+                error.message ||
+                'Account deletion failed.'
+            )
+        );
+
+        if (button) {
+            button.disabled = false;
+            button.textContent =
+                '🗑️ Delete My Account';
+        }
+    }
+}
         // =========================
         // LOAD ON START
         // =========================
