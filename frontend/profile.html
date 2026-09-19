@@ -663,7 +663,18 @@ async function deleteMyAccount() {
     if (!firstConfirm) {
         return;
     }
+const currentPassword = prompt(
+    'Account delete karne ke liye apna current password enter karein:'
+);
 
+if (currentPassword === null) {
+    return;
+}
+
+if (!currentPassword.trim()) {
+    alert('Password required hai.');
+    return;
+}
     const secondConfirm = confirm(
         'FINAL CONFIRMATION\n\n' +
         'Kya aap sach mein apna account DELETE karna chahte hain?'
@@ -686,16 +697,21 @@ async function deleteMyAccount() {
 
     try {
 
-        const res = await fetch(
-            `${API_BASE}/auth/account`,
-            {
-                method: 'DELETE',
-                headers: {
-                    'Authorization':
-                        `Bearer ${token}`
-                }
-            }
-        );
+   const res = await fetch(
+    `${API_BASE}/auth/account`,
+    {
+        method: 'DELETE',
+        headers: {
+            'Authorization':
+                `Bearer ${token}`,
+            'Content-Type':
+                'application/json'
+        },
+        body: JSON.stringify({
+            currentPassword
+        })
+    }
+);   
 
         const data =
             await res.json();
