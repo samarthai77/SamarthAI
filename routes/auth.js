@@ -419,6 +419,7 @@ router.put('/profile', async (req, res) => {
 
 router.delete('/account', async (req, res) => {
   try {
+
     const token =
       req.headers.authorization?.split(' ')[1];
 
@@ -439,8 +440,9 @@ router.delete('/account', async (req, res) => {
       });
     }
 
+
     // ------------------------------------------------
-    // Get current user before deletion
+    // GET CURRENT USER
     // ------------------------------------------------
 
     const {
@@ -460,8 +462,73 @@ router.delete('/account', async (req, res) => {
       });
     }
 
+
     // ------------------------------------------------
-    // Delete account data through secure DB function
+    // COLLECT PORTFOLIO STORAGE FILES
+    // BEFORE DATABASE DELETION
+    // ------------------------------------------------
+
+    const {
+      data: portfolioRows,
+      error: portfolioError
+    } = await supabase
+      .from('service_portfolio')
+      .select('image_url')
+      .eq('user_id', decoded.id);
+
+    if (portfolioError) {
+
+      console.error(
+        '❌ Portfolio cleanup lookup error:',
+        portfolioError
+      );
+
+      return res.status(500).json({
+        error:
+          'Unable to prepare account deletion. Your account was not deleted.'
+      });
+    }
+
+
+    const portfolioPaths = [];
+
+    const portfolioMarker =
+      '/service-portfolio/';
+
+    for (const item of portfolioRows || []) {
+
+      if (
+        item &&
+        item.image_url &&
+        item.image_url.includes(
+          portfolioMarker
+        )
+      ) {
+
+        const markerIndex =
+          item.image_url.indexOf(
+            portfolioMarker
+          );
+
+        const filePath =
+          decodeURIComponent(
+            item.image_url.slice(
+              markerIndex +
+                portfolioMarker.length
+            )
+          );
+
+        if (filePath) {
+          portfolioPaths.push(
+            filePath
+          );
+        }
+      }
+    }
+
+
+    // ------------------------------------------------
+    // DELETE DATABASE ACCOUNT DATA
     // ------------------------------------------------
 
     const {
@@ -475,6 +542,7 @@ router.delete('/account', async (req, res) => {
     );
 
     if (deleteError) {
+
       console.error(
         '❌ Account deletion database error:',
         deleteError
@@ -486,11 +554,48 @@ router.delete('/account', async (req, res) => {
       });
     }
 
+
     // ------------------------------------------------
-    // Remove profile photo files
+    // REMOVE PORTFOLIO STORAGE FILES
+    // ------------------------------------------------
+
+    if (portfolioPaths.length > 0) {
+
+      try {
+
+        const {
+          error: portfolioStorageError
+        } = await supabase
+          .storage
+          .from('service-portfolio')
+          .remove(portfolioPaths);
+
+        if (portfolioStorageError) {
+
+          console.error(
+            '⚠️ Portfolio storage cleanup error:',
+            portfolioStorageError
+          );
+
+        }
+
+      } catch (storageError) {
+
+        console.error(
+          '⚠️ Portfolio storage cleanup exception:',
+          storageError
+        );
+
+      }
+    }
+
+
+    // ------------------------------------------------
+    // REMOVE PROFILE PHOTO FILES
     // ------------------------------------------------
 
     try {
+
       const {
         data: profileFiles,
         error: profileListError
@@ -499,7 +604,10 @@ router.delete('/account', async (req, res) => {
         .from('profile-photos')
         .list(decoded.id);
 
-      if (!profileListError && profileFiles?.length) {
+      if (
+        !profileListError &&
+        profileFiles?.length
+      ) {
 
         const profilePaths =
           profileFiles.map(
@@ -507,31 +615,47 @@ router.delete('/account', async (req, res) => {
               `${decoded.id}/${file.name}`
           );
 
-        await supabase
+        const {
+          error: profileRemoveError
+        } = await supabase
           .storage
           .from('profile-photos')
           .remove(profilePaths);
+
+        if (profileRemoveError) {
+
+          console.error(
+            '⚠️ Profile photo cleanup error:',
+            profileRemoveError
+          );
+
+        }
       }
 
     } catch (storageError) {
 
       console.error(
-        '⚠️ Profile photo cleanup error:',
+        '⚠️ Profile photo cleanup exception:',
         storageError
       );
 
     }
 
+
     // ------------------------------------------------
-    // Clear response
+    // FINAL RESPONSE
     // ------------------------------------------------
 
     res.json({
       success: true,
+
       message:
         'Your SamarthAI account and associated account data have been deleted.',
-      result: deleteResult || null
+
+      result:
+        deleteResult || null
     });
+
 
   } catch (error) {
 
@@ -540,14 +664,20 @@ router.delete('/account', async (req, res) => {
       error
     );
 
+
     if (
-      error.name === 'JsonWebTokenError' ||
-      error.name === 'TokenExpiredError'
+      error.name ===
+        'JsonWebTokenError' ||
+      error.name ===
+        'TokenExpiredError'
     ) {
+
       return res.status(401).json({
-        error: 'Invalid or expired token'
+        error:
+          'Invalid or expired token'
       });
     }
+
 
     res.status(500).json({
       error:
