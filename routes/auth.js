@@ -450,9 +450,10 @@ router.delete('/account', async (req, res) => {
       error: userError
     } = await supabase
       .from('users')
-      .select(
-        'id, email, profile_photo_url'
-      )
+    .select(
+  'id, email, password, profile_photo_url'
+) 
+      
       .eq('id', decoded.id)
       .single();
 
@@ -462,7 +463,31 @@ router.delete('/account', async (req, res) => {
       });
     }
 
+// ------------------------------------------------
+// VERIFY CURRENT PASSWORD BEFORE ACCOUNT DELETION
+// ------------------------------------------------
 
+const { currentPassword } = req.body || {};
+
+if (
+  typeof currentPassword !== 'string' ||
+  !currentPassword
+) {
+  return res.status(400).json({
+    error: 'Current password is required'
+  });
+}
+
+const passwordMatches = await bcrypt.compare(
+  currentPassword,
+  user.password
+);
+
+if (!passwordMatches) {
+  return res.status(401).json({
+    error: 'Incorrect current password'
+  });
+}
     // ------------------------------------------------
     // COLLECT PORTFOLIO STORAGE FILES
     // BEFORE DATABASE DELETION
