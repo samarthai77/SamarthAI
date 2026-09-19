@@ -415,7 +415,146 @@ router.put('/profile', async (req, res) => {
     });
   }
 });
+// ============ DELETE ACCOUNT ============
 
+router.delete('/account', async (req, res) => {
+  try {
+    const token =
+      req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'No token provided'
+      });
+    }
+
+    const decoded = jwt.verify(
+      token,
+      JWT_SECRET
+    );
+
+    if (!decoded?.id) {
+      return res.status(401).json({
+        error: 'Invalid token'
+      });
+    }
+
+    // ------------------------------------------------
+    // Get current user before deletion
+    // ------------------------------------------------
+
+    const {
+      data: user,
+      error: userError
+    } = await supabase
+      .from('users')
+      .select(
+        'id, email, profile_photo_url'
+      )
+      .eq('id', decoded.id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        error: 'User account not found'
+      });
+    }
+
+    // ------------------------------------------------
+    // Delete account data through secure DB function
+    // ------------------------------------------------
+
+    const {
+      data: deleteResult,
+      error: deleteError
+    } = await supabase.rpc(
+      'delete_user_account',
+      {
+        p_user_id: decoded.id
+      }
+    );
+
+    if (deleteError) {
+      console.error(
+        '❌ Account deletion database error:',
+        deleteError
+      );
+
+      return res.status(500).json({
+        error:
+          'Account deletion failed. Your account was not deleted.'
+      });
+    }
+
+    // ------------------------------------------------
+    // Remove profile photo files
+    // ------------------------------------------------
+
+    try {
+      const {
+        data: profileFiles,
+        error: profileListError
+      } = await supabase
+        .storage
+        .from('profile-photos')
+        .list(decoded.id);
+
+      if (!profileListError && profileFiles?.length) {
+
+        const profilePaths =
+          profileFiles.map(
+            file =>
+              `${decoded.id}/${file.name}`
+          );
+
+        await supabase
+          .storage
+          .from('profile-photos')
+          .remove(profilePaths);
+      }
+
+    } catch (storageError) {
+
+      console.error(
+        '⚠️ Profile photo cleanup error:',
+        storageError
+      );
+
+    }
+
+    // ------------------------------------------------
+    // Clear response
+    // ------------------------------------------------
+
+    res.json({
+      success: true,
+      message:
+        'Your SamarthAI account and associated account data have been deleted.',
+      result: deleteResult || null
+    });
+
+  } catch (error) {
+
+    console.error(
+      '❌ Delete account error:',
+      error
+    );
+
+    if (
+      error.name === 'JsonWebTokenError' ||
+      error.name === 'TokenExpiredError'
+    ) {
+      return res.status(401).json({
+        error: 'Invalid or expired token'
+      });
+    }
+
+    res.status(500).json({
+      error:
+        'Unable to delete account'
+    });
+  }
+});
 // ============ MULTER ERROR HANDLER ============
 
 router.use((error, req, res, next) => {
