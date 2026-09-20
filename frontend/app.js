@@ -10,6 +10,52 @@ function isLoggedIn() {
     return !!getToken();
 }
 
+// ===== VERIFY LIVE SESSION =====
+async function validateSession() {
+    const token = getToken();
+
+    if (!token) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/profile`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            return false;
+        }
+
+        const user = await response.json();
+
+        if (!user || !user.id) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            return false;
+        }
+
+        // Keep local user data synchronized
+        localStorage.setItem('user', JSON.stringify(user));
+
+        return true;
+
+    } catch (error) {
+        console.error('Session validation error:', error);
+
+        // Fail closed for protected pages
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        return false;
+    }
+}
 // ===== NAVIGATION =====
 function navigateTo(page) {
     window.location.href = page;
@@ -67,13 +113,36 @@ async function loadProfile() {
 }
 
 // ===== RUN ON PAGE LOAD =====
-document.addEventListener('DOMContentLoaded', () => {
-    // Auth check for protected pages
-    const protectedPages = ['dashboard.html', 'profile.html', 'chat.html', 'services.html'];
-    const currentPage = window.location.pathname.split('/').pop();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Auth check for all protected V1 pages
+    const protectedPages = [
+        'dashboard.html',
+        'profile.html',
+        'chat.html',
+        'family.html',
+        'sos.html',
+        'gps.html',
+        'camera.html',
+        'services.html'
+    ];
 
-    if (protectedPages.includes(currentPage) && !isLoggedIn()) {
-        navigateTo('index.html');
+    const currentPage =
+        window.location.pathname.split('/').pop();
+
+    if (protectedPages.includes(currentPage)) {
+
+        if (!isLoggedIn()) {
+            navigateTo('index.html');
+            return;
+        }
+
+        const sessionValid =
+            await validateSession();
+
+        if (!sessionValid) {
+            navigateTo('index.html');
+            return;
+        }
     }
 
     // Load profile if on profile page
