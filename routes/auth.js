@@ -631,10 +631,19 @@ storageCleanupWarning = true;
         .from('profile-photos')
         .list(decoded.id);
 
-      if (
-        !profileListError &&
-        profileFiles?.length
-      ) {
+if (profileListError) {
+  storageCleanupWarning = true;
+
+  console.error(
+    '⚠️ Profile photo listing error:',
+    profileListError
+  );
+}
+
+if (
+  !profileListError &&
+  profileFiles?.length
+) {    
 
         const profilePaths =
           profileFiles.map(
