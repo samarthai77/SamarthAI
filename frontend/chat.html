@@ -189,7 +189,12 @@ body{overflow:hidden}
 }
 
 .messages:empty{
-    padding-bottom:10px
+    flex:0 0 0 !important;
+    height:0 !important;
+    min-height:0 !important;
+    padding:0 !important;
+    margin:0 !important;
+    overflow:hidden !important;
 }
 
 .messages::-webkit-scrollbar{
@@ -686,6 +691,28 @@ footer{
         font-size:16px
     }
 }
+ /* ===== FINAL MOBILE FEATURE FIX ===== */
+
+@media(max-width:600px){
+
+    .messages:empty{
+        flex:0 0 0 !important;
+        height:0 !important;
+        min-height:0 !important;
+        padding:0 !important;
+        margin:0 !important;
+    }
+
+    .feature-area{
+        flex:0 0 175px;
+        padding-bottom:0;
+    }
+
+    .feature-orbit{
+        transform:scale(.90);
+    }
+
+}   
 </style>
 </head>
 
