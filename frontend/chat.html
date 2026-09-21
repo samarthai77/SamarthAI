@@ -8,7 +8,86 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #f5f5f5; font-family: 'Segoe UI', sans-serif; }
+/* ===== SamarthAI Professional Top Bar ===== */
 
+.samarth-topbar {
+    height: 76px;
+    width: 100%;
+    background: rgba(255,255,255,0.96);
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #e9eef5;
+    box-shadow: 0 4px 18px rgba(0,51,102,0.06);
+}
+
+.menu-btn {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: #003366;
+    font-size: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-box {
+    flex: 1;
+    min-width: 0;
+}
+
+.brand-name {
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #003b78;
+}
+
+.brand-name span {
+    color: #ff6b00;
+}
+
+.brand-tagline {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #52677d;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-actions button {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    background: #f3f7fc;
+    color: #003366;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.top-actions button:hover {
+    background: #e7f0fb;
+}
+
+.top-actions .profile-mini {
+    background: linear-gradient(135deg, #0099ff, #0066cc);
+    color: white;
+    font-weight: 700;
+    font-size: 17px;
+}
         .chat-container {
             max-width: 750px;
             margin: 1.5rem auto;
@@ -252,16 +331,22 @@
 <body>
 
 <header>
-    <div class="logo">SamarthAI</div>
-    <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="chat.html">Chat</a>
-        <a href="services.html">Services</a>
-        <a href="profile.html">Profile</a>
-        <a href="#" onclick="logout()">Logout</a>
-    </nav>
-</header>
+ <div class="samarth-topbar">
+    <button class="menu-btn" type="button" onclick="history.back()">☰</button>
 
+    <div class="brand-box">
+        <div class="brand-name">Samarth<span>AI</span></div>
+        <div class="brand-tagline">Har Zaroorat Ka Sathi</div>
+    </div>
+
+    <div class="top-actions">
+        <button type="button" title="Search">⌕</button>
+        <button type="button" title="Notifications">🔔</button>
+        <button type="button" class="profile-mini" title="Profile"
+                onclick="location.href='profile.html'">S</button>
+    </div>
+</div>
+ </header>   
 <div class="chat-container">
     <div class="chat-header">
         <div class="avatar">🤖</div>
