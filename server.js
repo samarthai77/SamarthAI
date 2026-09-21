@@ -49,6 +49,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
+// ===== USER ACTIVITY TRACKER =====
+const activityTracker = require('./middleware/activityTracker');
+app.use(activityTracker);
 app.get('/css/style.css', (req, res) => {
   res.sendFile(__dirname + '/frontend/style.css');
 });
@@ -86,6 +89,9 @@ const complaintsRoutes = require('./routes/complaints');
 app.use('/api/complaints', complaintsRoutes);
 const serviceAdminRoutes = require('./routes/serviceadmin');
 app.use('/api/service-admin', serviceAdminRoutes);
+// ===== MAIN ADMIN DASHBOARD =====
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
 const messagesRoutes = require('./routes/messages');
 app.use('/api/messages', messagesRoutes);
 const notificationsRoutes = require('./routes/notifications');
