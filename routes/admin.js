@@ -134,7 +134,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // TOTAL MEMBERS
     // --------------------------------------------------
-
+adminStep = 'total_members';
     const {
       count: totalMembers,
       error: totalError
@@ -153,7 +153,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // ONLINE MEMBERS
     // --------------------------------------------------
-
+adminStep = 'online_members';
     const {
       count: onlineMembers,
       error: onlineError
@@ -177,7 +177,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // OFFLINE MEMBERS
     // --------------------------------------------------
-
+adminStep = 'offline_members';
     const {
       count: offlineMembers,
       error: offlineError
@@ -199,7 +199,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // FREE MEMBERS
     // --------------------------------------------------
-
+adminStep = 'free_members';
     const {
       count: freeMembers,
       error: freeError
@@ -219,7 +219,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // PRO MEMBERS
     // --------------------------------------------------
-
+adminStep = 'pro_members';
     const {
       count: proMembers,
       error: proError
@@ -239,7 +239,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // NEW MEMBERS TODAY
     // --------------------------------------------------
-
+adminStep = 'new_today';
     const {
       count: newToday,
       error: todayError
@@ -262,7 +262,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // NEW MEMBERS THIS MONTH
     // --------------------------------------------------
-
+adminStep = 'new_this_month';
     const {
       count: newThisMonth,
       error: monthError
@@ -285,7 +285,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // APP INSTALLS
     // --------------------------------------------------
-
+adminStep = 'app_installs';
     const {
       count: installs,
       error: installError
@@ -304,7 +304,7 @@ router.get('/dashboard', async (req, res) => {
     // --------------------------------------------------
     // MEMBER LIST
     // --------------------------------------------------
-
+adminStep = 'members_list';
     const {
       data: members,
       error: membersError
