@@ -458,7 +458,10 @@ adminStep = 'members_list';
       '❌ Admin dashboard error stack:',
       error?.stack
     );
-
+console.error(
+  '❌ Admin dashboard error step:',
+  adminStep
+);
     res.status(500).json({
       error:
         'Unable to load admin dashboard',
