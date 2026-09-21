@@ -88,6 +88,79 @@
     font-weight: 700;
     font-size: 17px;
 }
+     .welcome-hero {
+    text-align: center;
+    padding: 28px 20px 22px;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(0,153,255,0.12), transparent 45%),
+        linear-gradient(180deg, #ffffff, #f7fbff);
+}
+
+.hero-avatar {
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #003366, #0099ff);
+    border: 5px solid #ffffff;
+    box-shadow: 0 8px 28px rgba(0,102,204,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    position: relative;
+}
+
+.online-badge {
+    position: absolute;
+    right: 3px;
+    bottom: 5px;
+    width: 24px;
+    height: 24px;
+    background: #20c765;
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+}
+
+.welcome-hero h1 {
+    color: #003366;
+    font-size: 2.2rem;
+    margin-bottom: 4px;
+}
+
+.welcome-hero h2 {
+    color: #003366;
+    font-size: 1.65rem;
+    margin-bottom: 8px;
+}
+
+.welcome-hero h2 span {
+    color: #ff6b00;
+}
+
+.welcome-hero p {
+    color: #607080;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 520px;
+    margin: auto;
+}
+
+.hero-tagline {
+    display: inline-flex;
+    gap: 9px;
+    margin-top: 16px;
+    padding: 8px 18px;
+    border-radius: 24px;
+    background: #f5f9ff;
+    color: #003366;
+    box-shadow: 0 4px 15px rgba(0,51,102,0.07);
+    font-size: 0.95rem;
+}
+
+.hero-tagline b {
+    color: #ff6b00;
+}   
         .chat-container {
             max-width: 750px;
             margin: 1.5rem auto;
@@ -348,14 +421,31 @@
 </div>
  </header>   
 <div class="chat-container">
-    <div class="chat-header">
-        <div class="avatar">🤖</div>
-        <div class="info">
-            <h3>SamarthAI Assistant</h3>
-            <p><span class="status-dot"></span>Online — Har waqt aapke saath</p>
-        </div>
+ <div class="welcome-hero">
+
+    <div class="hero-avatar">
+        🤖
+        <span class="online-badge"></span>
     </div>
 
+    <h1>Namaste!</h1>
+
+    <h2>Main hoon Samarth<span>AI</span></h2>
+
+    <p>
+        Aapka apna AI sathi — koi bhi sawaal puchhiye,
+        main hamesha yahan hoon!
+    </p>
+
+    <div class="hero-tagline">
+        <span>Sochiye</span>
+        <b>•</b>
+        <span>Puchhiye</span>
+        <b>•</b>
+        <span>Kariye</span>
+    </div>
+
+</div>
     <div class="messages" id="chatMessages">
         <div class="welcome-msg" id="welcomeMsg">
             <div class="namaste">🙏</div>
