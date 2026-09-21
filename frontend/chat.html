@@ -359,6 +359,10 @@ body{overflow:hidden}
     align-items:center;
     justify-content:center;
     transition:.18s
+   opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:scale(.45); 
 }
 
 .feature-btn span{
@@ -373,7 +377,18 @@ body{overflow:hidden}
 .feature-btn:active{
     transform:scale(.94)
 }
+/* ===== RADIAL FEATURES OPEN ===== */
 
+.feature-area.open .feature-btn{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:scale(1);
+}
+
+.feature-area.open .plus-btn{
+    transform:translate(-50%,-50%) rotate(45deg);
+}
 .feature-btn[data-pos="chat"]{
     left:95px;
     top:0
@@ -1134,12 +1149,14 @@ async function loadChatProfile(){
 
 function toggleFeatureMenu(){
 
-    document
-        .getElementById('featureMenu')
-        .classList.toggle('open');
+    const area =
+        document.querySelector('.feature-area');
+
+    if(!area) return;
+
+    area.classList.toggle('open');
 
 }
-
 
 function openFeature(feature){
 
