@@ -91,6 +91,8 @@ async function requireServiceAdmin(req, res) {
 // ======================================================
 
 router.get('/dashboard', async (req, res) => {
+  let adminStep = 'starting';
+
   try {
 
     const auth = await requireServiceAdmin(req, res);
