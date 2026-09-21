@@ -421,18 +421,52 @@ router.get('/dashboard', async (req, res) => {
 
     });
 
-  } catch (error) {
+} catch (error) {
 
     console.error(
       '❌ Admin dashboard error:',
-      error
+      JSON.stringify(
+        error,
+        Object.getOwnPropertyNames(error),
+        2
+      )
+    );
+
+    console.error(
+      '❌ Admin dashboard error message:',
+      error?.message
+    );
+
+    console.error(
+      '❌ Admin dashboard error code:',
+      error?.code
+    );
+
+    console.error(
+      '❌ Admin dashboard error details:',
+      error?.details
+    );
+
+    console.error(
+      '❌ Admin dashboard error hint:',
+      error?.hint
+    );
+
+    console.error(
+      '❌ Admin dashboard error stack:',
+      error?.stack
     );
 
     res.status(500).json({
       error:
         'Unable to load admin dashboard',
+
       details:
-        error.message
+        error?.message ||
+        error?.details ||
+        error?.hint ||
+        error?.code ||
+        'Unknown database error'
     });
   }
 });
