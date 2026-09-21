@@ -1,889 +1,1742 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat — SamarthAI</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #f5f5f5; font-family: 'Segoe UI', sans-serif; }
-/* ===== SamarthAI Professional Top Bar ===== */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat — SamarthAI</title>
+<link rel="stylesheet" href="style.css">
 
-.samarth-topbar {
-    height: 76px;
-    width: 100%;
-    background: rgba(255,255,255,0.96);
-    display: flex;
-    align-items: center;
-    padding: 10px 18px;
-    gap: 14px;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    border-bottom: 1px solid #e9eef5;
-    box-shadow: 0 4px 18px rgba(0,51,102,0.06);
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+    width:100%;
+    height:100%;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:#f5f8fc;
+    color:#17324d
 }
 
-.menu-btn {
-    width: 44px;
-    height: 44px;
-    border: 0;
-    background: transparent;
-    color: #003366;
-    font-size: 30px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+body{overflow:hidden}
+
+/* ===== TOP BAR ===== */
+
+.samarth-topbar{
+    height:64px;
+    width:100%;
+    background:rgba(255,255,255,.97);
+    display:flex;
+    align-items:center;
+    padding:8px 14px;
+    gap:10px;
+    border-bottom:1px solid #e6edf5;
+    box-shadow:0 3px 14px rgba(0,51,102,.07);
+    position:relative;
+    z-index:20
 }
 
-.brand-box {
-    flex: 1;
-    min-width: 0;
+.menu-btn{
+    width:40px;
+    height:40px;
+    border:0;
+    background:transparent;
+    color:#003366;
+    font-size:25px;
+    cursor:pointer;
+    border-radius:50%
 }
 
-.brand-name {
-    font-size: 30px;
-    line-height: 1;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: #003b78;
+.menu-btn:active{background:#eef4fa}
+
+.brand-box{
+    flex:1;
+    min-width:0
 }
 
-.brand-name span {
-    color: #ff6b00;
+.brand-name{
+    font-size:25px;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:-.7px;
+    color:#003b78
 }
 
-.brand-tagline {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #52677d;
+.brand-name span{color:#ff6b00}
+
+.brand-tagline{
+    margin-top:3px;
+    font-size:11px;
+    color:#6b7d90
 }
 
-.top-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.top-actions{
+    display:flex;
+    gap:7px
 }
 
-.top-actions button {
-    width: 42px;
-    height: 42px;
-    border: 0;
-    border-radius: 50%;
-    background: #f3f7fc;
-    color: #003366;
-    cursor: pointer;
-    font-size: 20px;
+.top-actions button{
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:50%;
+    background:#f1f6fb;
+    color:#003366;
+    cursor:pointer;
+    font-size:18px
 }
 
-.top-actions button:hover {
-    background: #e7f0fb;
+.top-actions .profile-mini{
+    background:linear-gradient(135deg,#0099ff,#0066cc);
+    color:#fff;
+    font-weight:700;
+    font-size:15px;
+    overflow:hidden;
+    padding:0
 }
 
-.top-actions .profile-mini {
-    background: linear-gradient(135deg, #0099ff, #0066cc);
-    color: white;
-    font-weight: 700;
-    font-size: 17px;
+.profile-mini img{
+    width:100%;
+    height:100%;
+    object-fit:cover
 }
-     .welcome-hero {
-    text-align: center;
-    padding: 28px 20px 22px;
+
+/* ===== CHAT CONTAINER ===== */
+
+.chat-container{
+    height:calc(100vh - 64px);
+    width:100%;
+    max-width:920px;
+    margin:0 auto;
+    background:linear-gradient(180deg,#fff 0%,#f7fbff 100%);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden
+}
+
+/* ===== HERO ===== */
+
+.welcome-hero{
+    flex:0 0 auto;
+    text-align:center;
+    padding:18px 16px 8px;
     background:
-        radial-gradient(circle at 50% 20%, rgba(0,153,255,0.12), transparent 45%),
-        linear-gradient(180deg, #ffffff, #f7fbff);
+        radial-gradient(
+            circle at 50% 0,
+            rgba(0,153,255,.12),
+            transparent 45%
+        )
 }
 
-.hero-avatar {
-    width: 112px;
-    height: 112px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #003366, #0099ff);
-    border: 5px solid #ffffff;
-    box-shadow: 0 8px 28px rgba(0,102,204,0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    position: relative;
+.hero-avatar{
+    width:92px;
+    height:92px;
+    margin:0 auto 8px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#003366,#0099ff);
+    border:4px solid #fff;
+    box-shadow:0 7px 24px rgba(0,102,204,.23);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    cursor:pointer
 }
 
-.online-badge {
-    position: absolute;
-    right: 3px;
-    bottom: 5px;
-    width: 24px;
-    height: 24px;
-    background: #20c765;
-    border: 4px solid #ffffff;
-    border-radius: 50%;
+.hero-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover
 }
 
-.welcome-hero h1 {
-    color: #003366;
-    font-size: 2.2rem;
-    margin-bottom: 4px;
+.hero-avatar .avatar-fallback{
+    font-size:42px
 }
 
-.welcome-hero h2 {
-    color: #003366;
-    font-size: 1.65rem;
-    margin-bottom: 8px;
+.online-badge{
+    position:absolute;
+    right:1px;
+    bottom:2px;
+    width:19px;
+    height:19px;
+    background:#20c765;
+    border:3px solid #fff;
+    border-radius:50%
 }
 
-.welcome-hero h2 span {
-    color: #ff6b00;
+.welcome-hero h1{
+    font-size:18px;
+    color:#003366;
+    font-weight:700;
+    margin:0 0 4px
 }
 
-.welcome-hero p {
-    color: #607080;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    max-width: 520px;
-    margin: auto;
+.welcome-hero p{
+    font-size:13px;
+    color:#66798c;
+    margin:0
 }
 
-.hero-tagline {
-    display: inline-flex;
-    gap: 9px;
-    margin-top: 16px;
-    padding: 8px 18px;
-    border-radius: 24px;
-    background: #f5f9ff;
-    color: #003366;
-    box-shadow: 0 4px 15px rgba(0,51,102,0.07);
-    font-size: 0.95rem;
+/* ===== MESSAGES ===== */
+
+.messages{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:10px 14px 120px;
+    scroll-behavior:smooth
 }
 
-.hero-tagline b {
-    color: #ff6b00;
-}   
-        .chat-container {
-            max-width: 750px;
-            margin: 1.5rem auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.12);
-            overflow: hidden;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #003366, #0066cc);
-            color: white;
-            padding: 1.2rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .chat-header .avatar {
-            width: 48px;
-            height: 48px;
-            background: #ff6b00;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .chat-header .info h3 { font-size: 1.1rem; }
-        .chat-header .info p { 
-            font-size: 0.8rem; 
-            opacity: 0.85;
-            margin-top: 2px;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            background: #44ff88;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .messages {
-            height: 420px;
-            overflow-y: auto;
-            padding: 1.2rem;
-            background: #f9f9f9;
-            scroll-behavior: smooth;
-        }
-
-        .messages::-webkit-scrollbar { width: 6px; }
-        .messages::-webkit-scrollbar-thumb { 
-            background: #ccc; 
-            border-radius: 10px; 
-        }
-
-        .msg-wrapper {
-            display: flex;
-            margin-bottom: 1rem;
-            align-items: flex-end;
-            gap: 8px;
-        }
-
-        .msg-wrapper.user { flex-direction: row-reverse; }
-
-        .msg-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .msg-avatar.ai { background: #003366; }
-        .msg-avatar.user-av { background: #ff6b00; }
-
-        .msg {
-            padding: 0.7rem 1.1rem;
-            border-radius: 18px;
-            max-width: 75%;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        }
-
-        .user-msg {
-            background: linear-gradient(135deg, #003366, #0055aa);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .ai-msg {
-            background: white;
-            color: #222;
-            border: 1px solid #e8e8e8;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .msg-time {
-            font-size: 0.7rem;
-            color: #aaa;
-            margin-top: 3px;
-            text-align: right;
-        }
-
-        .typing-indicator {
-            display: none;
-            padding: 0.7rem 1.1rem;
-            background: white;
-            border: 1px solid #e8e8e8;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
-            width: fit-content;
-        }
-
-        .typing-indicator span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: bounce 1.2s infinite;
-        }
-
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-
-        .input-area {
-            display: flex;
-            gap: 0.6rem;
-            padding: 1rem 1.2rem;
-            background: white;
-            border-top: 1px solid #eee;
-            align-items: center;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 0.75rem 1.2rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 30px;
-            outline: none;
-            font-size: 0.95rem;
-            transition: border 0.3s;
-        }
-
-        .input-area input:focus { border-color: #003366; }
-
-        .input-area button {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #ff6b00, #ff8c00);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.95rem;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-
-        .input-area button:hover { transform: scale(1.05); }
-        .input-area button:disabled { opacity: 0.6; cursor: not-allowed; }
-#micBtn {
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    border-radius: 50%;
-    background: #003366;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    flex-shrink: 0;
-    transition: transform 0.2s, background 0.2s;
+.messages:empty{
+    padding-bottom:10px
 }
 
-#micBtn:hover {
-    transform: scale(1.05);
+.messages::-webkit-scrollbar{
+    width:5px
 }
 
-#micBtn.listening {
-    background: #d32f2f;
-    animation: micPulse 1.2s infinite;
+.messages::-webkit-scrollbar-thumb{
+    background:#c8d3df;
+    border-radius:10px
 }
 
-@keyframes micPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-}
-        .quick-questions {
-            padding: 0.8rem 1.2rem;
-            background: white;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .quick-btn {
-            padding: 0.4rem 0.9rem;
-            background: #f0f4ff;
-            border: 1px solid #c0d0ff;
-            border-radius: 20px;
-            font-size: 0.82rem;
-            cursor: pointer;
-            color: #003366;
-            transition: background 0.2s;
-        }
-
-        .quick-btn:hover { background: #003366; color: white; }
-
-        .welcome-msg {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: #888;
-        }
-
-        .welcome-msg .namaste { font-size: 2.5rem; margin-bottom: 0.5rem; }
-        .welcome-msg h3 { color: #003366; margin-bottom: 0.3rem; }
-        .welcome-msg p { font-size: 0.9rem; }
-    /* ===== CHAT SCREEN FIT FIX ===== */
-
-html,
-body {
-    width: 100%;
-    min-height: 100%;
+.msg-wrapper{
+    display:flex;
+    margin:0 0 12px;
+    align-items:flex-end;
+    gap:7px
 }
 
-@media (max-width: 768px) {
+.msg-wrapper.user{
+    justify-content:flex-end
+}
 
-    body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
+.msg{
+    padding:9px 12px;
+    border-radius:16px;
+    max-width:min(78%,620px);
+    line-height:1.45;
+    font-size:14px;
+    white-space:pre-wrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.05)
+}
+
+.user-msg{
+    background:linear-gradient(135deg,#003366,#0055aa);
+    color:#fff;
+    border-bottom-right-radius:4px
+}
+
+.ai-msg{
+    background:#fff;
+    color:#1f2933;
+    border:1px solid #e3eaf1;
+    border-bottom-left-radius:4px
+}
+
+.msg-time{
+    font-size:10px;
+    color:#9aa8b5;
+    margin-top:3px;
+    text-align:right
+}
+
+/* ===== TYPING ===== */
+
+.typing-indicator{
+    display:none;
+    position:absolute;
+    left:14px;
+    bottom:82px;
+    padding:8px 11px;
+    background:#fff;
+    border:1px solid #e3eaf1;
+    border-radius:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.06);
+    z-index:5
+}
+
+.typing-indicator span{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    background:#8c9aaa;
+    border-radius:50%;
+    margin:0 2px;
+    animation:bounce 1.2s infinite
+}
+
+.typing-indicator span:nth-child(2){
+    animation-delay:.2s
+}
+
+.typing-indicator span:nth-child(3){
+    animation-delay:.4s
+}
+
+@keyframes bounce{
+    0%,100%{
+        transform:translateY(0);
+        opacity:.55
     }
 
-    .chat-container {
-        width: 100%;
-        max-width: 100%;
-        height: calc(100vh - 76px);
-        min-height: 0;
-        margin: 0;
-        border-radius: 0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+    50%{
+        transform:translateY(-5px);
+        opacity:1
+    }
+}
+
+/* ===== FEATURE AREA ===== */
+
+.assistant-label{
+    font-size:14px;
+    font-weight:600;
+    color:#003366;
+    margin:4px 0 12px
+}
+
+.feature-area{
+    flex:0 0 210px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    padding-bottom:6px
+}
+
+.feature-orbit{
+    width:240px;
+    height:190px;
+    position:relative
+}
+
+/* ===== PLUS BUTTON ===== */
+
+.plus-btn{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:66px;
+    height:66px;
+    border:0;
+    border-radius:50%;
+    background:linear-gradient(135deg,#ff6b00,#ff8c00);
+    color:#fff;
+    font-size:40px;
+    line-height:1;
+    box-shadow:0 10px 24px rgba(255,107,0,.3);
+    cursor:pointer;
+    z-index:4
+}
+
+.plus-btn:active{
+    transform:translate(-50%,-50%) scale(.96)
+}
+
+/* ===== FEATURE BUTTONS ===== */
+
+.feature-btn{
+    position:absolute;
+    width:50px;
+    height:50px;
+    border:0;
+    border-radius:50%;
+    background:#fff;
+    color:#003366;
+    box-shadow:0 5px 16px rgba(0,51,102,.12);
+    border:1px solid #e2eaf2;
+    cursor:pointer;
+    font-size:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.18s
+}
+
+.feature-btn span{
+    position:absolute;
+    top:54px;
+    white-space:nowrap;
+    font-size:10px;
+    color:#52677d;
+    font-weight:600
+}
+
+.feature-btn:active{
+    transform:scale(.94)
+}
+
+.feature-btn[data-pos="chat"]{
+    left:95px;
+    top:0
+}
+
+.feature-btn[data-pos="family"]{
+    left:24px;
+    top:28px
+}
+
+.feature-btn[data-pos="sos"]{
+    left:166px;
+    top:28px
+}
+
+.feature-btn[data-pos="gps"]{
+    left:0;
+    top:91px
+}
+
+.feature-btn[data-pos="scanner"]{
+    right:0;
+    top:91px
+}
+
+.feature-btn[data-pos="services"]{
+    left:38px;
+    bottom:0
+}
+
+.feature-btn[data-pos="profile"]{
+    right:38px;
+    bottom:0
+}
+
+/* ===== PLUS MENU ===== */
+
+.feature-menu{
+    display:none;
+    position:absolute;
+    left:50%;
+    bottom:72px;
+    transform:translateX(-50%);
+    width:min(92%,370px);
+    background:rgba(255,255,255,.98);
+    border:1px solid #e0e8f0;
+    border-radius:18px;
+    padding:10px;
+    box-shadow:0 14px 35px rgba(0,51,102,.18);
+    z-index:10;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px
+}
+
+.feature-menu.open{
+    display:grid
+}
+
+.menu-feature{
+    border:0;
+    background:#f5f8fc;
+    border-radius:13px;
+    padding:9px 4px;
+    color:#003366;
+    font-size:11px;
+    cursor:pointer
+}
+
+.menu-feature b{
+    display:block;
+    font-size:20px;
+    margin-bottom:4px
+}
+
+.menu-feature:active{
+    transform:scale(.97)
+}
+
+/* ===== INPUT ===== */
+
+.input-area{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    padding:9px 12px;
+    background:rgba(255,255,255,.97);
+    border-top:1px solid #e5ebf1;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    z-index:12
+}
+
+.chat-input-box{
+    flex:1;
+    min-width:0;
+    height:46px;
+    border:1px solid #dbe4ed;
+    border-radius:25px;
+    background:#f7f9fb;
+    display:flex;
+    align-items:center;
+    padding:0 5px
+}
+
+.chat-input-box input{
+    flex:1;
+    min-width:0;
+    border:0;
+    outline:0;
+    background:transparent;
+    padding:0 9px;
+    font-size:14px;
+    color:#203040
+}
+
+.attach-btn,
+.send-btn,
+.mic-btn{
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    font-size:18px
+}
+
+.attach-btn{
+    background:transparent;
+    color:#60758a
+}
+
+.send-btn{
+    background:#ff6b00;
+    color:#fff
+}
+
+.mic-btn{
+    background:#003366;
+    color:#fff
+}
+
+.mic-btn.listening{
+    background:#d32f2f;
+    animation:micPulse 1.2s infinite
+}
+
+@keyframes micPulse{
+    0%,100%{
+        transform:scale(1)
     }
 
-    .messages {
-        flex: 1;
-        height: auto;
-        min-height: 0;
-        overflow-y: auto;
+    50%{
+        transform:scale(1.08)
+    }
+}
+
+footer{
+    display:none
+}
+
+/* ===== MOBILE ===== */
+
+@media(max-width:600px){
+
+    .samarth-topbar{
+        height:58px;
+        padding:7px 10px
     }
 
-    .quick-questions {
-        flex-shrink: 0;
-        padding: 8px 12px;
+    .brand-name{
+        font-size:22px
     }
 
-    .input-area {
-        flex-shrink: 0;
-        padding: 10px 12px;
+    .brand-tagline{
+        font-size:9px
     }
 
-    .input-area input {
-        min-width: 0;
+    .top-actions button{
+        width:34px;
+        height:34px
     }
 
-    footer {
-        display: none;
+    .menu-btn{
+        width:36px;
+        height:36px
     }
-}    
-    </style>
+
+    .chat-container{
+        height:calc(100vh - 58px)
+    }
+
+    .welcome-hero{
+        padding:10px 12px 4px
+    }
+
+    .hero-avatar{
+        width:70px;
+        height:70px;
+        margin-bottom:5px
+    }
+
+    .hero-avatar .avatar-fallback{
+        font-size:32px
+    }
+
+    .online-badge{
+        width:16px;
+        height:16px;
+        border-width:2px
+    }
+
+    .welcome-hero h1{
+        font-size:15px
+    }
+
+    .welcome-hero p{
+        font-size:11px
+    }
+
+    .assistant-label{
+        font-size:12px;
+        margin:2px 0 4px
+    }
+
+    .feature-area{
+        flex-basis:165px
+    }
+
+    .feature-orbit{
+        width:210px;
+        height:155px
+    }
+
+    .plus-btn{
+        width:58px;
+        height:58px;
+        font-size:35px
+    }
+
+    .feature-btn{
+        width:43px;
+        height:43px;
+        font-size:17px
+    }
+
+    .feature-btn span{
+        top:46px;
+        font-size:9px
+    }
+
+    .feature-btn[data-pos="chat"]{
+        left:84px
+    }
+
+    .feature-btn[data-pos="family"]{
+        left:20px;
+        top:24px
+    }
+
+    .feature-btn[data-pos="sos"]{
+        left:147px;
+        top:24px
+    }
+
+    .feature-btn[data-pos="gps"]{
+        left:0;
+        top:73px
+    }
+
+    .feature-btn[data-pos="scanner"]{
+        right:0;
+        top:73px
+    }
+
+    .feature-btn[data-pos="services"]{
+        left:34px
+    }
+
+    .feature-btn[data-pos="profile"]{
+        right:34px
+    }
+
+    .feature-menu{
+        bottom:65px;
+        grid-template-columns:repeat(3,1fr)
+    }
+
+    .messages{
+        padding:6px 10px 110px
+    }
+
+    .msg{
+        max-width:84%;
+        font-size:13px
+    }
+
+    .input-area{
+        padding:7px 8px
+    }
+
+    .chat-input-box{
+        height:43px
+    }
+
+    .attach-btn,
+    .send-btn,
+    .mic-btn{
+        width:35px;
+        height:35px;
+        font-size:16px
+    }
+}
+</style>
 </head>
+
 <body>
 
 <header>
- <div class="samarth-topbar">
-    <button class="menu-btn" type="button" onclick="history.back()">☰</button>
+    <div class="samarth-topbar">
 
-    <div class="brand-box">
-        <div class="brand-name">Samarth<span>AI</span></div>
-        <div class="brand-tagline">Har Zaroorat Ka Sathi</div>
-    </div>
+        <button
+            class="menu-btn"
+            type="button"
+            onclick="history.back()"
+            aria-label="Back">
+            ☰
+        </button>
 
-    <div class="top-actions">
-        <button type="button" title="Search">⌕</button>
-        <button type="button" title="Notifications">🔔</button>
-        <button type="button" class="profile-mini" title="Profile"
-                onclick="location.href='profile.html'">S</button>
+        <div class="brand-box">
+            <div class="brand-name">
+                Samarth<span>AI</span>
+            </div>
+
+            <div class="brand-tagline">
+                Har Zaroorat Ka Sathi
+            </div>
+        </div>
+
+        <div class="top-actions">
+
+            <button
+                type="button"
+                title="Search"
+                onclick="document.getElementById('chatInput').focus()">
+                ⌕
+            </button>
+
+            <button
+                type="button"
+                title="Notifications">
+                🔔
+            </button>
+
+            <button
+                type="button"
+                class="profile-mini"
+                title="Profile"
+                onclick="location.href='profile.html'">
+                S
+            </button>
+
+        </div>
     </div>
-</div>
- </header>   
+</header>
+
+
 <div class="chat-container">
- <div class="welcome-hero">
 
-    <div class="hero-avatar">
-        🤖
-        <span class="online-badge"></span>
+    <!-- PROFILE / ASSISTANT -->
+    <div class="welcome-hero">
+
+        <div
+            class="hero-avatar"
+            id="heroAvatar"
+            onclick="location.href='profile.html'"
+            title="Profile">
+
+            <span class="avatar-fallback">
+                👤
+            </span>
+
+            <span class="online-badge"></span>
+
+        </div>
+
+        <h1>
+            Aapka parasnol assistant
+        </h1>
+
+        <p>
+            Jo bhi poochna ho, yahin se baat kijiye.
+        </p>
+
     </div>
 
-    <h1>Namaste!</h1>
 
-    <h2>Main hoon Samarth<span>AI</span></h2>
+    <!-- CHAT MESSAGES -->
 
-    <p>
-        Aapka apna AI sathi — koi bhi sawaal puchhiye,
-        main hamesha yahan hoon!
-    </p>
+    <div
+        class="messages"
+        id="chatMessages">
+    </div>
 
-    <div class="hero-tagline">
-        <span>Sochiye</span>
-        <b>•</b>
-        <span>Puchhiye</span>
-        <b>•</b>
-        <span>Kariye</span>
+
+    <!-- TYPING -->
+
+    <div
+        class="typing-indicator"
+        id="typingIndicator">
+
+        <span></span>
+        <span></span>
+        <span></span>
+
+    </div>
+
+
+    <!-- FEATURES -->
+
+    <div class="feature-area">
+
+        <div>
+
+            <div class="assistant-label">
+                Features
+            </div>
+
+            <div class="feature-orbit">
+
+                <button
+                    class="feature-btn"
+                    data-pos="chat"
+                    onclick="openFeature('chat')"
+                    title="Chat">
+                    💬
+                    <span>Chat</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="family"
+                    onclick="openFeature('family')"
+                    title="Family Security">
+                    👨‍👩‍👧
+                    <span>Family</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="sos"
+                    onclick="openFeature('sos')"
+                    title="SOS">
+                    🆘
+                    <span>SOS</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="gps"
+                    onclick="openFeature('gps')"
+                    title="GPS">
+                    📍
+                    <span>GPS</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="scanner"
+                    onclick="openFeature('scanner')"
+                    title="Scanner">
+                    📷
+                    <span>Scanner</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="services"
+                    onclick="openFeature('services')"
+                    title="Services">
+                    🛠️
+                    <span>Services</span>
+                </button>
+
+                <button
+                    class="feature-btn"
+                    data-pos="profile"
+                    onclick="openFeature('profile')"
+                    title="Profile">
+                    👤
+                    <span>Profile</span>
+                </button>
+
+                <button
+                    class="plus-btn"
+                    id="plusBtn"
+                    type="button"
+                    onclick="toggleFeatureMenu()"
+                    aria-label="Features">
+                    +
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PLUS MENU -->
+
+    <div
+        class="feature-menu"
+        id="featureMenu">
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('chat')">
+            <b>💬</b>
+            Chat
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('family')">
+            <b>👨‍👩‍👧</b>
+            Family
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('sos')">
+            <b>🆘</b>
+            SOS
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('gps')">
+            <b>📍</b>
+            GPS
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('scanner')">
+            <b>📷</b>
+            Scanner
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('services')">
+            <b>🛠️</b>
+            Services
+        </button>
+
+        <button
+            class="menu-feature"
+            onclick="openFeature('profile')">
+            <b>👤</b>
+            Profile
+        </button>
+
+    </div>
+
+
+    <!-- CHAT INPUT -->
+
+    <div class="input-area">
+
+        <div class="chat-input-box">
+
+            <button
+                class="attach-btn"
+                type="button"
+                title="Attachment"
+                onclick="document.getElementById('fileInput').click()">
+                ＋
+            </button>
+
+            <input
+                type="file"
+                id="fileInput"
+                hidden>
+
+            <input
+                type="text"
+                id="chatInput"
+                placeholder="Kuch bhi puchiye..."
+                autocomplete="off">
+
+            <button
+                class="mic-btn"
+                id="micBtn"
+                type="button"
+                onclick="startVoiceChat()"
+                title="Bolkar baat karein">
+                🎙️
+            </button>
+
+            <button
+                class="send-btn"
+                id="sendBtn"
+                type="button"
+                onclick="sendMessage()"
+                title="Send">
+                ➤
+            </button>
+
+        </div>
+
     </div>
 
 </div>
-    <div class="messages" id="chatMessages">
-       
-    </div>
 
-    <div class="typing-indicator" id="typingIndicator">
-        <span></span><span></span><span></span>
-    </div>
 
-    <div class="quick-questions">
-        <button class="quick-btn" onclick="getLiveWeather()">🌤️ Mausam</button>
-        <button class="quick-btn" onclick="quickAsk('Koi achhi kahani sunao')">📖 Kahani</button>
-        <button class="quick-btn" onclick="quickAsk('Koi motivational baat batao')">💪 Motivation</button>
-        <button class="quick-btn" onclick="quickAsk('Aaj ka news kya hai?')">📰 News</button>
-        <button class="quick-btn" onclick="quickAsk('Koi joke sunao')">😄 Joke</button>
-    </div>
+<script src="app.js"></script>
 
-<div class="input-area">
-    <input type="text" id="chatInput" 
-           placeholder="Kuch bhi puchiye... main hoon na! 😊" />
-
-    <button id="micBtn" type="button"
-            onclick="startVoiceChat()"
-            title="Bolkar baat karein">🎙️</button>
-
-    <button id="sendBtn" onclick="sendMessage()">Bhejo ➤</button>
-</div>    
-
-</div>
-
-<footer>
-    <p>&copy; 2026 SamarthAI — Har Zaroorat Ka Sathi</p>
-</footer>
-
-<script src="js/app.js"></script>
 <script>
-    const CHAT_API = 'https://samarthai-backend.onrender.com/api/chat';
+
+const CHAT_API =
+    'https://samarthai-backend.onrender.com/api/chat';
+
+const PROFILE_API =
+    'https://samarthai-backend.onrender.com/api/auth/profile';
+
 let recognition = null;
-let voiceReplyEnabled = false;
 let isListening = false;
+let voiceReplyEnabled = false;
 
-function setupVoiceRecognition() {
-    const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) return false;
+/* ===== LOAD PROFILE ===== */
 
-    recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+async function loadChatProfile(){
 
-    recognition.onstart = () => {
-        isListening = true;
+    const token =
+        localStorage.getItem('token');
 
-        const micBtn = document.getElementById('micBtn');
-        if (micBtn) {
-            micBtn.classList.add('listening');
-            micBtn.textContent = '🔴';
-        }
+    if(!token) return;
 
-        const input = document.getElementById('chatInput');
-        if (input) input.placeholder = 'Sun raha hoon... boliye 🎙️';
-    };
+    try{
 
-    recognition.onresult = (event) => {
-        const transcript =
-            event.results?.[0]?.[0]?.transcript?.trim();
-
-        if (!transcript) return;
-
-        const input = document.getElementById('chatInput');
-        if (!input) return;
-
-        input.value = transcript;
-        voiceReplyEnabled = true;
-
-        sendMessage();
-    };
-
-    recognition.onerror = (event) => {
-        console.warn('[VOICE]', event.error);
-
-        if (event.error === 'not-allowed' ||
-            event.error === 'service-not-allowed') {
-            addMessage(
-                'Microphone permission nahi mili. Browser settings me microphone permission allow karein.',
-                false
+        const res =
+            await fetch(
+                PROFILE_API,
+                {
+                    headers:{
+                        Authorization:
+                            'Bearer ' + token
+                    }
+                }
             );
-        } else if (event.error !== 'no-speech' &&
-                   event.error !== 'aborted') {
-            addMessage(
-                'Awaaz samajhne me dikkat hui. Dobara bolkar try karein.',
-                false
+
+        if(!res.ok) return;
+
+        const data =
+            await res.json();
+
+        const p =
+            data.user ||
+            data.profile ||
+            data;
+
+        const photo =
+            p.profile_photo_url ||
+            p.profilePhotoUrl;
+
+        const avatar =
+            document.getElementById(
+                'heroAvatar'
             );
+
+        const mini =
+            document.querySelector(
+                '.profile-mini'
+            );
+
+        if(photo){
+
+            const safePhoto =
+                photo.replace(
+                    /"/g,
+                    '&quot;'
+                );
+
+            avatar.innerHTML =
+                '<img src="' +
+                safePhoto +
+                '" alt="Profile">' +
+                '<span class="online-badge"></span>';
+
+            mini.innerHTML =
+                '<img src="' +
+                safePhoto +
+                '" alt="Profile">';
+
+        }else{
+
+            const name =
+                (
+                    p.name ||
+                    p.full_name ||
+                    p.email ||
+                    'S'
+                ).trim();
+
+            const initial =
+                (
+                    name.charAt(0) ||
+                    'S'
+                ).toUpperCase();
+
+            mini.textContent =
+                initial;
         }
-    };
 
-    recognition.onend = () => {
-        isListening = false;
+    }catch(e){
 
-        const micBtn = document.getElementById('micBtn');
-        if (micBtn) {
-            micBtn.classList.remove('listening');
-            micBtn.textContent = '🎙️';
-        }
+        console.warn(
+            '[PROFILE]',
+            e
+        );
 
-        const input = document.getElementById('chatInput');
-        if (input) {
-            input.placeholder = 'Kuch bhi puchiye... main hoon na! 😊';
-        }
-    };
-
-    return true;
-}
-
-function startVoiceChat() {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        addMessage('Pehle login kijiye, phir voice chat use karein.', false);
-        return;
     }
 
-    if (!recognition && !setupVoiceRecognition()) {
+}
+
+
+/* ===== FEATURE MENU ===== */
+
+function toggleFeatureMenu(){
+
+    document
+        .getElementById('featureMenu')
+        .classList.toggle('open');
+
+}
+
+
+function openFeature(feature){
+
+    document
+        .getElementById('featureMenu')
+        .classList.remove('open');
+
+    const routes = {
+
+        family: 'family.html',
+
+        sos: 'sos.html',
+
+        gps: 'gps.html',
+
+        scanner: 'camera.html',
+
+        services: 'services.html',
+
+        profile: 'profile.html'
+
+    };
+
+
+    if(feature === 'chat'){
+
+        document
+            .getElementById('chatInput')
+            .focus();
+
+        return;
+
+    }
+
+
+    if(routes[feature]){
+
+        location.href =
+            routes[feature];
+
+    }
+
+}
+/* ===== CLOSE MENU OUTSIDE ===== */
+
+document.addEventListener(
+    'click',
+    function(e){
+
+        const menu =
+            document.getElementById(
+                'featureMenu'
+            );
+
+        const plus =
+            document.getElementById(
+                'plusBtn'
+            );
+
+        if(
+            menu.classList.contains('open') &&
+            !menu.contains(e.target) &&
+            e.target !== plus
+        ){
+
+            menu.classList.remove('open');
+
+        }
+
+    }
+);
+
+
+/* ===== TIME ===== */
+
+function getTime(){
+
+    return new Date()
+        .toLocaleTimeString(
+            'hi-IN',
+            {
+                hour:'2-digit',
+                minute:'2-digit'
+            }
+        );
+
+}
+
+
+/* ===== ADD MESSAGE ===== */
+
+function addMessage(
+    text,
+    isUser
+){
+
+    const box =
+        document.getElementById(
+            'chatMessages'
+        );
+
+    const wrap =
+        document.createElement('div');
+
+    wrap.className =
+        'msg-wrapper ' +
+        (isUser ? 'user' : '');
+
+    const msg =
+        document.createElement('div');
+
+    msg.className =
+        'msg ' +
+        (isUser
+            ? 'user-msg'
+            : 'ai-msg'
+        );
+
+    msg.textContent =
+        text;
+
+    const time =
+        document.createElement('div');
+
+    time.className =
+        'msg-time';
+
+    time.textContent =
+        getTime();
+
+    msg.appendChild(time);
+
+    wrap.appendChild(msg);
+
+    box.appendChild(wrap);
+
+    box.scrollTop =
+        box.scrollHeight;
+
+}
+
+
+/* ===== TYPING ===== */
+
+function showTyping(show){
+
+    document
+        .getElementById(
+            'typingIndicator'
+        )
+        .style.display =
+            show
+                ? 'block'
+                : 'none';
+
+}
+
+
+/* ===== SEND MESSAGE ===== */
+
+async function sendMessage(){
+
+    const input =
+        document.getElementById(
+            'chatInput'
+        );
+
+    const btn =
+        document.getElementById(
+            'sendBtn'
+        );
+
+    const message =
+        input.value.trim();
+
+    if(!message) return;
+
+    addMessage(
+        message,
+        true
+    );
+
+    input.value =
+        '';
+
+    btn.disabled =
+        true;
+
+    showTyping(
+        true
+    );
+
+    try{
+
+        const token =
+            localStorage.getItem(
+                'token'
+            );
+
+        const res =
+            await fetch(
+                CHAT_API,
+                {
+                    method:'POST',
+
+                    headers:{
+                        'Content-Type':
+                            'application/json',
+
+                        'Authorization':
+                            'Bearer ' + token
+                    },
+
+                    body:
+                        JSON.stringify({
+                            message
+                        })
+                }
+            );
+
+        const data =
+            await res.json();
+
+        showTyping(
+            false
+        );
+
+        const reply =
+            data.response ||
+            'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
+
+        addMessage(
+            reply,
+            false
+        );
+
+        speakAIResponse(
+            reply
+        );
+
+    }catch(e){
+
+        showTyping(
+            false
+        );
+
+        addMessage(
+            'Arre! Kuch gadbad ho gayi. Thodi der baad try karein. 🙏',
+            false
+        );
+
+    }
+
+    btn.disabled =
+        false;
+
+    input.focus();
+
+}
+
+
+/* ===== VOICE RECOGNITION ===== */
+
+function setupVoiceRecognition(){
+
+    const SR =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if(!SR) return false;
+
+    recognition =
+        new SR();
+
+    recognition.lang =
+        'hi-IN';
+
+    recognition.continuous =
+        false;
+
+    recognition.interimResults =
+        false;
+
+    recognition.maxAlternatives =
+        1;
+
+
+    recognition.onstart =
+        () => {
+
+            isListening =
+                true;
+
+            const b =
+                document.getElementById(
+                    'micBtn'
+                );
+
+            b.classList.add(
+                'listening'
+            );
+
+            b.textContent =
+                '🔴';
+
+            document.getElementById(
+                'chatInput'
+            ).placeholder =
+                'Sun raha hoon... boliye 🎙️';
+
+        };
+
+
+    recognition.onresult =
+        e => {
+
+            const t =
+                e.results?.[0]?.[0]
+                    ?.transcript
+                    ?.trim();
+
+            if(t){
+
+                document.getElementById(
+                    'chatInput'
+                ).value =
+                    t;
+
+                voiceReplyEnabled =
+                    true;
+
+                sendMessage();
+
+            }
+
+        };
+
+
+    recognition.onerror =
+        e => {
+
+            console.warn(
+                '[VOICE]',
+                e.error
+            );
+
+            if(
+                e.error ===
+                    'not-allowed' ||
+                e.error ===
+                    'service-not-allowed'
+            ){
+
+                addMessage(
+                    'Microphone permission nahi mili. Browser settings me microphone permission allow karein.',
+                    false
+                );
+
+            }
+
+        };
+
+
+    recognition.onend =
+        () => {
+
+            isListening =
+                false;
+
+            const b =
+                document.getElementById(
+                    'micBtn'
+                );
+
+            b.classList.remove(
+                'listening'
+            );
+
+            b.textContent =
+                '🎙️';
+
+            document.getElementById(
+                'chatInput'
+            ).placeholder =
+                'Kuch bhi puchiye...';
+
+        };
+
+
+    return true;
+
+}
+
+
+/* ===== START VOICE ===== */
+
+function startVoiceChat(){
+
+    if(
+        !localStorage.getItem(
+            'token'
+        )
+    ){
+
+        addMessage(
+            'Pehle login kijiye, phir voice chat use karein.',
+            false
+        );
+
+        return;
+
+    }
+
+
+    if(
+        !recognition &&
+        !setupVoiceRecognition()
+    ){
+
         addMessage(
             'Is browser me voice input available nahi hai. Text se chat kar sakte hain.',
             false
         );
+
         return;
+
     }
 
-    if (isListening) {
+
+    if(isListening){
+
         recognition.stop();
+
         return;
+
     }
 
-    // Purani speech ko queue me jama hone se roko.
-    if ('speechSynthesis' in window) {
+
+    if(
+        'speechSynthesis' in
+        window
+    ){
+
         window.speechSynthesis.cancel();
+
     }
 
-    try {
+
+    try{
+
         recognition.start();
-    } catch (error) {
-        console.warn('[VOICE START]', error);
+
+    }catch(e){
+
+        console.warn(
+            '[VOICE START]',
+            e
+        );
+
     }
+
 }
 
-function speakAIResponse(text) {
-    if (!voiceReplyEnabled) return;
-    if (!('speechSynthesis' in window)) return;
-    if (!text || !text.trim()) return;
+
+/* ===== AI VOICE REPLY ===== */
+
+function speakAIResponse(text){
+
+    if(
+        !voiceReplyEnabled ||
+        !('speechSynthesis' in window) ||
+        !text?.trim()
+    ){
+
+        return;
+
+    }
+
 
     window.speechSynthesis.cancel();
 
-    const cleanText = text
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/[*_#`]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
 
-    if (!cleanText) return;
+    const clean =
+        text
+            .replace(
+                /```[\s\S]*?```/g,
+                ' '
+            )
+            .replace(
+                /[*_#`]/g,
+                ''
+            )
+            .replace(
+                /\s+/g,
+                ' '
+            )
+            .trim();
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
 
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.92;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    if(!clean) return;
 
-    const voices = window.speechSynthesis.getVoices();
 
-    const hindiVoice =
-        voices.find(v => v.lang === 'hi-IN') ||
-        voices.find(v => v.lang?.toLowerCase().startsWith('hi'));
+    const u =
+        new SpeechSynthesisUtterance(
+            clean
+        );
 
-    if (hindiVoice) {
-        utterance.voice = hindiVoice;
+    u.lang =
+        'hi-IN';
+
+    u.rate =
+        .92;
+
+    u.pitch =
+        1;
+
+    u.volume =
+        1;
+
+
+    const voices =
+        window
+            .speechSynthesis
+            .getVoices();
+
+
+    const hv =
+        voices.find(
+            v =>
+                v.lang ===
+                'hi-IN'
+        ) ||
+        voices.find(
+            v =>
+                v.lang
+                    ?.toLowerCase()
+                    .startsWith('hi')
+        );
+
+
+    if(hv){
+
+        u.voice =
+            hv;
+
     }
 
-    utterance.onend = () => {
-        voiceReplyEnabled = false;
-    };
 
-    utterance.onerror = () => {
-        voiceReplyEnabled = false;
-    };
+    u.onend =
+        () =>
+            voiceReplyEnabled =
+                false;
 
-    window.speechSynthesis.speak(utterance);
+    u.onerror =
+        () =>
+            voiceReplyEnabled =
+                false;
+
+
+    window
+        .speechSynthesis
+        .speak(u);
+
 }
 
-if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-    };
-}
-    function getTime() {
-        return new Date().toLocaleTimeString('hi-IN', { 
-            hour: '2-digit', minute: '2-digit' 
-        });
-    }
 
-    function addMessage(text, isUser) {
-        const welcomeMsg = document.getElementById('welcomeMsg');
-        if (welcomeMsg) welcomeMsg.remove();
+/* ===== ENTER SEND ===== */
 
-        const chatBox = document.getElementById('chatMessages');
-        const wrapper = document.createElement('div');
-        wrapper.className = 'msg-wrapper ' + (isUser ? 'user' : '');
+document
+    .getElementById(
+        'chatInput'
+    )
+    .addEventListener(
+        'keypress',
+        e => {
 
-        const avatar = document.createElement('div');
-        avatar.className = 'msg-avatar ' + (isUser ? 'user-av' : 'ai');
-        avatar.textContent = isUser ? '👤' : '🤖';
+            if(
+                e.key ===
+                'Enter'
+            ){
 
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'msg ' + (isUser ? 'user-msg' : 'ai-msg');
-        msgDiv.textContent = text;
+                sendMessage();
 
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'msg-time';
-        timeDiv.textContent = getTime();
-        msgDiv.appendChild(timeDiv);
-
-        wrapper.appendChild(avatar);
-        wrapper.appendChild(msgDiv);
-        chatBox.appendChild(wrapper);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function showTyping(show) {
-        document.getElementById('typingIndicator').style.display = 
-            show ? 'block' : 'none';
-    }
-
-    async function sendMessage() {
-        const input = document.getElementById('chatInput');
-        const btn = document.getElementById('sendBtn');
-        const message = input.value.trim();
-        if (!message) return;
-
-        addMessage(message, true);
-        input.value = '';
-        btn.disabled = true;
-        showTyping(true);
-
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(CHAT_API, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ message })
-            });
-            const data = await res.json();
-            showTyping(false);
-            const reply = data.response || 
-                'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
-            addMessage(reply, false);
-           speakAIResponse(reply); 
-        } catch (error) {
-            showTyping(false);
-            addMessage('Arre! Kuch gadbad ho gayi. Thodi der baad try karein. 🙏', false);
-        }
-
-        btn.disabled = false;
-        input.focus();
-    }
-async function getLiveWeather() {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        addMessage('Pehle login kijiye.', false);
-        return;
-    }
-
-    if (!navigator.geolocation) {
-        addMessage('Aapke device me GPS location available nahi hai.', false);
-        return;
-    }
-
-    addMessage('📍 Aapki location lekar live mausam check kar raha hoon...', false);
-
-    navigator.geolocation.getCurrentPosition(
-        async (position) => {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
-            try {
-                const url =
-                    'https://samarthai-backend.onrender.com/api/weather' +
-                    `?latitude=${encodeURIComponent(latitude)}` +
-                    `&longitude=${encodeURIComponent(longitude)}` +
-                    '&type=current';
-
-                const res = await fetch(url, {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-
-                const result = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(
-                        result.error || 'Weather request failed'
-                    );
-                }
-
-                const weather = result.data;
-
-                const temperature =
-                    weather?.temperature?.degrees ??
-                    weather?.temperature ??
-                    '--';
-
-                const feelsLike =
-                    weather?.feelsLikeTemperature?.degrees ??
-                    '--';
-
-                const description =
-                    weather?.weatherCondition?.description?.text ||
-                    weather?.weatherCondition?.description ||
-                    'मौसम की जानकारी उपलब्ध है';
-
-                const humidity =
-                    weather?.relativeHumidity ??
-                    '--';
-
-                const wind =
-                    weather?.wind?.speed?.value ??
-                    '--';
-
-                const reply =
-                    `🌤️ Live Mausam\n\n` +
-                    `🌡️ Temperature: ${temperature}°C\n` +
-                    `🤗 Feels like: ${feelsLike}°C\n` +
-                    `☁️ Condition: ${description}\n` +
-                    `💧 Humidity: ${humidity}%\n` +
-                    `💨 Wind: ${wind} km/h`;
-
-                addMessage(reply, false);
-
-            } catch (error) {
-                console.error('[WEATHER]', error);
-                addMessage(
-                    'Live mausam ki information abhi nahi mil pa rahi. Dobara try karein. 🙏',
-                    false
-                );
             }
-        },
 
-        (error) => {
-            console.warn('[GPS]', error);
-
-            if (error.code === 1) {
-                addMessage(
-                    '📍 Location permission allow kijiye, tab SamarthAI live mausam bata payega.',
-                    false
-                );
-            } else {
-                addMessage(
-                    '📍 Location nahi mil pa rahi. GPS on karke dobara try karein.',
-                    false
-                );
-            }
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 300000
         }
     );
-}
-    function quickAsk(question) {
-        document.getElementById('chatInput').value = question;
-        sendMessage();
-    }
 
-    document.getElementById('chatInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
+
+/* ===== FILE SELECT ===== */
+
+document
+    .getElementById(
+        'fileInput'
+    )
+    .addEventListener(
+        'change',
+        e => {
+
+            const f =
+                e.target.files?.[0];
+
+            if(f){
+
+                addMessage(
+                    '📎 ' +
+                    f.name +
+                    ' select hua hai. Scanner se document process karna ho to Scanner open karein.',
+                    false
+                );
+
+            }
+
+            e.target.value =
+                '';
+
+        }
+    );
+
+
+/* ===== INIT ===== */
+
+loadChatProfile();
+
 </script>
 
 </body>
-</html>
+</html>    
