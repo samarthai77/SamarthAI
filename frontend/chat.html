@@ -727,6 +727,56 @@ footer{
     transform:scale(.90) translateY(-35px);
 }   
 
+}  
+ /* ===== MOBILE CHAT KEYBOARD FIX ===== */
+@media(max-width:600px){
+
+    html,
+    body{
+        height:100%;
+        overflow:hidden;
+    }
+
+    .chat-container{
+        height:100dvh !important;
+        min-height:0 !important;
+        overflow:hidden !important;
+        position:relative;
+    }
+
+    .messages{
+        position:absolute !important;
+        top:150px !important;
+        left:0;
+        right:0;
+        bottom:145px !important;
+        height:auto !important;
+        overflow-y:auto !important;
+        -webkit-overflow-scrolling:touch;
+        padding:10px 18px 20px !important;
+    }
+
+    .input-area{
+        position:fixed !important;
+        left:0 !important;
+        right:0 !important;
+        bottom:0 !important;
+        height:64px !important;
+        z-index:9999 !important;
+    }
+
+    .feature-area{
+        position:absolute !important;
+        left:0;
+        right:0;
+        bottom:72px !important;
+        height:190px !important;
+        overflow:visible !important;
+    }
+
+    .feature-orbit{
+        transform:scale(.85) !important;
+    }
 }   
 </style>
 </head>
@@ -1779,7 +1829,37 @@ document
 /* ===== INIT ===== */
 
 loadChatProfile();
+/* ===== MOBILE KEYBOARD FIX ===== */
 
+const chatInput =
+    document.getElementById('chatInput');
+
+if(chatInput && window.visualViewport){
+
+    const keepInputVisible = () => {
+
+        requestAnimationFrame(() => {
+
+            chatInput.scrollIntoView({
+                block:'nearest',
+                behavior:'instant'
+            });
+
+        });
+
+    };
+
+    chatInput.addEventListener(
+        'focus',
+        () => {
+            setTimeout(
+                keepInputVisible,
+                300
+            );
+        }
+    );
+
+}
 </script>
 
 </body>
