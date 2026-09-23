@@ -765,19 +765,47 @@ footer{
         z-index:9999 !important;
     }
 
+  
+} 
+  /* ===== GPT STYLE MOBILE FEATURES ===== */
+
+@media(max-width:600px){
+
     .feature-area{
-        position:absolute !important;
-        left:0;
-        right:0;
-        bottom:72px !important;
-        height:190px !important;
-        overflow:visible !important;
+        display:none !important;
     }
 
-    .feature-orbit{
-        transform:scale(.85) !important;
+    .feature-menu{
+        position:fixed !important;
+        left:10px !important;
+        right:10px !important;
+        bottom:72px !important;
+        width:auto !important;
+        transform:none !important;
+        grid-template-columns:repeat(3,1fr);
+        gap:8px;
+        z-index:10000;
     }
-}   
+
+    .feature-menu.open{
+        display:grid !important;
+    }
+
+    .menu-feature{
+        min-height:58px;
+        border-radius:14px;
+        font-size:11px;
+    }
+
+    .menu-feature b{
+        font-size:20px;
+    }
+
+    .attach-btn.feature-open{
+        transform:rotate(45deg);
+        color:#ff6b00;
+    }
+}  
 </style>
 </head>
 
@@ -1038,13 +1066,14 @@ footer{
 
         <div class="chat-input-box">
 
-            <button
-                class="attach-btn"
-                type="button"
-                title="Attachment"
-                onclick="document.getElementById('fileInput').click()">
-                ＋
-            </button>
+          <button
+    class="attach-btn"
+    id="inputPlusBtn"
+    type="button"
+    title="Features"
+    onclick="toggleInputFeatureMenu()">
+    ＋
+</button>
 
             <input
                 type="file"
@@ -1206,13 +1235,41 @@ function toggleFeatureMenu(){
     area.classList.toggle('open');
 
 }
+/* ===== GPT STYLE INPUT FEATURE MENU ===== */
 
+function toggleInputFeatureMenu(){
+
+    const menu =
+        document.getElementById('featureMenu');
+
+    const btn =
+        document.getElementById('inputPlusBtn');
+
+    if(!menu || !btn) return;
+
+    const isOpen =
+        menu.classList.toggle('open');
+
+    btn.classList.toggle(
+        'feature-open',
+        isOpen
+    );
+}
 function openFeature(feature){
 
-    document
-        .getElementById('featureMenu')
-        .classList.remove('open');
+    const menu =
+        document.getElementById('featureMenu');
 
+    const inputPlus =
+        document.getElementById('inputPlusBtn');
+
+    if(menu){
+        menu.classList.remove('open');
+    }
+
+    if(inputPlus){
+        inputPlus.classList.remove('feature-open');
+    }
     const routes = {
 
         family: 'family.html',
