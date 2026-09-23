@@ -1,7 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
-
+const {
+  routeAI
+} = require('../services/aiGateway');
 const router = express.Router();
 
 const supabase = createClient(
@@ -774,13 +776,21 @@ router.post('/', async (req, res) => {
     // =================================================
     // AI RESPONSE
     // =================================================
-    const response =
-      await callGroqAI(
-        message,
-        personalMemory,
-        familyMemory,
-        history
-      );
+  const memoryText =
+  formatMemory(
+    personalMemory,
+    familyMemory
+  );
+
+const aiResult =
+  await routeAI({
+    message,
+    history,
+    memoryText
+  });
+
+const response =
+  aiResult.text;
 
     // =================================================
     // SAVE CHAT
@@ -797,7 +807,8 @@ router.post('/', async (req, res) => {
           user_id: userId,
           message,
           response,
-          model: 'groq'
+       model:
+  `${aiResult.provider}:${aiResult.model}`  
         }
       ])
       .select()
@@ -815,18 +826,31 @@ router.post('/', async (req, res) => {
     // =================================================
     // RESPONSE
     // =================================================
-    return res.json({
-      response,
-      chat_id: chatId,
+ return res.json({
+  response,
+  chat_id: chatId,
 
-      memory_used: {
-        personal: personalMemory.length,
-        family: familyMemory.length,
-        history: history.length
-      },
+  provider:
+    aiResult.provider,
 
-      memory_saved: Boolean(memoryRequest)
-    });
+  model:
+    aiResult.model,
+
+  intent:
+    aiResult.intent,
+
+  web_used:
+    Boolean(aiResult.web_used),
+
+  memory_used: {
+    personal: personalMemory.length,
+    family: familyMemory.length,
+    history: history.length
+  },
+
+  memory_saved:
+    Boolean(memoryRequest)
+});
 
   } catch (error) {
     console.error(
