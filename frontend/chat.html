@@ -726,7 +726,8 @@ footer{
         transform:none !important;
 
         padding:10px !important;
-
+max-height:calc(100dvh - 150px);
+overflow-y:auto;
         grid-template-columns:repeat(3,1fr);
 
         gap:8px;
@@ -1031,63 +1032,145 @@ footer{
     </div>
 
 
-    <!-- PLUS MENU -->
+  <!-- PLUS MENU -->
 
-    <div
-        class="feature-menu"
-        id="featureMenu">
+<div
+    class="feature-menu"
+    id="featureMenu">
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('chat')">
-            <b>💬</b>
-            Chat
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('chat')">
+        <b>💬</b>
+        Chat
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('family')">
-            <b>👨‍👩‍👧</b>
-            Family
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('family')">
+        <b>👨‍👩‍👧</b>
+        Family
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('sos')">
-            <b>🆘</b>
-            SOS
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('sos')">
+        <b>🆘</b>
+        SOS
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('gps')">
-            <b>📍</b>
-            GPS
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('gps')">
+        <b>📍</b>
+        GPS
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('scanner')">
-            <b>📷</b>
-            Scanner
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('scanner')">
+        <b>📷</b>
+        Scanner
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('services')">
-            <b>🛠️</b>
-            Services
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('services')">
+        <b>🛠️</b>
+        Services
+    </button>
 
-        <button
-            class="menu-feature"
-            onclick="openFeature('profile')">
-            <b>👤</b>
-            Profile
-        </button>
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="openFeature('profile')">
+        <b>👤</b>
+        Profile
+    </button>
 
-    </div>
+    <!-- CURRENT TOOLS -->
 
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="document.getElementById('fileInput').click()">
+        <b>📄</b>
+        Documents
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button"
+        onclick="location.href='camera.html'">
+        <b>📸</b>
+        Camera
+    </button>
+
+    <!-- FUTURE TOOLS -->
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🔌</b>
+        Plugins
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>📚</b>
+        Library
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>📁</b>
+        Project
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🗓️</b>
+        Schedule
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🧠</b>
+        Think
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🌐</b>
+        Web Search
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🎵</b>
+        Music
+    </button>
+
+    <button
+        class="menu-feature"
+        type="button">
+        <b>🎓</b>
+        Guided Learning
+    </button>
+
+</div>
 
     <!-- CHAT INPUT -->
 
