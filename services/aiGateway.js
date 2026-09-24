@@ -476,6 +476,20 @@ function detectIntent(message) {
   }
 
 
+// ---------------------------------------------------
+  // WEATHER
+  // ---------------------------------------------------
+
+  if (
+    /(weather|mausam|baarish|barish|temperature|temp|garmi|thand|badal|rain)/i
+      .test(text)
+  ) {
+
+    return 'weather';
+
+  }
+
+
   // ---------------------------------------------------
   // WEB
   // ---------------------------------------------------
@@ -486,20 +500,6 @@ function detectIntent(message) {
   ) {
 
     return 'web';
-
-  }
-
-
-  // ---------------------------------------------------
-  // WEATHER
-  // ---------------------------------------------------
-
-  if (
-    /(weather|mausam|baarish|barish|temperature|temp|garmi|thand|badal|rain)/i
-      .test(text)
-  ) {
-
-    return 'weather';
 
   }
 
