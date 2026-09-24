@@ -914,7 +914,86 @@ async function callGeminiVision(imageBase64) {
     return 'Image analysis failed.';
   }
 }
+// =====================================================
+// LOAD CHAT HISTORY
+// =====================================================
+router.get('/history', async (req, res) => {
 
+  const userId =
+    getUserId(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Authentication required'
+    });
+  }
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from('chats')
+      .select(
+        'id,message,response,model,created_at'
+      )
+      .eq(
+        'user_id',
+        userId
+      )
+      .order(
+        'created_at',
+        {
+          ascending: true
+        }
+      )
+      .limit(100);
+
+    if (error) {
+
+      console.error(
+        'Chat history load error:',
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          'Chat history load failed'
+      });
+
+    }
+
+    return res.json({
+
+      success: true,
+
+      chats:
+        data || []
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      'Chat history exception:',
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        'Internal server error'
+    });
+
+  }
+
+});
+
+
+// =====================================================
+// MAIN CHAT
+// =====================================================
+router.post('/', async (req, res) => {
 // =====================================================
 // MAIN CHAT
 // =====================================================
