@@ -605,6 +605,79 @@ async function saveChatMessage(
     return null;
   }
 }
+
+
+// =====================================================
+// COMMON CHAT RESPONSE
+// =====================================================
+async function sendChatResponse({
+  res,
+  userId,
+  message,
+  response,
+  model,
+  intent,
+  provider = 'samarthai-tool',
+  web_used = false,
+  personalMemory = [],
+  familyMemory = [],
+  history = [],
+  memory_saved = false
+}) {
+
+  const chatId =
+    await saveChatMessage(
+      userId,
+      message,
+      response,
+      model
+    );
+
+  return res.json({
+
+    response,
+
+    chat_id:
+      chatId,
+
+    provider,
+
+    model,
+
+    intent,
+
+    web_used:
+      Boolean(web_used),
+
+    memory_used: {
+
+      personal:
+        personalMemory.length,
+
+      family:
+        familyMemory.length,
+
+      history:
+        history.length
+
+    },
+
+    memory_saved:
+      Boolean(memory_saved)
+
+  });
+}
+
+  } catch (error) {
+
+    console.error(
+      'Chat save exception:',
+      error
+    );
+
+    return null;
+  }
+}
 // =====================================================
 // HISTORY REQUEST
 // =====================================================
@@ -1039,12 +1112,10 @@ console.log(
 // -------------------------------------------------
 
 let toolResult = null;
-
 if (
   toolPlan &&
   toolPlan.tool &&
-  toolPlan.tool !== 'none' &&
-  Number(toolPlan.confidence || 0) >= 0.60
+  toolPlan.tool !== 'none'
 ) {
 
   try {
@@ -1078,26 +1149,26 @@ if (
   }
 
 }
-
 // -------------------------------------------------
 // WEATHER NEEDS LOCATION
 // -------------------------------------------------
 if (
   toolPlan?.tool === 'weather' &&
   toolResult?.needs_location
-){
+) {
 
   const response =
     'Mausam batane ke liye mujhe us jagah ka location chahiye. Agar aap chahein to location permission de sakte hain. 📍';
 
-  return res.json({
+  return await sendChatResponse({
+
+    res,
+
+    userId,
+
+    message,
 
     response,
-
-    chat_id: null,
-
-    provider:
-      'samarthai-tool',
 
     model:
       'weather',
@@ -1105,28 +1176,18 @@ if (
     intent:
       'weather',
 
-    web_used:
-      false,
+    personalMemory,
 
-    memory_used: {
+    familyMemory,
 
-      personal:
-        personalMemory.length,
-
-      family:
-        familyMemory.length,
-
-      history:
-        history.length
-
-    },
+    history,
 
     memory_saved:
       Boolean(memoryRequest)
 
   });
-}
 
+}
 
 // -------------------------------------------------
 // FAMILY RESULT
@@ -1174,15 +1235,15 @@ if (
         .join('\n');
   }
 
+return await sendChatResponse({
 
-  return res.json({
+    res,
+
+    userId,
+
+    message,
 
     response,
-
-    chat_id: null,
-
-    provider:
-      'samarthai-tool',
 
     model:
       'family',
@@ -1190,29 +1251,17 @@ if (
     intent:
       'family',
 
-    web_used:
-      false,
+    personalMemory,
 
-    memory_used: {
+    familyMemory,
 
-      personal:
-        personalMemory.length,
-
-      family:
-        familyMemory.length,
-
-      history:
-        history.length
-
-    },
+    history,
 
     memory_saved:
       Boolean(memoryRequest)
 
   });
-}
-
-
+ 
 // -------------------------------------------------
 // SERVICES RESULT
 // -------------------------------------------------
@@ -1269,14 +1318,15 @@ if (
   }
 
 
-  return res.json({
+return await sendChatResponse({
+
+    res,
+
+    userId,
+
+    message,
 
     response,
-
-    chat_id: null,
-
-    provider:
-      'samarthai-tool',
 
     model:
       'services',
@@ -1284,21 +1334,11 @@ if (
     intent:
       'services',
 
-    web_used:
-      false,
+    personalMemory,
 
-    memory_used: {
+    familyMemory,
 
-      personal:
-        personalMemory.length,
-
-      family:
-        familyMemory.length,
-
-      history:
-        history.length
-
-    },
+    history,
 
     memory_saved:
       Boolean(memoryRequest)
@@ -1319,14 +1359,15 @@ if (
   const response =
     'Kis family member ki location dekhni hai? Jaise: bhai, mummy ya papa. 📍';
 
-  return res.json({
+return await sendChatResponse({
+
+    res,
+
+    userId,
+
+    message,
 
     response,
-
-    chat_id: null,
-
-    provider:
-      'samarthai-tool',
 
     model:
       'gps',
@@ -1334,21 +1375,11 @@ if (
     intent:
       'gps',
 
-    web_used:
-      false,
+    personalMemory,
 
-    memory_used: {
+    familyMemory,
 
-      personal:
-        personalMemory.length,
-
-      family:
-        familyMemory.length,
-
-      history:
-        history.length
-
-    },
+    history,
 
     memory_saved:
       Boolean(memoryRequest)
@@ -1374,37 +1405,47 @@ const aiResult =
 
 const response =
   aiResult.text;
-    // =================================================
-    // SAVE CHAT
-    // =================================================
-    let chatId = null;
+  
+const response =
+  aiResult.text;
 
-    const {
-      data: chat,
-      error: chatError
-    } = await supabase
-      .from('chats')
-      .insert([
-        {
-          user_id: userId,
-          message,
-          response,
-       model:
-  `${aiResult.provider}:${aiResult.model}`  
-        }
-      ])
-      .select()
-      .single();
 
-    if (chatError) {
-      console.error(
-        'Chat save error:',
-        chatError
-      );
-    } else {
-      chatId = chat?.id || null;
-    }
+// =================================================
+// SAVE NORMAL AI RESPONSE
+// =================================================
 
+return await sendChatResponse({
+
+  res,
+
+  userId,
+
+  message,
+
+  response,
+
+  provider:
+    aiResult.provider,
+
+  model:
+    aiResult.model,
+
+  intent:
+    aiResult.intent,
+
+  web_used:
+    Boolean(aiResult.web_used),
+
+  personalMemory,
+
+  familyMemory,
+
+  history,
+
+  memory_saved:
+    Boolean(memoryRequest)
+
+});
     // =================================================
     // RESPONSE
     // =================================================
