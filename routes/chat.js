@@ -22,16 +22,15 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const GROQ_MODEL = 'openai/gpt-oss-20b';
+// FIX 1: Correct Groq model name
+const GROQ_MODEL = 'llama3-70b-8192';
 
 // =====================================================
 // AUTH
 // =====================================================
 function getUserId(req) {
   const token = req.headers.authorization?.split(' ')[1];
-
   if (!token) return null;
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded?.id || null;
@@ -46,7 +45,6 @@ function getUserId(req) {
 // =====================================================
 function withTimeout(promise, ms, fallbackValue, label = '') {
   let timer;
-
   return Promise.race([
     promise,
     new Promise(resolve => {
@@ -70,7 +68,6 @@ function withTimeout(promise, ms, fallbackValue, label = '') {
 // =====================================================
 async function getPersonalMemory(userId) {
   if (!userId) return [];
-
   try {
     const { data, error } = await supabase
       .from('personal_memory')
@@ -78,12 +75,10 @@ async function getPersonalMemory(userId) {
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(100);
-
     if (error) {
       console.error('Personal memory read:', error);
       return [];
     }
-
     return data || [];
   } catch (e) {
     console.error('Personal memory exception:', e);
@@ -96,7 +91,6 @@ async function getPersonalMemory(userId) {
 // =====================================================
 async function getFamilyMemory(userId) {
   if (!userId) return [];
-
   try {
     const { data: member, error: memberError } = await supabase
       .from('family_members')
@@ -106,9 +100,7 @@ async function getFamilyMemory(userId) {
       .limit(1)
       .maybeSingle();
 
-    if (memberError || !member?.family_id) {
-      return [];
-    }
+    if (memberError || !member?.family_id) return [];
 
     const { data, error } = await supabase
       .from('family_memory')
@@ -121,7 +113,6 @@ async function getFamilyMemory(userId) {
       console.error('Family memory read:', error);
       return [];
     }
-
     return data || [];
   } catch (e) {
     console.error('Family memory exception:', e);
@@ -146,33 +137,20 @@ async function savePersonalMemory(userId, key, value) {
   if (existing) {
     const { data, error } = await supabase
       .from('personal_memory')
-      .update({
-        value,
-        updated_at: new Date().toISOString()
-      })
+      .update({ value, updated_at: new Date().toISOString() })
       .eq('id', existing.id)
       .select()
       .single();
-
     if (error) throw error;
-
     return data;
   }
 
   const { data, error } = await supabase
     .from('personal_memory')
-    .insert([
-      {
-        user_id: userId,
-        key,
-        value
-      }
-    ])
+    .insert([{ user_id: userId, key, value }])
     .select()
     .single();
-
   if (error) throw error;
-
   return data;
 }
 
@@ -181,65 +159,39 @@ async function savePersonalMemory(userId, key, value) {
 // =====================================================
 function detectMemorySave(message) {
   const text = String(message || '').trim();
-
   if (!text) return null;
 
-  // -----------------------------------------------
-  // QUESTIONS ARE NOT MEMORY
-  // -----------------------------------------------
+  // Questions are not memory
   if (
-    /(?:kya|kaun|kab|kyu|kyon|why|what|who|when|how|batao|btao|pata hai|\?)$/i
-      .test(text)
+    /(?:kya|kaun|kab|kyu|kyon|why|what|who|when|how|batao|btao|pata hai|\?)$/i.test(text)
   ) {
     return null;
   }
 
-  // -----------------------------------------------
-  // NAME
-  // -----------------------------------------------
+  // Name
   let match = text.match(
     /(?:mera\s+naam|my\s+name)\s+(?:hai|is)?\s*([a-zA-Z\u0900-\u097F][a-zA-Z\u0900-\u097F\s]{1,40}?)(?:\s+(?:hai|h|is))?$/i
   );
-
   if (match) {
     const name = match[1].trim();
-
-    if (
-      name &&
-      !/^(kya|kaun|yaad|batao|btao|pata)$/i.test(name)
-    ) {
-      return {
-        key: 'name',
-        value: name
-      };
+    if (name && !/^(kya|kaun|yaad|batao|btao|pata)$/i.test(name)) {
+      return { key: 'name', value: name };
     }
   }
 
-  // -----------------------------------------------
-  // EXPLICIT REMEMBER
-  // -----------------------------------------------
+  // Explicit remember
   match = text.match(
     /(?:remember|yaad\s+rakho|yaad\s+rakhna|याद\s+रखो|याद\s+रखना|memory\s+me\s+save|memory\s+mein\s+save|मेमोरी\s+में\s+सेव)\s*(?:that|ki|कि)?\s*(.+)$/i
   );
-
   if (match) {
     const value = match[1].trim();
-
-    if (value) {
-      return {
-        key: `note_${Date.now()}`,
-        value
-      };
-    }
+    if (value) return { key: `note_${Date.now()}`, value };
   }
 
-  // -----------------------------------------------
-  // LIKES / DISLIKES
-  // -----------------------------------------------
+  // Likes
   match = text.match(
     /(?:mujhe|i)\s+(.+?)\s+(?:pasand|achha\s+lagta|accha\s+lagta|like\s+hai)$/i
   );
-
   if (match) {
     return {
       key: `preference_${Date.now()}`,
@@ -247,10 +199,10 @@ function detectMemorySave(message) {
     };
   }
 
+  // Dislikes
   match = text.match(
     /(?:mujhe|i)\s+(.+?)\s+(?:pasand\s+nahi|achha\s+nahi\s+lagta|accha\s+nahi\s+lagta|don't\s+like)$/i
   );
-
   if (match) {
     return {
       key: `preference_${Date.now()}`,
@@ -258,43 +210,21 @@ function detectMemorySave(message) {
     };
   }
 
-  // -----------------------------------------------
-  // USER FACTS
-  // -----------------------------------------------
-  match = text.match(
-    /^(?:main|mai|mera|meri|i am|i'm|i)\s+(.{3,120})$/i
-  );
-
+  // User facts
+  match = text.match(/^(?:main|mai|mera|meri|i am|i'm|i)\s+(.{3,120})$/i);
   if (match) {
     const value = match[1].trim();
-
-    if (
-      !/^(kya|kaise|kyu|kyon|kab|kahan|batao|btao|hu|hoon)$/i.test(value)
-    ) {
-      return {
-        key: `fact_${Date.now()}`,
-        value: `User: ${value}`
-      };
+    if (!/^(kya|kaise|kyu|kyon|kab|kahan|batao|btao|hu|hoon)$/i.test(value)) {
+      return { key: `fact_${Date.now()}`, value: `User: ${value}` };
     }
   }
 
-  // -----------------------------------------------
-  // FAMILY / PERSONAL FACTS
-  // -----------------------------------------------
-  match = text.match(
-    /^(?:meri|mere|my)\s+(.{3,100})$/i
-  );
-
+  // Family / personal facts
+  match = text.match(/^(?:meri|mere|my)\s+(.{3,100})$/i);
   if (match) {
     const value = match[1].trim();
-
-    if (
-      !/(?:kya|kaise|kyu|kyon|kab|kahan|batao|btao)$/i.test(value)
-    ) {
-      return {
-        key: `personal_${Date.now()}`,
-        value: value
-      };
+    if (!/(?:kya|kaise|kyu|kyon|kab|kahan|batao|btao)$/i.test(value)) {
+      return { key: `personal_${Date.now()}`, value };
     }
   }
 
@@ -305,10 +235,7 @@ function detectMemorySave(message) {
 // FORMAT VALUE
 // =====================================================
 function formatValue(value) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
+  if (value === null || value === undefined) return '';
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value);
@@ -316,7 +243,6 @@ function formatValue(value) {
       return String(value);
     }
   }
-
   return String(value);
 }
 
@@ -325,209 +251,81 @@ function formatValue(value) {
 // =====================================================
 function formatMemory(personal, family) {
   let text = '';
-
   if (personal.length) {
     text += '\nPRIVATE PERSONAL MEMORY:\n';
-
     personal.forEach(item => {
       text += `- ${item.key}: ${formatValue(item.value)}\n`;
     });
   }
-
   if (family.length) {
     text += '\nSHARED FAMILY MEMORY:\n';
-
     family.forEach(item => {
       text += `- ${item.key}: ${formatValue(item.value)}\n`;
     });
   }
-
   return text;
 }
+
 // =====================================================
 // AI TOOL EXECUTOR
 // =====================================================
-
-async function executeChatTool({
-  plan,
-  userId,
-  location = null
-}) {
-
-  const toolName =
-    String(plan?.tool || '')
-      .trim()
-      .toLowerCase();
-
-  const action =
-    String(plan?.action || '')
-      .trim()
-      .toLowerCase();
-
+async function executeChatTool({ plan, userId, location = null }) {
+  const toolName = String(plan?.tool || '').trim().toLowerCase();
+  const action = String(plan?.action || '').trim().toLowerCase();
   const args =
-    plan?.arguments &&
-    typeof plan.arguments === 'object'
+    plan?.arguments && typeof plan.arguments === 'object'
       ? plan.arguments
       : {};
 
+  if (!toolName || toolName === 'none' || action === 'none') return null;
 
-  // ---------------------------------------------------
-  // NO TOOL
-  // ---------------------------------------------------
+  const tool = getTool(toolName);
+  if (!tool) return { error: `Tool "${toolName}" is not available` };
 
-  if (
-    !toolName ||
-    toolName === 'none' ||
-    action === 'none'
-  ) {
-
-    return null;
-
-  }
-
-
-  // ---------------------------------------------------
-  // GET TOOL
-  // ---------------------------------------------------
-
-  const tool =
-    getTool(toolName);
-
-
-  if (!tool) {
-
-    return {
-      error:
-        `Tool "${toolName}" is not available`
-    };
-
-  }
-
-
-  // ---------------------------------------------------
-  // WEATHER
-  // ---------------------------------------------------
-
+  // Weather
   if (toolName === 'weather') {
-
     if (
       !location ||
       location.latitude === undefined ||
       location.longitude === undefined
     ) {
-
-      return {
-        needs_location: true
-      };
-
+      return { needs_location: true };
     }
-
-
     return await tool.execute({
-
-      latitude:
-        location.latitude,
-
-      longitude:
-        location.longitude,
-
-      type:
-        args.weather_type ||
-        'current'
-
+      latitude: location.latitude,
+      longitude: location.longitude,
+      type: args.weather_type || 'current'
     });
-
   }
 
-
-  // ---------------------------------------------------
-  // FAMILY
-  // ---------------------------------------------------
-
-  if (
-    toolName === 'family' &&
-    action === 'read'
-  ) {
-
-    return await tool.execute(
-      userId
-    );
-
+  // Family
+  if (toolName === 'family' && action === 'read') {
+    return await tool.execute(userId);
   }
 
-
-  // ---------------------------------------------------
-  // SERVICES
-  // ---------------------------------------------------
-
-  if (
-    toolName === 'services' &&
-    action === 'search'
-  ) {
-
+  // Services
+  if (toolName === 'services' && action === 'search') {
     return await tool.execute({
-
-      query:
-        args.query || '',
-
-      category:
-        args.category || '',
-
-      location:
-        args.location_name ||
-        location?.name ||
-        '',
-
-      limit:
-        10
-
+      query: args.query || '',
+      category: args.category || '',
+      location: args.location_name || location?.name || '',
+      limit: 10
     });
-
   }
 
-
-  // ---------------------------------------------------
   // GPS
-  // ---------------------------------------------------
-
-  if (
-    toolName === 'gps' &&
-    action === 'locate'
-  ) {
-
-    return {
-
-      needs_member:
-        true,
-
-      member_name:
-        args.member_name || ''
-
-    };
-
+  if (toolName === 'gps' && action === 'locate') {
+    return { needs_member: true, member_name: args.member_name || '' };
   }
 
-
-  // ---------------------------------------------------
-  // UNSUPPORTED ACTION
-  // ---------------------------------------------------
-
-  return {
-
-    error:
-      `Action "${action}" is not implemented yet`
-
-  };
-
+  return { error: `Action "${action}" is not implemented yet` };
 }
-
 
 // =====================================================
 // CHAT HISTORY
 // =====================================================
 async function getRecentChatHistory(userId) {
   if (!userId) return [];
-
   try {
     const { data, error } = await supabase
       .from('chats')
@@ -540,72 +338,44 @@ async function getRecentChatHistory(userId) {
       console.error('Chat history error:', error);
       return [];
     }
-return (data || [])
-  .filter(item => {
-    const response = String(item.response || '').trim();
 
-    return (
-      response &&
-      response !== 'Sorry, I could not process your request.' &&
-      !response.toLowerCase().includes('could not process your request')
-    );
-  })
-  .reverse();
-    
+    return (data || [])
+      .filter(item => {
+        const response = String(item.response || '').trim();
+        return (
+          response &&
+          response !== 'Sorry, I could not process your request.' &&
+          !response.toLowerCase().includes('could not process your request')
+        );
+      })
+      .reverse();
   } catch (e) {
     console.error('Chat history exception:', e);
     return [];
   }
 }
+
 // =====================================================
 // SAVE CHAT MESSAGE
 // =====================================================
-async function saveChatMessage(
-  userId,
-  message,
-  response,
-  model
-) {
+async function saveChatMessage(userId, message, response, model) {
   try {
-
-    const {
-      data,
-      error
-    } = await supabase
+    const { data, error } = await supabase
       .from('chats')
-      .insert([
-        {
-          user_id: userId,
-          message,
-          response,
-          model
-        }
-      ])
+      .insert([{ user_id: userId, message, response, model }])
       .select()
       .single();
 
     if (error) {
-      console.error(
-        'Chat save error:',
-        error
-      );
-
+      console.error('Chat save error:', error);
       return null;
     }
-
     return data?.id || null;
-
   } catch (error) {
-
-    console.error(
-      'Chat save exception:',
-      error
-    );
-
+    console.error('Chat save exception:', error);
     return null;
   }
 }
-
 
 // =====================================================
 // COMMON CHAT RESPONSE
@@ -624,108 +394,61 @@ async function sendChatResponse({
   history = [],
   memory_saved = false
 }) {
-
-  const chatId =
-    await saveChatMessage(
-      userId,
-      message,
-      response,
-      model
-    );
+  const chatId = await saveChatMessage(userId, message, response, model);
 
   return res.json({
-
     response,
-
-    chat_id:
-      chatId,
-
+    chat_id: chatId,
     provider,
-
     model,
-
     intent,
-
-    web_used:
-      Boolean(web_used),
-
+    web_used: Boolean(web_used),
     memory_used: {
-
-      personal:
-        personalMemory.length,
-
-      family:
-        familyMemory.length,
-
-      history:
-        history.length
-
+      personal: personalMemory.length,
+      family: familyMemory.length,
+      history: history.length
     },
-
-    memory_saved:
-      Boolean(memory_saved)
-
+    memory_saved: Boolean(memory_saved)
   });
 }
 
-
 // =====================================================
-// HISTORY REQUEST
+// HISTORY REQUEST DETECTOR
 // =====================================================
 function isHistoryRequest(message) {
   const text = String(message || '').trim().toLowerCase();
-
   const hasHistoryWord =
-    /pichhli|pichli|pichhle|purani|previous|old|last|pehle|history|record|conversation|chat|baat.?cheet|baatcheet/i
-      .test(text);
-
+    /pichhli|pichli|pichhle|purani|previous|old|last|pehle|history|record|conversation|chat|baat.?cheet|baatcheet/i.test(
+      text
+    );
   const hasRequestWord =
-    /batao|btao|dikhao|dikhाओ|show|hui|huyi|thi|the|kya|kya.?kya/i
-      .test(text);
-
+    /batao|btao|dikhao|dikhाओ|show|hui|huyi|thi|the|kya|kya.?kya/i.test(text);
   return hasHistoryWord && hasRequestWord;
 }
-
 
 // =====================================================
 // FORMAT HISTORY
 // =====================================================
 function formatChatHistory(history) {
-  if (!history.length) {
-    return 'Abhi koi purani chat available nahi hai.';
-  }
+  if (!history.length) return 'Abhi koi purani chat available nahi hai.';
 
   let result = 'Aapki recent baatcheet:\n\n';
-
   history.forEach(item => {
-    if (item.message) {
-      result += `Aap: ${item.message}\n`;
-    }
-
-    if (item.response) {
-      result += `SamarthAI: ${item.response}\n`;
-    }
-
+    if (item.message) result += `Aap: ${item.message}\n`;
+    if (item.response) result += `SamarthAI: ${item.response}\n`;
     result += '\n';
   });
-
   return result.trim();
 }
 
 // =====================================================
-// GROQ AI
+// GROQ AI  (FIX 2: now actually used as fallback)
 // =====================================================
-async function callGroqAI(
-  message,
-  personalMemory,
-  familyMemory,
-  history
-) {
+async function callGroqAI(message, personalMemory, familyMemory, history) {
   const systemPrompt = `
 You are SamarthAI, a highly capable personal AI assistant.
 
 IMPORTANT MEMORY BEHAVIOUR:
-
 - Remember useful facts about the current user.
 - Use personal memory naturally.
 - Use previous conversation context naturally.
@@ -739,8 +462,7 @@ IMPORTANT MEMORY BEHAVIOUR:
 - Short messages such as "haan", "hmm", "acha", "nahi", "mtlb", "btao" must be understood from context.
 - Do not restart the conversation unnecessarily.
 
-CONVERSATION:
-
+CONVERSATION RULES:
 1. Be natural and human-like.
 2. Match the user's language.
 3. Hindi/Hinglish is preferred when the user uses Hindi/Hinglish.
@@ -753,13 +475,7 @@ CONVERSATION:
 10. If the user asks "tumhe yaad hai?", check memory/history first.
 11. If information is unavailable, say so honestly.
 
-MEMORY:
-
-PRIVATE PERSONAL MEMORY:
-${formatMemory(personalMemory, [])}
-
-SHARED FAMILY MEMORY:
-${formatMemory([], familyMemory)}
+${formatMemory(personalMemory, familyMemory)}
 
 CURRENT DATE:
 ${new Date().toLocaleDateString('en-IN', {
@@ -770,75 +486,38 @@ ${new Date().toLocaleDateString('en-IN', {
 })}
 `;
 
-  const messages = [
-    {
-      role: 'system',
-      content: systemPrompt
-    }
-  ];
+  const messages = [{ role: 'system', content: systemPrompt }];
 
-  // -------------------------------------------------
-  // PREVIOUS CONVERSATION
-  // -------------------------------------------------
   history.forEach(item => {
-    if (item.message) {
-      messages.push({
-        role: 'user',
-        content: item.message
-      });
-    }
-
-    if (item.response) {
-      messages.push({
-        role: 'assistant',
-        content: item.response
-      });
-    }
+    if (item.message) messages.push({ role: 'user', content: item.message });
+    if (item.response) messages.push({ role: 'assistant', content: item.response });
   });
 
-  // -------------------------------------------------
-  // CURRENT MESSAGE
-  // -------------------------------------------------
-  messages.push({
-    role: 'user',
-    content: message
+  messages.push({ role: 'user', content: message });
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages,
+      temperature: 0.5,
+      max_tokens: 700
+    })
   });
-
-  const response = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages,
-        temperature: 0.5,
-        max_tokens: 700
-      })
-    }
-  );
 
   const data = await response.json();
-
   console.log('Groq status:', response.status);
 
   if (!response.ok) {
     console.error('Groq error:', JSON.stringify(data));
-
-    throw new Error(
-      data?.error?.message || 'Groq API request failed'
-    );
+    throw new Error(data?.error?.message || 'Groq API request failed');
   }
 
-  return (
-    data.choices?.[0]?.message?.content ||
-    'Mujhe iska jawab nahi mil paaya.'
-  );
+  return data.choices?.[0]?.message?.content || 'Mujhe iska jawab nahi mil paaya.';
 }
 
 // =====================================================
@@ -854,34 +533,20 @@ async function callGeminiVision(imageBase64) {
       ? imageBase64.split(',')[1]
       : imageBase64;
 
-    const mimeMatch = imageBase64.match(
-      /^data:(.*?);base64,/
-    );
-
+    const mimeMatch = imageBase64.match(/^data:(.*?);base64,/);
     const mimeType = mimeMatch?.[1] || 'image/png';
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
-
-        headers: {
-          'Content-Type': 'application/json'
-        },
-
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [
             {
               parts: [
-                {
-                  text: 'Describe this image in simple Hindi. Be accurate and concise.'
-                },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data
-                  }
-                }
+                { text: 'Describe this image in simple Hindi. Be accurate and concise.' },
+                { inline_data: { mime_type: mimeType, data: base64Data } }
               ]
             }
           ]
@@ -892,11 +557,7 @@ async function callGeminiVision(imageBase64) {
     const data = await response.json();
 
     if (!response.ok || data.error) {
-      console.error(
-        'Gemini error:',
-        JSON.stringify(data)
-      );
-
+      console.error('Gemini error:', JSON.stringify(data));
       return 'Image analysis failed.';
     }
 
@@ -904,178 +565,91 @@ async function callGeminiVision(imageBase64) {
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
       'Image ko samajh nahi paaya.'
     );
-
   } catch (e) {
-    console.error(
-      'Gemini vision error:',
-      e
-    );
-
+    console.error('Gemini vision error:', e);
     return 'Image analysis failed.';
   }
 }
+
 // =====================================================
-// LOAD CHAT HISTORY
+// GET CHAT HISTORY ROUTE
 // =====================================================
 router.get('/history', async (req, res) => {
-
-  const userId =
-    getUserId(req);
+  const userId = getUserId(req);
 
   if (!userId) {
-    return res.status(401).json({
-      error: 'Authentication required'
-    });
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
-
-    const {
-      data,
-      error
-    } = await supabase
+    const { data, error } = await supabase
       .from('chats')
-      .select(
-        'id,message,response,model,created_at'
-      )
-      .eq(
-        'user_id',
-        userId
-      )
-      .order(
-        'created_at',
-        {
-          ascending: true
-        }
-      )
+      .select('id,message,response,model,created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
       .limit(100);
 
     if (error) {
-
-      console.error(
-        'Chat history load error:',
-        error
-      );
-
-      return res.status(500).json({
-        error:
-          'Chat history load failed'
-      });
-
+      console.error('Chat history load error:', error);
+      return res.status(500).json({ error: 'Chat history load failed' });
     }
 
-    return res.json({
-
-      success: true,
-
-      chats:
-        data || []
-
-    });
-
+    return res.json({ success: true, chats: data || [] });
   } catch (error) {
-
-    console.error(
-      'Chat history exception:',
-      error
-    );
-
-    return res.status(500).json({
-      error:
-        'Internal server error'
-    });
-
+    console.error('Chat history exception:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-
 });
 
-
-
 // =====================================================
-// MAIN CHAT
+// MAIN CHAT ROUTE
 // =====================================================
 router.post('/', async (req, res) => {
   try {
     const userId = getUserId(req);
 
     if (!userId) {
-      return res.status(401).json({
-        error: 'Authentication required'
-      });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-const {
-  message,
-  image,
-  location
-} = req.body;
+    const { message, image, location } = req.body;
 
     if (!message && !image) {
-      return res.status(400).json({
-        error: 'Message or image required'
-      });
+      return res.status(400).json({ error: 'Message or image required' });
     }
 
     // =================================================
-    // IMAGE
+    // IMAGE  (FIX 3: load memory for image too)
     // =================================================
     if (image) {
+      const [personalMemory, familyMemory] = await Promise.all([
+        withTimeout(getPersonalMemory(userId), 5000, [], 'Personal memory'),
+        withTimeout(getFamilyMemory(userId), 5000, [], 'Family memory')
+      ]);
+
       const response = await callGeminiVision(image);
 
-      const { data: chat, error } = await supabase
-        .from('chats')
-        .insert([
-          {
-            user_id: userId,
-            message: message || '[Image]',
-            response,
-            model: 'gemini-vision'
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error(
-          'Chat save error:',
-          error
-        );
-      }
-
-      return res.json({
+      return await sendChatResponse({
+        res,
+        userId,
+        message: message || '[Image]',
         response,
-        chat_id: chat?.id || null
+        model: 'gemini-vision',
+        intent: 'image',
+        provider: 'gemini',
+        personalMemory,
+        familyMemory,
+        history: []
       });
     }
 
     // =================================================
     // LOAD FULL CONTEXT
     // =================================================
-    const [
-      history,
-      personalMemory,
-      familyMemory
-    ] = await Promise.all([
-      withTimeout(
-        getRecentChatHistory(userId),
-        5000,
-        [],
-        'Chat history'
-      ),
-
-      withTimeout(
-        getPersonalMemory(userId),
-        5000,
-        [],
-        'Personal memory'
-      ),
-
-      withTimeout(
-        getFamilyMemory(userId),
-        5000,
-        [],
-        'Family memory'
-      )
+    const [history, personalMemory, familyMemory] = await Promise.all([
+      withTimeout(getRecentChatHistory(userId), 5000, [], 'Chat history'),
+      withTimeout(getPersonalMemory(userId), 5000, [], 'Personal memory'),
+      withTimeout(getFamilyMemory(userId), 5000, [], 'Family memory')
     ]);
 
     console.log('🧠 Context:', {
@@ -1086,444 +660,200 @@ const {
     });
 
     // =================================================
-    // SHOW OLD CHAT
+    // HISTORY REQUEST  (FIX 4: save to DB now)
     // =================================================
     if (isHistoryRequest(message)) {
-      const response =
-        formatChatHistory(history);
+      const response = formatChatHistory(history);
 
-      return res.json({
+      return await sendChatResponse({
+        res,
+        userId,
+        message,
         response,
-        chat_id: null,
-        memory_used: {
-          personal: personalMemory.length,
-          family: familyMemory.length,
-          history: history.length
-        }
+        model: 'history',
+        intent: 'history',
+        provider: 'samarthai-tool',
+        personalMemory,
+        familyMemory,
+        history
       });
     }
 
     // =================================================
-    // EXPLICIT / AUTOMATIC MEMORY
+    // MEMORY DETECT & SAVE
     // =================================================
-    const memoryRequest =
-      detectMemorySave(message);
+    const memoryRequest = detectMemorySave(message);
+    let memory_saved = false;
 
-    // IMPORTANT:
-    // Save memory AND continue to AI.
-    // Previous version returned immediately,
-    // which made memory conversations feel robotic.
     if (memoryRequest && userId) {
       try {
-        const saved =
-          await savePersonalMemory(
-            userId,
-            memoryRequest.key,
-            memoryRequest.value
-          );
+        await savePersonalMemory(userId, memoryRequest.key, memoryRequest.value);
 
-        // Add newly saved memory to current context.
+        // Add to current context immediately
         personalMemory.unshift({
           key: memoryRequest.key,
-          value: memoryRequest.value
+       value: memoryRequest.value
         });
 
-        console.log(
-          '✅ Memory saved:',
-          memoryRequest.key,
-          memoryRequest.value
-        );
-
-        // Continue normally to AI.
-        // No early return.
-        void saved;
-
+        memory_saved = true;
+        console.log('✅ Memory saved:', memoryRequest.key, memoryRequest.value);
       } catch (e) {
-        console.error(
-          'Memory save failed:',
-          e
-        );
+        console.error('Memory save failed:', e);
       }
     }
+    // =================================================
+    // TOOL PLANNER
+    // =================================================
+    const toolPlan = await planToolCall({ message, history });
+    console.log('🤖 Tool Plan:', JSON.stringify(toolPlan));
 
-  // =================================================
-// AI / TOOL RESPONSE
-// =================================================
-
-const memoryText =
-  formatMemory(
-    personalMemory,
-    familyMemory
-  );
-
-
-
-// -------------------------------------------------
-// AI TOOL PLANNER
-// -------------------------------------------------
-
-const toolPlan =
-  await planToolCall({
-    message,
-    history
-  });
-
-console.log(
-  '🤖 Tool Plan:',
-  JSON.stringify(toolPlan)
-);
-
-
-// -------------------------------------------------
-// EXECUTE TOOL
-// -------------------------------------------------
-
-let toolResult = null;
-if (
-  toolPlan &&
-  toolPlan.tool &&
-  toolPlan.tool !== 'none'
-) {
-
-  try {
-
-    toolResult =
-      await executeChatTool({
-
-        plan:
-          toolPlan,
-
+    // =================================================
+    // EXECUTE TOOL
+    // =================================================
+    let toolResult = null;
+    if (toolPlan && toolPlan.tool && toolPlan.tool !== 'none') {
+      try {
+        toolResult = await executeChatTool({ plan: toolPlan, userId, location });
+      } catch (toolError) {
+        console.error('Tool execution error:', toolError);
+        toolResult = { error: toolError.message };
+      }
+    }
+    // =================================================
+    // WEATHER — needs location
+    // =================================================
+    if (toolPlan?.tool === 'weather' && toolResult?.needs_location) {
+      return await sendChatResponse({
+        res,
         userId,
-
-        location
-
+        message,
+        response:
+          'Mausam batane ke liye mujhe us jagah ka location chahiye. Agar aap chahein to location permission de sakte hain. 📍',
+        model: 'weather',
+        intent: 'weather',
+        personalMemory,
+        familyMemory,
+        history,
+        memory_saved
       });
-
-  } catch (toolError) {
-
-    console.error(
-      'Tool execution error:',
-      toolError
-    );
-
-    toolResult = {
-
-      error:
-        toolError.message
-
-    };
-
-  }
-
-}
-// -------------------------------------------------
-// WEATHER NEEDS LOCATION
-// -------------------------------------------------
-if (
-  toolPlan?.tool === 'weather' &&
-  toolResult?.needs_location
-) {
-
-  const response =
-    'Mausam batane ke liye mujhe us jagah ka location chahiye. Agar aap chahein to location permission de sakte hain. 📍';
-
-  return await sendChatResponse({
-
-    res,
-
-    userId,
-
-    message,
-
-    response,
-
-    model:
-      'weather',
-
-    intent:
-      'weather',
-
-    personalMemory,
-
-    familyMemory,
-
-    history,
-
-    memory_saved:
-      Boolean(memoryRequest)
-
-  });
-
-}
-
-// -------------------------------------------------
-// FAMILY RESULT
-// -------------------------------------------------
-
-if (
-  toolPlan?.tool === 'family' &&
-  toolResult
-){
-
-  const members =
-    Array.isArray(toolResult.members)
-      ? toolResult.members
-      : [];
-
-
-  let response = '';
-
-
-  if (!members.length) {
-
-    response =
-      'Aapki family mein abhi koi active member nahi mila.';
-
-  } else {
-
-    response =
-      'Aapki family ke active members:\n\n' +
-
-      members
-        .map((member, index) => {
-
-          const relation =
-            member.relation
-              ? ` (${member.relation})`
-              : '';
-
-          return (
-            `${index + 1}. ` +
-            `${member.name || 'Member'}` +
-            `${relation}`
-          );
-
-        })
-        .join('\n');
-  }
-
-return await sendChatResponse({
-
-    res,
-
-    userId,
-
-    message,
-
-    response,
-
-    model:
-      'family',
-
-    intent:
-      'family',
-
-    personalMemory,
-
-    familyMemory,
-
-    history,
-
-    memory_saved:
-      Boolean(memoryRequest)
-
-  });
-}
-// -------------------------------------------------
-// SERVICES RESULT
-// -------------------------------------------------
-
-if (
-  toolPlan?.tool === 'services' &&
-  Array.isArray(toolResult)
-){
-
-  let response = '';
-
-
-  if (!toolResult.length) {
-
-    response =
-      'Abhi is category ka koi active service provider nahi mila.';
-
-  } else {
-
-    response =
-      'Mujhe ye service providers mile:\n\n' +
-
-      toolResult
-        .map((service, index) => {
-
-          const price =
-            service.price !== null &&
-            service.price !== undefined
-              ? `₹${service.price}`
-              : 'Price available nahi hai';
-
-
-          const locationText =
-            service.location
-              ? `📍 ${service.location}`
-              : '';
-
-
-          return (
-
-            `${index + 1}. ` +
-            `${service.title || service.category || 'Service'}\n` +
-
-            `👤 ${service.provider_name}\n` +
-
-            `💰 ${price}\n` +
-
-            `${locationText}`
-
-          );
-
-        })
-        .join('\n\n');
-  }
-
-
-return await sendChatResponse({
-
-    res,
-
-    userId,
-
-    message,
-
-    response,
-
-    model:
-      'services',
-
-    intent:
-      'services',
-
-    personalMemory,
-
-    familyMemory,
-
-    history,
-
-    memory_saved:
-      Boolean(memoryRequest)
-
-  });
-}
-
-
-// -------------------------------------------------
-// GPS
-// -------------------------------------------------
-
-if (
-  toolPlan?.tool === 'gps' &&
-  toolResult?.needs_member
-) {
-
-  const response =
-    'Kis family member ki location dekhni hai? Jaise: bhai, mummy ya papa. 📍';
-
-return await sendChatResponse({
-
-    res,
-
-    userId,
-
-    message,
-
-    response,
-
-    model:
-      'gps',
-
-    intent:
-      'gps',
-
-    personalMemory,
-
-    familyMemory,
-
-    history,
-
-    memory_saved:
-      Boolean(memoryRequest)
-
-  });
-}
-
-
-// -------------------------------------------------
-// NORMAL AI
-// -------------------------------------------------
-
-const aiResult =
-  await routeAI({
-
-    message,
-
-    history,
-
-    memoryText
-
-  });
-
-
-  
-const response =
-  aiResult.text;
-
-
-// =================================================
-// SAVE NORMAL AI RESPONSE
-// =================================================
-
-return await sendChatResponse({
-
-  res,
-
-  userId,
-
-  message,
-
-  response,
-
-  provider:
-    aiResult.provider,
-
-  model:
-    aiResult.model,
-
-  intent:
-    aiResult.intent,
-
-  web_used:
-    Boolean(aiResult.web_used),
-
-  personalMemory,
-
-  familyMemory,
-
-  history,
-
-  memory_saved:
-    Boolean(memoryRequest)
-
-});
-    
+    }
+    // =================================================
+    // FAMILY
+    // =================================================
+    if (toolPlan?.tool === 'family' && toolResult) {
+      const members = Array.isArray(toolResult.members) ? toolResult.members : [];
+
+      const response = !members.length
+        ? 'Aapki family mein abhi koi active member nahi mila.'
+        : 'Aapki family ke active members:\n\n' +
+          members
+            .map((member, index) => {
+              const relation = member.relation ? ` (${member.relation})` : '';
+              return `${index + 1}. ${member.name || 'Member'}${relation}`;
+            })
+            .join('\n');
+
+      return await sendChatResponse({
+        res,
+        userId,
+        message,
+        response,
+        model: 'family',
+        intent: 'family',
+        personalMemory,
+        familyMemory,
+        history,
+        memory_saved
+      });
+    }
+
+    // =================================================
+    // SERVICES
+    // =================================================
+    if (toolPlan?.tool === 'services' && Array.isArray(toolResult)) {
+      const response = !toolResult.length
+        ? 'Abhi is category ka koi active service provider nahi mila.'
+        : 'Mujhe ye service providers mile:\n\n' +
+          toolResult
+            .map((service, index) => {
+              const price =
+                service.price !== null && service.price !== undefined
+                  ? `₹${service.price}`
+                  : 'Price available nahi hai';
+              const locationText = service.location ? `📍 ${service.location}` : '';
+              return (
+                `${index + 1}. ${service.title || service.category || 'Service'}\n` +
+                `👤 ${service.provider_name}\n` +
+                `💰 ${price}\n` +
+                `${locationText}`
+              );
+            })
+            .join('\n\n');
+
+      return await sendChatResponse({
+        res,
+        userId,
+        message,
+        response,
+        model: 'services',
+        intent: 'services',
+        personalMemory,
+        familyMemory,
+        history,
+        memory_saved
+      });
+    }
+
+    // =================================================
+    // GPS
+    // =================================================
+    if (toolPlan?.tool === 'gps' && toolResult?.needs_member) {
+      return await sendChatResponse({
+        res,
+        userId,
+        message,
+        response:
+          'Kis family member ki location dekhni hai? Jaise: bhai, mummy ya papa. 📍',
+        model: 'gps',
+        intent: 'gps',
+        personalMemory,
+        familyMemory,
+        history,
+        memory_saved
+      });
+    }
+
+    // =================================================
+    // NORMAL AI  (FIX 5: Groq as fallback if routeAI fails)
+    // =================================================
+    let aiResult;
+    try {
+      aiResult = await routeAI({ message, history, memoryText: formatMemory(personalMemory, familyMemory) });
+    } catch (routeError) {
+      console.error('routeAI failed, falling back to Groq:', routeError.message);
+      const groqText = await callGroqAI(message, personalMemory, familyMemory, history);
+      aiResult = { text: groqText, provider: 'groq', model: GROQ_MODEL, intent: 'chat', web_used: false };
+    }
+
+    return await sendChatResponse({
+      res,
+      userId,
+      message,
+      response: aiResult.text,
+      provider: aiResult.provider,
+      model: aiResult.model,
+      intent: aiResult.intent,
+      web_used: Boolean(aiResult.web_used),
+      personalMemory,
+      familyMemory,
+      history,
+      memory_saved
+    });
 
   } catch (error) {
-    console.error(
-      '❌ Chat error:',
-      error
-    );
-
+    console.error('❌ Chat error:', error);
     return res.status(500).json({
-      error:
-        error.message ||
-        'Internal server error'
+      error: error.message || 'Internal server error'
     });
   }
 });
