@@ -668,16 +668,7 @@ async function sendChatResponse({
   });
 }
 
-  } catch (error) {
 
-    console.error(
-      'Chat save exception:',
-      error
-    );
-
-    return null;
-  }
-}
 // =====================================================
 // HISTORY REQUEST
 // =====================================================
@@ -1403,8 +1394,7 @@ const aiResult =
 
   });
 
-const response =
-  aiResult.text;
+
   
 const response =
   aiResult.text;
