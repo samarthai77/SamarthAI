@@ -2,9 +2,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 const {
-  routeAI
+  routeAI,
+  planToolCall
 } = require('../services/aiGateway');
-
 const {
   getTool
 } = require('../services/tools');
@@ -345,34 +345,62 @@ function formatMemory(personal, family) {
   return text;
 }
 // =====================================================
-// CHAT TOOL EXECUTOR
+// AI TOOL EXECUTOR
 // =====================================================
 
 async function executeChatTool({
-  intent,
+  plan,
   userId,
-  message,
   location = null
 }) {
 
+  const toolName =
+    String(plan?.tool || '')
+      .trim()
+      .toLowerCase();
+
+  const action =
+    String(plan?.action || '')
+      .trim()
+      .toLowerCase();
+
+  const args =
+    plan?.arguments &&
+    typeof plan.arguments === 'object'
+      ? plan.arguments
+      : {};
+
+
   // ---------------------------------------------------
-  // FAMILY
+  // NO TOOL
   // ---------------------------------------------------
 
-  if (intent === 'family') {
+  if (
+    !toolName ||
+    toolName === 'none' ||
+    action === 'none'
+  ) {
 
-    const tool =
-      getTool('family');
+    return null;
 
-    if (!tool) {
-      throw new Error(
-        'Family tool is not available'
-      );
-    }
+  }
 
-    return await tool.execute(
-      userId
-    );
+
+  // ---------------------------------------------------
+  // GET TOOL
+  // ---------------------------------------------------
+
+  const tool =
+    getTool(toolName);
+
+
+  if (!tool) {
+
+    return {
+      error:
+        `Tool "${toolName}" is not available`
+    };
+
   }
 
 
@@ -380,16 +408,7 @@ async function executeChatTool({
   // WEATHER
   // ---------------------------------------------------
 
-  if (intent === 'weather') {
-
-    const tool =
-      getTool('weather');
-
-    if (!tool) {
-      throw new Error(
-        'Weather tool is not available'
-      );
-    }
+  if (toolName === 'weather') {
 
     if (
       !location ||
@@ -400,40 +419,40 @@ async function executeChatTool({
       return {
         needs_location: true
       };
-    }
 
-
-    let type = 'current';
-
-    const text =
-      String(message || '')
-        .toLowerCase();
-
-
-    if (
-      /hour|hourly|ghante|ghanto/i
-        .test(text)
-    ) {
-      type = 'hourly';
-    }
-
-    if (
-      /tomorrow|kal|daily|forecast|aane wale din/i
-        .test(text)
-    ) {
-      type = 'daily';
     }
 
 
     return await tool.execute({
+
       latitude:
         location.latitude,
 
       longitude:
         location.longitude,
 
-      type
+      type:
+        args.weather_type ||
+        'current'
+
     });
+
+  }
+
+
+  // ---------------------------------------------------
+  // FAMILY
+  // ---------------------------------------------------
+
+  if (
+    toolName === 'family' &&
+    action === 'read'
+  ) {
+
+    return await tool.execute(
+      userId
+    );
+
   }
 
 
@@ -441,77 +460,66 @@ async function executeChatTool({
   // SERVICES
   // ---------------------------------------------------
 
-  if (intent === 'services') {
-
-    const tool =
-      getTool('services');
-
-    if (!tool) {
-      throw new Error(
-        'Services tool is not available'
-      );
-    }
-
-
-    const text =
-      String(message || '')
-        .trim();
-
-
-    let category = '';
-
-
-    if (
-      /plumber|plumbing|nal|paani/i
-        .test(text)
-    ) {
-      category = 'plumber';
-    }
-
-    else if (
-      /electrician|electric|bijli|wiring/i
-        .test(text)
-    ) {
-      category = 'electrician';
-    }
-
-    else if (
-      /carpenter|furniture|lakdi/i
-        .test(text)
-    ) {
-      category = 'carpenter';
-    }
-
-    else if (
-      /mechanic|bike|car repair/i
-        .test(text)
-    ) {
-      category = 'mechanic';
-    }
-
-    else if (
-      /cleaning|cleaner|safai/i
-        .test(text)
-    ) {
-      category = 'cleaning';
-    }
-
+  if (
+    toolName === 'services' &&
+    action === 'search'
+  ) {
 
     return await tool.execute({
-      query:
-        category
-          ? ''
-          : text,
 
-      category,
+      query:
+        args.query || '',
+
+      category:
+        args.category || '',
 
       location:
-        location?.name || '',
+        args.location_name ||
+        location?.name ||
+        '',
 
-      limit: 10
+      limit:
+        10
+
     });
+
   }
 
+
+  // ---------------------------------------------------
+  // GPS
+  // ---------------------------------------------------
+
+  if (
+    toolName === 'gps' &&
+    action === 'locate'
+  ) {
+
+    return {
+
+      needs_member:
+        true,
+
+      member_name:
+        args.member_name || ''
+
+    };
+
+  }
+
+
+  // ---------------------------------------------------
+  // UNSUPPORTED ACTION
+  // ---------------------------------------------------
+
+  return {
+
+    error:
+      `Action "${action}" is not implemented yet`
+
+  };
+
+}
 
   // ---------------------------------------------------
   // GPS
@@ -979,38 +987,56 @@ const memoryText =
 // DETECT INTENT
 // -------------------------------------------------
 
-const toolIntent =
-  require('../services/aiGateway')
-    .detectIntent(message);
-
+const toolPlan =
+  await planToolCall({
+    message,
+    history
+  });
 
 // -------------------------------------------------
 // EXECUTE READ-ONLY TOOL
+// -------------------------------------------------
+// -------------------------------------------------
+// AI TOOL PLANNER
+// -------------------------------------------------
+
+const toolPlan =
+  await planToolCall({
+    message,
+    history
+  });
+
+console.log(
+  '🤖 Tool Plan:',
+  JSON.stringify(toolPlan)
+);
+
+
+// -------------------------------------------------
+// EXECUTE TOOL
 // -------------------------------------------------
 
 let toolResult = null;
 
 if (
-  [
-    'weather',
-    'family',
-    'services',
-    'gps'
-  ].includes(toolIntent)
+  toolPlan &&
+  toolPlan.tool &&
+  toolPlan.tool !== 'none' &&
+  Number(toolPlan.confidence || 0) >= 0.60
 ) {
 
   try {
 
     toolResult =
       await executeChatTool({
-        intent:
-          toolIntent,
+
+        plan:
+          toolPlan,
 
         userId,
 
-        message,
-
         location
+
       });
 
   } catch (toolError) {
@@ -1021,21 +1047,23 @@ if (
     );
 
     toolResult = {
+
       error:
         toolError.message
-    };
-  }
-}
 
+    };
+
+  }
+
+}
 
 // -------------------------------------------------
 // WEATHER NEEDS LOCATION
 // -------------------------------------------------
-
 if (
-  toolIntent === 'weather' &&
+  toolPlan?.tool === 'weather' &&
   toolResult?.needs_location
-) {
+){
 
   const response =
     'Mausam batane ke liye mujhe us jagah ka location chahiye. Agar aap chahein to location permission de sakte hain. 📍';
@@ -1083,9 +1111,9 @@ if (
 // -------------------------------------------------
 
 if (
-  toolIntent === 'family' &&
+  toolPlan?.tool === 'family' &&
   toolResult
-) {
+){
 
   const members =
     Array.isArray(toolResult.members)
@@ -1168,9 +1196,9 @@ if (
 // -------------------------------------------------
 
 if (
-  toolIntent === 'services' &&
+  toolPlan?.tool === 'services' &&
   Array.isArray(toolResult)
-) {
+){
 
   let response = '';
 
@@ -1262,7 +1290,7 @@ if (
 // -------------------------------------------------
 
 if (
-  toolIntent === 'gps' &&
+  toolPlan?.tool === 'gps' &&
   toolResult?.needs_member
 ) {
 
