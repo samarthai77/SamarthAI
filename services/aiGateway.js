@@ -6,7 +6,249 @@ function cleanText(value) {
   return String(value || '').trim();
 }
 
+// =====================================================
+// AI TOOL PLANNER
+// =====================================================
 
+async function planToolCall({
+  message,
+  history = []
+}) {
+
+  if (!process.env.GROQ_API_KEY) {
+    return {
+      tool: 'none',
+      action: 'none',
+      arguments: {},
+      confidence: 0
+    };
+  }
+
+  const tools = `
+AVAILABLE TOOLS:
+
+1. weather
+   Purpose: Current or forecast weather information.
+   Actions: read
+
+2. family
+   Purpose: Read family members and family information.
+   Actions: read
+
+3. gps
+   Purpose: Locate a family member.
+   Actions: locate
+
+4. services
+   Purpose: Search SamarthAI service providers.
+   Actions: search
+
+5. none
+   Purpose: Normal conversation or a feature that is not currently handled by the tool system.
+`;
+
+  const prompt = `
+You are the intent and tool planner for SamarthAI.
+
+Understand the user's meaning, not exact keywords.
+
+The user may speak:
+- Hindi
+- Roman Hindi
+- Hinglish
+- English
+- Devanagari Hindi
+- with spelling mistakes
+- with short conversational phrases
+
+Do NOT depend on fixed keywords.
+
+Decide whether a tool is required.
+
+${tools}
+
+Return ONLY valid JSON.
+
+Required JSON format:
+
+{
+  "tool": "weather|family|gps|services|none",
+  "action": "read|locate|search|none",
+  "arguments": {
+    "category": "",
+    "member_name": "",
+    "location_name": "",
+    "weather_type": "current"
+  },
+  "confidence": 0
+}
+
+Rules:
+
+- "मेरे लिए प्लंबर खोजो"
+  means services/search and category should be plumber.
+
+- "मेरे घर का नल खराब है कोई आदमी भेजो"
+  means services/search and category should be plumber.
+
+- "मुझे बिजली वाला चाहिए"
+  means services/search and category should be electrician.
+
+- "मेरी फैमिली दिखाओ"
+  means family/read.
+
+- "सुनील कहाँ है?"
+  means gps/locate and member_name should be सुनील.
+
+- "भाई कहाँ है?"
+  means gps/locate and member_name should be भाई.
+
+- "आज मौसम कैसा है?"
+  means weather/read and weather_type current.
+
+- "कल का मौसम बताओ"
+  means weather/read and weather_type daily.
+
+- Normal conversation means none.
+
+Do not execute anything.
+Do not invent a member name.
+Do not invent a location.
+Do not return explanations outside JSON.
+`;
+
+  const recentHistory =
+    history
+      .slice(-8)
+      .map(item => {
+
+        const user =
+          item.message
+            ? `User: ${item.message}`
+            : '';
+
+        const assistant =
+          item.response
+            ? `Assistant: ${item.response}`
+            : '';
+
+        return `${user}\n${assistant}`;
+
+      })
+      .join('\n\n');
+
+  const response = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      method: 'POST',
+
+      headers: {
+        Authorization:
+          `Bearer ${process.env.GROQ_API_KEY}`,
+
+        'Content-Type':
+          'application/json'
+      },
+
+      body: JSON.stringify({
+
+        model:
+          GROQ_MODEL,
+
+        messages: [
+
+          {
+            role: 'system',
+            content: prompt
+          },
+
+          {
+            role: 'user',
+            content:
+              `Recent conversation:\n${recentHistory}\n\nCurrent message:\n${message}`
+          }
+
+        ],
+
+        temperature: 0,
+
+        max_tokens: 300
+
+      })
+    }
+  );
+
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+
+    console.error(
+      'Tool planner error:',
+      JSON.stringify(data)
+    );
+
+    return {
+      tool: 'none',
+      action: 'none',
+      arguments: {},
+      confidence: 0
+    };
+  }
+
+  const raw =
+    data.choices?.[0]?.message?.content || '';
+
+  try {
+
+    const cleaned =
+      raw
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+
+    const plan =
+      JSON.parse(cleaned);
+
+    return {
+
+      tool:
+        typeof plan.tool === 'string'
+          ? plan.tool
+          : 'none',
+
+      action:
+        typeof plan.action === 'string'
+          ? plan.action
+          : 'none',
+
+      arguments:
+        plan.arguments &&
+        typeof plan.arguments === 'object'
+          ? plan.arguments
+          : {},
+
+      confidence:
+        Number(plan.confidence) || 0
+
+    };
+
+  } catch (error) {
+
+    console.error(
+      'Tool planner JSON error:',
+      raw
+    );
+
+    return {
+      tool: 'none',
+      action: 'none',
+      arguments: {},
+      confidence: 0
+    };
+  }
+}
 // =====================================================
 // PROVIDER: GROQ
 // =====================================================
@@ -799,6 +1041,8 @@ module.exports = {
   routeAI,
 
   detectIntent,
+
+  planToolCall,
 
   callGroq,
 
