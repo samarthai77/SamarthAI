@@ -557,7 +557,54 @@ return (data || [])
     return [];
   }
 }
+// =====================================================
+// SAVE CHAT MESSAGE
+// =====================================================
+async function saveChatMessage(
+  userId,
+  message,
+  response,
+  model
+) {
+  try {
 
+    const {
+      data,
+      error
+    } = await supabase
+      .from('chats')
+      .insert([
+        {
+          user_id: userId,
+          message,
+          response,
+          model
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        'Chat save error:',
+        error
+      );
+
+      return null;
+    }
+
+    return data?.id || null;
+
+  } catch (error) {
+
+    console.error(
+      'Chat save exception:',
+      error
+    );
+
+    return null;
+  }
+}
 // =====================================================
 // HISTORY REQUEST
 // =====================================================
