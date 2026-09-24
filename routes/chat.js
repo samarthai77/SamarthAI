@@ -4,6 +4,11 @@ const { createClient } = require('@supabase/supabase-js');
 const {
   routeAI
 } = require('../services/aiGateway');
+
+const {
+  getTool
+} = require('../services/tools');
+
 const router = express.Router();
 
 const supabase = createClient(
@@ -339,7 +344,189 @@ function formatMemory(personal, family) {
 
   return text;
 }
+// =====================================================
+// CHAT TOOL EXECUTOR
+// =====================================================
 
+async function executeChatTool({
+  intent,
+  userId,
+  message,
+  location = null
+}) {
+
+  // ---------------------------------------------------
+  // FAMILY
+  // ---------------------------------------------------
+
+  if (intent === 'family') {
+
+    const tool =
+      getTool('family');
+
+    if (!tool) {
+      throw new Error(
+        'Family tool is not available'
+      );
+    }
+
+    return await tool.execute(
+      userId
+    );
+  }
+
+
+  // ---------------------------------------------------
+  // WEATHER
+  // ---------------------------------------------------
+
+  if (intent === 'weather') {
+
+    const tool =
+      getTool('weather');
+
+    if (!tool) {
+      throw new Error(
+        'Weather tool is not available'
+      );
+    }
+
+    if (
+      !location ||
+      location.latitude === undefined ||
+      location.longitude === undefined
+    ) {
+
+      return {
+        needs_location: true
+      };
+    }
+
+
+    let type = 'current';
+
+    const text =
+      String(message || '')
+        .toLowerCase();
+
+
+    if (
+      /hour|hourly|ghante|ghanto/i
+        .test(text)
+    ) {
+      type = 'hourly';
+    }
+
+    if (
+      /tomorrow|kal|daily|forecast|aane wale din/i
+        .test(text)
+    ) {
+      type = 'daily';
+    }
+
+
+    return await tool.execute({
+      latitude:
+        location.latitude,
+
+      longitude:
+        location.longitude,
+
+      type
+    });
+  }
+
+
+  // ---------------------------------------------------
+  // SERVICES
+  // ---------------------------------------------------
+
+  if (intent === 'services') {
+
+    const tool =
+      getTool('services');
+
+    if (!tool) {
+      throw new Error(
+        'Services tool is not available'
+      );
+    }
+
+
+    const text =
+      String(message || '')
+        .trim();
+
+
+    let category = '';
+
+
+    if (
+      /plumber|plumbing|nal|paani/i
+        .test(text)
+    ) {
+      category = 'plumber';
+    }
+
+    else if (
+      /electrician|electric|bijli|wiring/i
+        .test(text)
+    ) {
+      category = 'electrician';
+    }
+
+    else if (
+      /carpenter|furniture|lakdi/i
+        .test(text)
+    ) {
+      category = 'carpenter';
+    }
+
+    else if (
+      /mechanic|bike|car repair/i
+        .test(text)
+    ) {
+      category = 'mechanic';
+    }
+
+    else if (
+      /cleaning|cleaner|safai/i
+        .test(text)
+    ) {
+      category = 'cleaning';
+    }
+
+
+    return await tool.execute({
+      query:
+        category
+          ? ''
+          : text,
+
+      category,
+
+      location:
+        location?.name || '',
+
+      limit: 10
+    });
+  }
+
+
+  // ---------------------------------------------------
+  // GPS
+  // ---------------------------------------------------
+
+  if (intent === 'gps') {
+
+    return {
+      needs_member: true
+    };
+  }
+
+
+  return null;
+}
 // =====================================================
 // CHAT HISTORY
 // =====================================================
@@ -635,7 +822,11 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const { message, image } = req.body;
+const {
+  message,
+  image,
+  location
+} = req.body;
 
     if (!message && !image) {
       return res.status(400).json({
@@ -773,25 +964,366 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // =================================================
-    // AI RESPONSE
-    // =================================================
-  const memoryText =
+  // =================================================
+// AI / TOOL RESPONSE
+// =================================================
+
+const memoryText =
   formatMemory(
     personalMemory,
     familyMemory
   );
 
+
+// -------------------------------------------------
+// DETECT INTENT
+// -------------------------------------------------
+
+const toolIntent =
+  require('../services/aiGateway')
+    .detectIntent(message);
+
+
+// -------------------------------------------------
+// EXECUTE READ-ONLY TOOL
+// -------------------------------------------------
+
+let toolResult = null;
+
+if (
+  [
+    'weather',
+    'family',
+    'services',
+    'gps'
+  ].includes(toolIntent)
+) {
+
+  try {
+
+    toolResult =
+      await executeChatTool({
+        intent:
+          toolIntent,
+
+        userId,
+
+        message,
+
+        location
+      });
+
+  } catch (toolError) {
+
+    console.error(
+      'Tool execution error:',
+      toolError
+    );
+
+    toolResult = {
+      error:
+        toolError.message
+    };
+  }
+}
+
+
+// -------------------------------------------------
+// WEATHER NEEDS LOCATION
+// -------------------------------------------------
+
+if (
+  toolIntent === 'weather' &&
+  toolResult?.needs_location
+) {
+
+  const response =
+    'Mausam batane ke liye mujhe us jagah ka location chahiye. Agar aap chahein to location permission de sakte hain. 📍';
+
+  return res.json({
+
+    response,
+
+    chat_id: null,
+
+    provider:
+      'samarthai-tool',
+
+    model:
+      'weather',
+
+    intent:
+      'weather',
+
+    web_used:
+      false,
+
+    memory_used: {
+
+      personal:
+        personalMemory.length,
+
+      family:
+        familyMemory.length,
+
+      history:
+        history.length
+
+    },
+
+    memory_saved:
+      Boolean(memoryRequest)
+
+  });
+}
+
+
+// -------------------------------------------------
+// FAMILY RESULT
+// -------------------------------------------------
+
+if (
+  toolIntent === 'family' &&
+  toolResult
+) {
+
+  const members =
+    Array.isArray(toolResult.members)
+      ? toolResult.members
+      : [];
+
+
+  let response = '';
+
+
+  if (!members.length) {
+
+    response =
+      'Aapki family mein abhi koi active member nahi mila.';
+
+  } else {
+
+    response =
+      'Aapki family ke active members:\n\n' +
+
+      members
+        .map((member, index) => {
+
+          const relation =
+            member.relation
+              ? ` (${member.relation})`
+              : '';
+
+          return (
+            `${index + 1}. ` +
+            `${member.name || 'Member'}` +
+            `${relation}`
+          );
+
+        })
+        .join('\n');
+  }
+
+
+  return res.json({
+
+    response,
+
+    chat_id: null,
+
+    provider:
+      'samarthai-tool',
+
+    model:
+      'family',
+
+    intent:
+      'family',
+
+    web_used:
+      false,
+
+    memory_used: {
+
+      personal:
+        personalMemory.length,
+
+      family:
+        familyMemory.length,
+
+      history:
+        history.length
+
+    },
+
+    memory_saved:
+      Boolean(memoryRequest)
+
+  });
+}
+
+
+// -------------------------------------------------
+// SERVICES RESULT
+// -------------------------------------------------
+
+if (
+  toolIntent === 'services' &&
+  Array.isArray(toolResult)
+) {
+
+  let response = '';
+
+
+  if (!toolResult.length) {
+
+    response =
+      'Abhi is category ka koi active service provider nahi mila.';
+
+  } else {
+
+    response =
+      'Mujhe ye service providers mile:\n\n' +
+
+      toolResult
+        .map((service, index) => {
+
+          const price =
+            service.price !== null &&
+            service.price !== undefined
+              ? `₹${service.price}`
+              : 'Price available nahi hai';
+
+
+          const locationText =
+            service.location
+              ? `📍 ${service.location}`
+              : '';
+
+
+          return (
+
+            `${index + 1}. ` +
+            `${service.title || service.category || 'Service'}\n` +
+
+            `👤 ${service.provider_name}\n` +
+
+            `💰 ${price}\n` +
+
+            `${locationText}`
+
+          );
+
+        })
+        .join('\n\n');
+  }
+
+
+  return res.json({
+
+    response,
+
+    chat_id: null,
+
+    provider:
+      'samarthai-tool',
+
+    model:
+      'services',
+
+    intent:
+      'services',
+
+    web_used:
+      false,
+
+    memory_used: {
+
+      personal:
+        personalMemory.length,
+
+      family:
+        familyMemory.length,
+
+      history:
+        history.length
+
+    },
+
+    memory_saved:
+      Boolean(memoryRequest)
+
+  });
+}
+
+
+// -------------------------------------------------
+// GPS
+// -------------------------------------------------
+
+if (
+  toolIntent === 'gps' &&
+  toolResult?.needs_member
+) {
+
+  const response =
+    'Kis family member ki location dekhni hai? Jaise: bhai, mummy ya papa. 📍';
+
+  return res.json({
+
+    response,
+
+    chat_id: null,
+
+    provider:
+      'samarthai-tool',
+
+    model:
+      'gps',
+
+    intent:
+      'gps',
+
+    web_used:
+      false,
+
+    memory_used: {
+
+      personal:
+        personalMemory.length,
+
+      family:
+        familyMemory.length,
+
+      history:
+        history.length
+
+    },
+
+    memory_saved:
+      Boolean(memoryRequest)
+
+  });
+}
+
+
+// -------------------------------------------------
+// NORMAL AI
+// -------------------------------------------------
+
 const aiResult =
   await routeAI({
+
     message,
+
     history,
+
     memoryText
+
   });
 
 const response =
   aiResult.text;
-
     // =================================================
     // SAVE CHAT
     // =================================================
