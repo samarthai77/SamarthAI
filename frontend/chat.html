@@ -1474,7 +1474,98 @@ function getTime(){
 
 }
 
+/* ===== LOAD CHAT HISTORY ===== */
 
+async function loadChatHistory(){
+
+    const token =
+        localStorage.getItem(
+            'token'
+        );
+
+    if(!token) return;
+
+    try{
+
+        const res =
+            await fetch(
+                CHAT_API +
+                '/history',
+                {
+                    method:'GET',
+
+                    headers:{
+                        'Authorization':
+                            'Bearer ' + token
+                    }
+                }
+            );
+
+        if(!res.ok){
+
+            console.warn(
+                '[CHAT HISTORY]',
+                'Failed to load history'
+            );
+
+            return;
+        }
+
+        const data =
+            await res.json();
+
+        const chats =
+            Array.isArray(data.chats)
+                ? data.chats
+                : [];
+
+        const box =
+            document.getElementById(
+                'chatMessages'
+            );
+
+        if(!box) return;
+
+        box.innerHTML = '';
+
+        chats.forEach(chat => {
+
+            if(
+                chat.message &&
+                chat.message.trim()
+            ){
+
+                addMessage(
+                    chat.message,
+                    true
+                );
+
+            }
+
+            if(
+                chat.response &&
+                chat.response.trim()
+            ){
+
+                addMessage(
+                    chat.response,
+                    false
+                );
+
+            }
+
+        });
+
+    }catch(error){
+
+        console.error(
+            '[CHAT HISTORY]',
+            error
+        );
+
+    }
+
+}
 /* ===== ADD MESSAGE ===== */
 
 function addMessage(
@@ -2009,6 +2100,7 @@ document
 /* ===== INIT ===== */
 
 loadChatProfile();
+ loadChatHistory();   
 /* ===== MOBILE KEYBOARD FIX ===== */
 
 const chatInput =
