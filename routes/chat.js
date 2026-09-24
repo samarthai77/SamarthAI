@@ -1252,7 +1252,7 @@ return await sendChatResponse({
       Boolean(memoryRequest)
 
   });
- 
+}
 // -------------------------------------------------
 // SERVICES RESULT
 // -------------------------------------------------
