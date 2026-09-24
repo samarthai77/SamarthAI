@@ -1436,34 +1436,7 @@ return await sendChatResponse({
     Boolean(memoryRequest)
 
 });
-    // =================================================
-    // RESPONSE
-    // =================================================
- return res.json({
-  response,
-  chat_id: chatId,
-
-  provider:
-    aiResult.provider,
-
-  model:
-    aiResult.model,
-
-  intent:
-    aiResult.intent,
-
-  web_used:
-    Boolean(aiResult.web_used),
-
-  memory_used: {
-    personal: personalMemory.length,
-    family: familyMemory.length,
-    history: history.length
-  },
-
-  memory_saved:
-    Boolean(memoryRequest)
-});
+    
 
   } catch (error) {
     console.error(
