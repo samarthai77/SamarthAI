@@ -1366,8 +1366,7 @@ async function runConversation({
               member.id
 
           });
-
-      } else {
+} else {
 
         toolResult = {
 
@@ -1376,49 +1375,82 @@ async function runConversation({
 
           requested:
             plan.arguments.member_name,
- };
-      } else {
-        return {
-          response:
-            'Kis family member ki location dekhni hai?',
-          model:
-            'gps',
-          intent:
-            'gps',
-          memory_saved:
-            saved.length > 0
+
+          members:
+            family.members || []
+
         };
+
       }
+
+    } else {
+
+      return {
+
+        response:
+          'Kis family member ki location dekhni hai?',
+
+        model:
+          'gps',
+
+        intent:
+          'gps',
+
+        memory_saved:
+          saved.length > 0
+
+      };
+
     }
+
   }
+
 
   const response =
     await finalAnswer({
+
       message,
+
       relevantHistory,
+
       personal:
         context.personal,
+
       family:
         context.family,
+
       toolPlan:
         plan,
+
       toolResult
+
     });
 
+
   return {
+
     response,
+
     model:
       toolResult
         ? plan.tool
         : GROQ_MODEL,
+
     intent:
       plan.tool ||
       'chat',
+
     memory_saved:
       saved.length > 0
+
   };
+
 }
 
+
 module.exports = {
+
   runConversation
-};         
+
+};
+ 
