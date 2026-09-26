@@ -1,6 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 const { getTool } = require('./tools');
-const { callGroq } = require('./aiGateway');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,15 +8,9 @@ const supabase = createClient(
 
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 
-
-// =====================================================
-// HELPERS
-// =====================================================
-
 function clip(value, max) {
   return String(value ?? '').slice(0, max);
 }
-
 
 function normalize(value) {
   return String(value || '')
@@ -26,54 +19,113 @@ function normalize(value) {
     .trim();
 }
 
+function normalizeWeatherType(value) {
+  const v = normalize(value);
 
-// =====================================================
-// MEMORY TEXT
-// =====================================================
+  if (
+    [
+      'hourly',
+      'hour',
+      'hours',
+      'ghante',
+      'hour forecast'
+    ].includes(v)
+  ) {
+    return 'hourly';
+  }
+
+  if (
+    [
+      'daily',
+      'day',
+      'days',
+      'tomorrow',
+      'forecast',
+      'future',
+      'kal',
+      'aane wale din'
+    ].includes(v)
+  ) {
+    return 'daily';
+  }
+
+  return 'current';
+}
+
+function normalizeLocationMode(value) {
+  const v = normalize(value);
+
+  if (
+    [
+      'nearby',
+      'near me',
+      'near-me',
+      'paas',
+      'aas paas',
+      'nazdeek'
+    ].includes(v)
+  ) {
+    return 'nearby';
+  }
+
+  if (
+    [
+      'named',
+      'city',
+      'area',
+      'place',
+      'location_name'
+    ].includes(v)
+  ) {
+    return 'named';
+  }
+
+  if (
+    [
+      'device',
+      'gps',
+      'phone',
+      'current location'
+    ].includes(v)
+  ) {
+    return 'device';
+  }
+
+  return 'none';
+}
 
 function memoryText(
   personal = [],
   family = []
 ) {
+  const p = personal
+    .slice(0, 25)
+    .map(
+      x =>
+        `- ${clip(x.key, 80)}: ${clip(x.value, 250)}`
+    )
+    .join('\n');
 
-  const personalText =
-    personal
-      .slice(0, 30)
-      .map(item =>
-        `- ${clip(item.key, 80)}: ${clip(item.value, 300)}`
-      )
-      .join('\n');
+  const f = family
+    .slice(0, 25)
+    .map(
+      x =>
+        `- ${clip(x.key, 80)}: ${clip(x.value, 250)}`
+    )
+    .join('\n');
 
-  const familyText =
-    family
-      .slice(0, 30)
-      .map(item =>
-        `- ${clip(item.key, 80)}: ${clip(item.value, 300)}`
-      )
-      .join('\n');
-
-  return `
-PRIVATE PERSONAL MEMORY:
-
-${personalText || '(none)'}
-
-
-SHARED FAMILY MEMORY:
-
-${familyText || '(none)'}
-`;
+  return (
+    `PRIVATE PERSONAL MEMORY:\n` +
+    `${p || '(none)'}\n\n` +
+    `SHARED FAMILY MEMORY:\n` +
+    `${f || '(none)'}`
+  );
 }
 
-
-// =====================================================
-// FAMILY MEMORY
-// =====================================================
-
 async function getFamilyMemory(userId) {
-
   const {
     data: member,
-    error: memberError
+    error: me
   } = await supabase
     .from('family_members')
     .select('family_id,is_active')
@@ -82,8 +134,8 @@ async function getFamilyMemory(userId) {
     .limit(1)
     .maybeSingle();
 
-  if (memberError) {
-    throw memberError;
+  if (me) {
+    throw me;
   }
 
   if (!member?.family_id) {
@@ -96,10 +148,16 @@ async function getFamilyMemory(userId) {
   } = await supabase
     .from('family_memory')
     .select('key,value,updated_at')
-    .eq('family_id', member.family_id)
-    .order('updated_at', {
-      ascending: false
-    })
+    .eq(
+      'family_id',
+      member.family_id
+    )
+    .order(
+      'updated_at',
+      {
+        ascending: false
+      }
+    )
     .limit(30);
 
   if (error) {
@@ -109,19 +167,12 @@ async function getFamilyMemory(userId) {
   return data || [];
 }
 
-
-// =====================================================
-// LOAD CONTEXT
-// =====================================================
-
 async function loadContext(userId) {
-
   const [
     historyResult,
     personalResult,
     family
   ] = await Promise.all([
-
     supabase
       .from('chats')
       .select(
@@ -137,7 +188,7 @@ async function loadContext(userId) {
           ascending: true
         }
       )
-      .limit(200),
+      .limit(100),
 
     supabase
       .from('personal_memory')
@@ -157,7 +208,6 @@ async function loadContext(userId) {
       .limit(30),
 
     getFamilyMemory(userId)
-
   ]);
 
   if (historyResult.error) {
@@ -169,7 +219,6 @@ async function loadContext(userId) {
   }
 
   return {
-
     history:
       historyResult.data || [],
 
@@ -178,19 +227,12 @@ async function loadContext(userId) {
 
     family:
       family || []
-
   };
 }
 
-
-// =====================================================
-// COMPACT HISTORY
-// =====================================================
-
 function compactHistory(history) {
-
   const recent =
-    history.slice(-12);
+    history.slice(-10);
 
   if (!recent.length) {
     return '(no previous conversation)';
@@ -198,104 +240,178 @@ function compactHistory(history) {
 
   return recent
     .map(
-      (item, index) =>
-        `[${index}] USER: ${clip(
+      (item, i) =>
+        `[${i + 1}] USER: ${clip(
           item.message,
-          300
-        )}
-ASSISTANT: ${clip(
+          280
+        )}\nASSISTANT: ${clip(
           item.response,
-          500
+          450
         )}`
     )
     .join('\n\n');
 }
 
-
-// =====================================================
-// DEFAULT PLAN
-// =====================================================
-
 function emptyPlan() {
-
   return {
-
-    reply:
-      '',
-
-    mode:
-      'chat',
-
-    exact_target:
-      'exchange',
-
-    tool:
-      'none',
-
-    action:
-      'none',
+    reply: '',
+    mode: 'chat',
+    exact_target: 'exchange',
+    tool: 'none',
+    action: 'none',
 
     arguments: {
-
-      category:
-        '',
-
-      query:
-        '',
-
-      member_name:
-        '',
-
-      location_name:
-        '',
-
-      weather_type:
-        'current',
-
-      location_mode:
-        'none'
-
+      category: '',
+      query: '',
+      member_name: '',
+      location_name: '',
+      weather_type: 'current',
+      location_mode: 'none'
     },
 
-    memory_candidates:
-      [],
+    memory_candidates: [],
 
-    needs_web:
-      false
-
+    needs_web: false
   };
 }
 
+const conversationSchema = {
+  type: 'object',
 
-// =====================================================
-// MAIN AI
-// UNDERSTANDING + NORMAL RESPONSE
-// ONE REQUEST
-// =====================================================
+  additionalProperties: false,
+
+  properties: {
+    reply: {
+      type: 'string'
+    },
+
+    mode: {
+      type: 'string'
+    },
+
+    exact_target: {
+      type: 'string'
+    },
+
+    tool: {
+      type: 'string'
+    },
+
+    action: {
+      type: 'string'
+    },
+
+    arguments: {
+      type: 'object',
+
+      additionalProperties: false,
+
+      properties: {
+        category: {
+          type: 'string'
+        },
+
+        query: {
+          type: 'string'
+        },
+
+        member_name: {
+          type: 'string'
+        },
+
+        location_name: {
+          type: 'string'
+        },
+
+        weather_type: {
+          type: 'string'
+        },
+
+        location_mode: {
+          type: 'string'
+        }
+      },
+
+      required: [
+        'category',
+        'query',
+        'member_name',
+        'location_name',
+        'weather_type',
+        'location_mode'
+      ]
+    },
+
+    memory_candidates: {
+      type: 'array',
+
+      items: {
+        type: 'object',
+
+        additionalProperties: false,
+
+        properties: {
+          key: {
+            type: 'string'
+          },
+
+          value: {
+            type: 'string'
+          },
+
+          explicit: {
+            type: 'boolean'
+          },
+
+          evidence: {
+            type: 'string'
+          }
+        },
+
+        required: [
+          'key',
+          'value',
+          'explicit',
+          'evidence'
+        ]
+      }
+    },
+
+    needs_web: {
+      type: 'boolean'
+    }
+  },
+
+  required: [
+    'reply',
+    'mode',
+    'exact_target',
+    'tool',
+    'action',
+    'arguments',
+    'memory_candidates',
+    'needs_web'
+  ]
+};
 
 async function understandAndAnswer(
   message,
   context
 ) {
-
   if (!process.env.GROQ_API_KEY) {
-
     throw new Error(
       'GROQ_API_KEY is not configured'
     );
-
   }
 
-
   const prompt = `
+You are SamarthAI's main conversation engine.
 
-You are the MAIN CONVERSATION ENGINE of SamarthAI.
+Understand meaning, context and references.
 
-Understand what the user actually means.
+Do not use keyword lists or regex logic.
 
-Do NOT depend on keyword matching.
-
-The user may speak:
+Understand:
 
 - Hindi
 - Roman Hindi
@@ -303,540 +419,168 @@ The user may speak:
 - English
 - Devanagari
 - spelling mistakes
-- incomplete sentences
 - short replies
-- references to earlier messages
-
-Examples of references:
-
-"wo"
-"uska"
-"pehle wali baat"
-"pichhla message"
-"fir se batao"
-"haan"
-"nahi"
-"acha"
-"theek hai"
-
-Use the supplied conversation context.
+- incomplete sentences
+- references to previous conversation
 
 Never invent facts.
 
-You must return ONLY the requested JSON object.
+Return ONLY JSON matching the supplied schema.
 
-
-=====================================================
-MODES
-=====================================================
-
-chat
-Normal conversation.
-
-exact_previous
-User wants the exact previous message or answer.
-
-recent_history
-User wants recent conversation.
-
-history_summary
-User wants a summary of earlier conversation.
-
-
-=====================================================
-TOOLS
-=====================================================
-
-weather
-Live weather.
-
-family
-Family information.
-
-gps
-Family member location.
-
-services
-SamarthAI service provider search.
+TOOLS:
 
 none
-Normal conversation.
+weather
+family
+gps
+services
 
+MODES:
 
-=====================================================
-MEMORY
-=====================================================
+chat
+exact_previous
+recent_history
+history_summary
 
-Only create a memory candidate when the user
-EXPLICITLY states a durable personal fact or preference.
+WEATHER:
 
-Examples:
+Use current, hourly or daily.
 
-"Mera naam Shekhar hai"
+If user names a city or area:
 
-"Main construction ka kaam karta hoon"
+location_mode = named
 
-"Mujhe chai pasand hai"
+and put the place name in:
 
-Do NOT save:
+location_name
 
-questions
+If user asks nearby services:
 
-temporary statements
+location_mode = nearby
 
-guesses
+If usable device coordinates are supplied:
 
-assistant information
+location_mode = device
 
-family information as personal memory
+SERVICES:
 
-For every memory candidate:
+Put requested service type in:
+
+category
+
+or:
+
+query
+
+GPS:
+
+member_name may contain a person's name
+or family relation.
+
+MEMORY:
+
+Create candidates only for durable facts
+or preferences explicitly stated by the user
+in THIS message.
 
 explicit must be true.
 
-evidence must be an exact substring of the
-CURRENT USER MESSAGE.
+evidence must be an exact substring
+of the current user message.
 
-Never invent evidence.
+Never create memory from questions,
+guesses or assistant information.
 
-
-=====================================================
-LOCATION
-=====================================================
-
-nearby
-User wants nearby services but usable coordinates
-are not supplied.
-
-named
-User explicitly gives a city or area.
-
-device
-Usable device coordinates are supplied.
-
-none
-Location is not required.
-
-
-=====================================================
-WEATHER
-=====================================================
-
-weather_type can be:
-
-current
-hourly
-daily
-
-
-=====================================================
-SERVICES
-=====================================================
-
-category/query should contain the requested service.
-
-Examples:
-
-plumber
-
-electrician
-
-carpenter
-
-mechanic
-
-cleaning
-
-
-=====================================================
-GPS
-=====================================================
-
-member_name may contain:
-
-person name
-
-relation
-
-example:
-
-Sunil
-
-bhai
-
-papa
-
-mummy
-
-
-=====================================================
-CURRENT USER MESSAGE
-=====================================================
+CURRENT USER MESSAGE:
 
 ${clip(
   message,
   2000
 )}
 
-
-=====================================================
-RECENT CONVERSATION
-=====================================================
+RECENT CONVERSATION:
 
 ${compactHistory(
   context.history
 )}
 
-
-=====================================================
-MEMORY
-=====================================================
+MEMORY:
 
 ${memoryText(
   context.personal,
   context.family
 )}
-
 `;
-
-
-  const schema = {
-
-    type:
-      'object',
-
-    properties: {
-
-      reply: {
-        type:
-          'string'
-      },
-
-      mode: {
-
-        type:
-          'string',
-
-        enum: [
-          'chat',
-          'exact_previous',
-          'recent_history',
-          'history_summary'
-        ]
-
-      },
-
-      exact_target: {
-
-        type:
-          'string',
-
-        enum: [
-          'user',
-          'assistant',
-          'exchange'
-        ]
-
-      },
-
-      tool: {
-
-        type:
-          'string',
-
-        enum: [
-          'none',
-          'weather',
-          'family',
-          'gps',
-          'services'
-        ]
-
-      },
-
-      action: {
-
-        type:
-          'string',
-
-        enum: [
-          'none',
-          'read',
-          'locate',
-          'search'
-        ]
-
-      },
-
-      arguments: {
-
-        type:
-          'object',
-
-        properties: {
-
-          category: {
-            type:
-              'string'
-          },
-
-          query: {
-            type:
-              'string'
-          },
-
-          member_name: {
-            type:
-              'string'
-          },
-
-          location_name: {
-            type:
-              'string'
-          },
-
-          weather_type: {
-
-            type:
-              'string',
-
-            enum: [
-              'current',
-              'hourly',
-              'daily'
-            ]
-
-          },
-
-          location_mode: {
-
-            type:
-              'string',
-
-            enum: [
-              'none',
-              'named',
-              'nearby',
-              'device'
-            ]
-
-          }
-
-        },
-
-        required: [
-
-          'category',
-
-          'query',
-
-          'member_name',
-
-          'location_name',
-
-          'weather_type',
-
-          'location_mode'
-
-        ],
-
-        additionalProperties:
-          false
-
-      },
-
-      memory_candidates: {
-
-        type:
-          'array',
-
-        items: {
-
-          type:
-            'object',
-
-          properties: {
-
-            key: {
-              type:
-                'string'
-            },
-
-            value: {
-              type:
-                'string'
-            },
-
-            explicit: {
-              type:
-                'boolean'
-            },
-
-            evidence: {
-              type:
-                'string'
-            }
-
-          },
-
-          required: [
-
-            'key',
-
-            'value',
-
-            'explicit',
-
-            'evidence'
-
-          ],
-
-          additionalProperties:
-            false
-
-        }
-
-      },
-
-      needs_web: {
-
-        type:
-          'boolean'
-
-      }
-
-    },
-
-    required: [
-
-      'reply',
-
-      'mode',
-
-      'exact_target',
-
-      'tool',
-
-      'action',
-
-      'arguments',
-
-      'memory_candidates',
-
-      'needs_web'
-
-    ],
-
-    additionalProperties:
-      false
-
-  };
-
 
   const response =
     await fetch(
-
       'https://api.groq.com/openai/v1/chat/completions',
-
       {
-
-        method:
-          'POST',
+        method: 'POST',
 
         headers: {
-
           Authorization:
             `Bearer ${process.env.GROQ_API_KEY}`,
 
           'Content-Type':
             'application/json'
-
         },
 
-        body:
-          JSON.stringify({
+        body: JSON.stringify({
+          model:
+            GROQ_MODEL,
 
-            model:
-              GROQ_MODEL,
+          messages: [
+            {
+              role: 'system',
 
-            messages: [
-
-              {
-
-                role:
-                  'system',
-
-                content:
-                  'Return only the requested JSON object. Do not include markdown.'
-
-              },
-
-              {
-
-                role:
-                  'user',
-
-                content:
-                  prompt
-
-              }
-
-            ],
-
-            response_format: {
-
-              type:
-                'json_schema',
-
-              json_schema: {
-
-                name:
-                  'samarthai_conversation',
-
-                strict:
-                  true,
-
-                schema
-
-              }
-
+              content:
+                'Return only valid JSON. No markdown.'
             },
 
-            reasoning_effort:
-              'low',
+            {
+              role: 'user',
 
-            reasoning_format:
-              'hidden',
+              content:
+                prompt
+            }
+          ],
 
-            temperature:
-              0.2,
+          response_format: {
+            type: 'json_schema',
 
-            max_tokens:
-              700
+            json_schema: {
+              name:
+                'samarthai_conversation',
 
-          })
+              strict: true,
 
+              schema:
+                conversationSchema
+            }
+          },
+
+          include_reasoning:
+            false,
+
+          temperature:
+            0.1,
+
+          max_completion_tokens:
+            900
+        })
       }
-
     );
-
 
   const data =
     await response.json();
 
-
   if (!response.ok) {
-
     throw new Error(
-
       data?.error?.message ||
-
       'Conversation AI request failed'
-
     );
-
   }
-
 
   const raw =
     data
@@ -844,36 +588,49 @@ ${memoryText(
       ?.message?.content ||
     '{}';
 
+  let parsed;
 
   try {
-
-    return {
-
-      ...emptyPlan(),
-
-      ...JSON.parse(
-        raw
-      )
-
-    };
-
+    parsed =
+      JSON.parse(raw);
   } catch (error) {
-
     console.error(
       'Conversation JSON parse error:',
       raw
     );
 
     return emptyPlan();
-
   }
 
+  const plan = {
+    ...emptyPlan(),
+    ...parsed
+  };
+
+  plan.arguments = {
+    ...emptyPlan().arguments,
+    ...(parsed.arguments || {})
+  };
+// Normalize AI-generated semantic values
+  // on the server side instead of trusting
+  // strict enum values from the model.
+
+  plan.arguments.weather_type =
+    normalizeWeatherType(
+      plan.arguments.weather_type
+    );
+
+  plan.arguments.location_mode =
+    normalizeLocationMode(
+      plan.arguments.location_mode
+    );
+
+  return plan;
 }
 
 
 // =====================================================
 // SAVE PERSONAL MEMORY
-// WITH EVIDENCE VALIDATION
 // =====================================================
 
 async function saveMemory(
@@ -881,205 +638,222 @@ async function saveMemory(
   candidates,
   userMessage
 ) {
-
-  if (
-    !Array.isArray(
-      candidates
-    )
-  ) {
-
+  if (!Array.isArray(candidates)) {
     return [];
-
   }
 
-
   const source =
-    normalize(
-      userMessage
-    );
-
+    normalize(userMessage);
 
   const saved = [];
-
 
   for (
     const item of candidates.slice(0, 5)
   ) {
-
     if (
       !item ||
       item.explicit !== true
     ) {
-
       continue;
-
     }
 
-
     const key =
-      clip(
-        item.key,
-        100
-      ).trim();
-
+      clip(item.key, 100).trim();
 
     const value =
-      clip(
-        item.value,
-        500
-      ).trim();
-
+      clip(item.value, 500).trim();
 
     const evidence =
-      normalize(
-        item.evidence
-      );
-
+      normalize(item.evidence);
 
     if (
       !key ||
       !value ||
       !evidence
     ) {
-
       continue;
-
     }
 
-
-    if (
-      !source.includes(
-        evidence
-      )
-    ) {
-
+    // Evidence must actually exist
+    // inside the current user message.
+    if (!source.includes(evidence)) {
       continue;
-
     }
-
 
     const {
       data: existing,
       error: findError
     } = await supabase
-
       .from('personal_memory')
-
       .select('id')
-
       .eq(
         'user_id',
         userId
       )
-
       .eq(
         'key',
         key
       )
-
       .limit(1)
-
       .maybeSingle();
 
-
     if (findError) {
-
       console.error(
         'Memory lookup error:',
         findError
       );
 
       continue;
-
     }
 
-
     if (existing?.id) {
-
       const {
         error
       } = await supabase
-
         .from('personal_memory')
-
         .update({
-
           value,
-
           updated_at:
-            new Date()
-              .toISOString()
-
+            new Date().toISOString()
         })
-
         .eq(
           'id',
           existing.id
         );
 
-
       if (error) {
-
         console.error(
           'Memory update error:',
           error
         );
 
         continue;
-
       }
-
     } else {
-
       const {
         error
       } = await supabase
-
         .from('personal_memory')
-
         .insert([
-
           {
-
             user_id:
               userId,
 
             key,
 
             value
-
           }
-
         ]);
 
-
       if (error) {
-
         console.error(
           'Memory insert error:',
           error
         );
 
         continue;
-
       }
-
     }
 
-
     saved.push({
-
       key,
-
       value
-
     });
-
   }
 
-
   return saved;
+}
 
+
+// =====================================================
+// EXACT HISTORY
+// =====================================================
+
+function formatHistory(
+  history,
+  target
+) {
+  if (!history.length) {
+    return (
+      'Abhi koi pichhli conversation available nahi hai.'
+    );
+  }
+
+  const previous =
+    history[
+      history.length - 1
+    ];
+
+  if (
+    target === 'user'
+  ) {
+    return (
+      `Aapka pichhla message tha: "${previous.message || ''}"`
+    );
+  }
+
+  if (
+    target === 'assistant'
+  ) {
+    return (
+      `Mera pichhla jawab tha: "${previous.response || ''}"`
+    );
+  }
+
+  return (
+    `Pichhla exchange:\n` +
+    `Aap: ${previous.message || ''}\n` +
+    `SamarthAI: ${previous.response || ''}`
+  );
+}
+
+
+// =====================================================
+// RECENT HISTORY
+// =====================================================
+
+function formatRecentHistory(
+  history
+) {
+  if (!history.length) {
+    return (
+      'Abhi koi pichhli conversation available nahi hai.'
+    );
+  }
+
+  return history
+    .slice(-12)
+    .map(
+      (item, index) =>
+        `${index + 1}. ` +
+        `Aap: ${item.message || ''}\n` +
+        `SamarthAI: ${item.response || ''}`
+    )
+    .join('\n\n');
+}
+
+
+// =====================================================
+// HISTORY SUMMARY
+// =====================================================
+
+function formatHistorySummary(
+  history
+) {
+  if (!history.length) {
+    return (
+      'Abhi koi pichhli conversation available nahi hai.'
+    );
+  }
+
+  return history
+    .slice(-12)
+    .map(
+      item =>
+        `User: ${item.message || ''}\n` +
+        `SamarthAI: ${item.response || ''}`
+    )
+    .join('\n\n');
 }
 
 
@@ -1092,71 +866,64 @@ async function executeTool(
   userId,
   location
 ) {
-
   const toolName =
-    plan?.tool ||
+    normalize(plan?.tool) ||
     'none';
-
 
   const args =
     plan?.arguments ||
     {};
 
-
   if (
-    toolName ===
-    'none'
+    toolName === 'none'
   ) {
-
     return null;
-
   }
-
 
   const tool =
-    getTool(
-      toolName
-    );
-
+    getTool(toolName);
 
   if (!tool) {
-
     return {
-
       error:
-        `Tool ${toolName} is not available.`
-
+        `Tool "${toolName}" is not available.`
     };
-
   }
 
-
-  // ===================================================
+// ===================================================
   // WEATHER
   // ===================================================
 
   if (
-    toolName ===
-    'weather'
+    toolName === 'weather'
   ) {
+    const namedLocation =
+      String(
+        args.location_name || ''
+      ).trim();
+
+    if (namedLocation) {
+      return tool.execute({
+        locationName:
+          namedLocation,
+
+        type:
+          args.weather_type ||
+          'current'
+      });
+    }
 
     if (
       location?.latitude == null ||
       location?.longitude == null
     ) {
-
       return {
-
         needs_location:
           true
-
       };
-
     }
 
-
     return tool.execute({
-
       latitude:
         location.latitude,
 
@@ -1166,9 +933,7 @@ async function executeTool(
       type:
         args.weather_type ||
         'current'
-
     });
-
   }
 
 
@@ -1177,14 +942,11 @@ async function executeTool(
   // ===================================================
 
   if (
-    toolName ===
-    'family'
+    toolName === 'family'
   ) {
-
     return tool.execute(
       userId
     );
-
   }
 
 
@@ -1193,62 +955,46 @@ async function executeTool(
   // ===================================================
 
   if (
-    toolName ===
-    'services'
+    toolName === 'services'
   ) {
+    const nearby =
+      args.location_mode ===
+      'nearby';
 
     if (
-
-      args.location_mode ===
-        'nearby' &&
-
+      nearby &&
       (
         location?.latitude == null ||
         location?.longitude == null
       )
-
     ) {
-
       return {
-
         needs_location:
           true
-
       };
-
     }
 
-
     return tool.execute({
-
       query:
-        args.query ||
-        '',
+        args.query || '',
 
       category:
-        args.category ||
-        '',
+        args.category || '',
 
       location:
+        args.location_name || '',
 
-        args.location_name ||
+      latitude:
+        location?.latitude ?? null,
 
-        (
-          args.location_mode ===
-            'named'
+      longitude:
+        location?.longitude ?? null,
 
-            ? ''
-
-            : location?.name ||
-              ''
-
-        ),
+      nearby,
 
       limit:
         10
-
     });
-
   }
 
 
@@ -1257,181 +1003,153 @@ async function executeTool(
   // ===================================================
 
   if (
-    toolName ===
-    'gps'
+    toolName === 'gps'
   ) {
-
     return {
-
       needs_member:
         true,
 
       member_name:
-        args.member_name ||
-        ''
-
+        args.member_name || ''
     };
-
   }
 
 
   return {
-
     error:
-      `Unsupported tool: ${toolName}`
-
+      `Unsupported tool "${toolName}".`
   };
-
 }
 
 
 // =====================================================
-// HISTORY
+// GPS MEMBER MATCHING
 // =====================================================
 
-function formatHistory(
-  history,
-  target
+function findFamilyMember(
+  members,
+  requested
 ) {
+  const value =
+    normalize(requested);
 
-  if (
-    !history.length
-  ) {
-
-    return (
-      'Abhi koi pichhli conversation available nahi hai.'
-    );
-
+  if (!value) {
+    return null;
   }
 
+  const exact =
+    members.find(
+      member => {
+        const name =
+          normalize(member.name);
 
-  const previous =
-    history[
-      history.length - 1
-    ];
+        const relation =
+          normalize(member.relation);
 
-
-  if (
-    target ===
-    'user'
-  ) {
-
-    return (
-      `Aapka pichhla message tha: "${previous.message || ''}"`
+        return (
+          name === value ||
+          relation === value
+        );
+      }
     );
 
+  if (exact) {
+    return exact;
   }
-
-
-  if (
-    target ===
-    'assistant'
-  ) {
-
-    return (
-      `Mera pichhla jawab tha: "${previous.response || ''}"`
-    );
-
-  }
-
 
   return (
-    `Pichhla exchange:\n` +
-    `Aap: ${previous.message || ''}\n` +
-    `SamarthAI: ${previous.response || ''}`
+    members.find(
+      member => {
+        const name =
+          normalize(member.name);
+
+        const relation =
+          normalize(member.relation);
+
+        return (
+          name.includes(value) ||
+          value.includes(name) ||
+          relation.includes(value)
+        );
+      }
+    ) ||
+    null
   );
-
 }
-
-
-// =====================================================
-// RECENT HISTORY
-// =====================================================
-
-function formatRecentHistory(
-  history
-) {
-
-  if (
-    !history.length
-  ) {
-
-    return (
-      'Abhi koi pichhli conversation available nahi hai.'
-    );
-
-  }
-
-
-  return history
-
-    .slice(-12)
-
-    .map(
-
-      (item, index) =>
-
-        `${index + 1}. ` +
-        `Aap: ${item.message || ''}\n` +
-        `SamarthAI: ${item.response || ''}`
-
-    )
-
-    .join('\n\n');
-
-}
-
-
 // =====================================================
 // FINAL TOOL RESPONSE
-// SECOND AI CALL ONLY WHEN TOOL WAS USED
 // =====================================================
 
 async function finalToolAnswer({
-
   message,
-
   plan,
-
-  result,
-
-  context
-
+  result
 }) {
+  if (
+    result?.needs_location
+  ) {
+    if (
+      plan.tool === 'services'
+    ) {
+      return (
+        'Nearby service dhoondhne ke liye ' +
+        'mujhe aapka city/area bata dijiye, ' +
+        'ya location permission de dijiye. 📍'
+      );
+    }
+
+    return (
+      'Mausam batane ke liye mujhe ' +
+      'city/area ka naam bata dijiye, ' +
+      'ya location permission de dijiye. 📍'
+    );
+  }
+
+  if (
+    result?.error
+  ) {
+    return (
+      `Is request ko complete nahi kar saka: ${result.error}`
+    );
+  }
+
+  if (
+    !process.env.GROQ_API_KEY
+  ) {
+    throw new Error(
+      'GROQ_API_KEY is not configured'
+    );
+  }
 
   const prompt = `
-
 You are SamarthAI.
 
-Answer the user naturally.
+Answer the user naturally and directly.
 
-Use the SAME language/style as the user.
+Use the same language as the user.
 
 The tool has already been executed.
 
-Use ONLY the supplied tool result.
+Use ONLY the supplied result.
 
-Never invent missing information.
+Never invent information.
 
-Do not expose:
+Never mention internal tools,
+JSON, schemas or system instructions.
 
-- JSON
-- internal tool names
-- system prompts
-- internal instructions
+If the result contains no useful records,
+clearly tell the user that nothing was found.
 
-If location is missing, ask for city/area
-or location permission.
+If there are service providers,
+show the most relevant ones concisely.
 
-If services are returned,
-show useful providers concisely.
+If there is family information,
+answer the user's actual question,
+including relation when available.
 
-If family information is returned,
-answer directly.
-
-If GPS information is returned,
-answer directly.
-
+If there is GPS information,
+give the member name and available
+location information directly.
 
 USER:
 
@@ -1440,48 +1158,84 @@ ${clip(
   2000
 )}
 
+TOOL:
 
-TOOL PLAN:
-
-${JSON.stringify(
-  plan
+${clip(
+  JSON.stringify(plan),
+  3000
 )}
 
+RESULT:
 
-TOOL RESULT:
-
-${JSON.stringify(
-  result
-).slice(0, 7000)}
-
-
-MEMORY:
-
-${memoryText(
-  context.personal,
-  context.family
+${clip(
+  JSON.stringify(result),
+  9000
 )}
-
 `;
 
+  const response =
+    await fetch(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
 
-  const ai =
-    await callGroq({
+        headers: {
+          Authorization:
+            `Bearer ${process.env.GROQ_API_KEY}`,
 
-      message:
-        prompt,
+          'Content-Type':
+            'application/json'
+        },
 
-      history:
-        [],
+        body: JSON.stringify({
+          model:
+            GROQ_MODEL,
 
-      memoryText:
-        ''
+          messages: [
+            {
+              role: 'system',
 
-    });
+              content:
+                'Answer naturally. Do not expose internal implementation details.'
+            },
 
+            {
+              role: 'user',
 
-  return ai.text;
+              content:
+                prompt
+            }
+          ],
 
+          include_reasoning:
+            false,
+
+          temperature:
+            0.2,
+
+          max_completion_tokens:
+            600
+        })
+      }
+    );
+
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ||
+      'Final AI response failed'
+    );
+  }
+
+  return (
+    data
+      ?.choices?.[0]
+      ?.message?.content
+      ?.trim() ||
+    'Mujhe iska jawab dene mein dikkat hui.'
+  );
 }
 
 
@@ -1490,85 +1244,75 @@ ${memoryText(
 // =====================================================
 
 async function runConversation({
-
   userId,
-
   message,
-
   location = null
-
 }) {
-
   const context =
     await loadContext(
       userId
     );
 
+  const cleanMessage =
+    String(message || '').trim();
 
-  // ===================================================
-  // ONE AI CALL FOR NORMAL CONVERSATION
-  // ===================================================
+  if (!cleanMessage) {
+    return {
+      response:
+        'Aap kya poochna chahte hain?',
 
-  const plan =
-    await understandAndAnswer(
+      model:
+        GROQ_MODEL,
 
-      message,
+      intent:
+        'chat',
 
-      context
+      memory_saved:
+        false,
 
-    );
-
-
-  console.log(
-    'Conversation Plan:',
-   JSON.stringify(
-        plan
-      )
-    );
-
-
-  // ===================================================
-  // MEMORY
-  // ===================================================
-
-  const saved =
-    await saveMemory(
-
-      userId,
-
-      plan.memory_candidates,
-
-      message
-
-    );
-
-
-  if (
-    saved.length
-  ) {
-
-    context.personal = [
-
-      ...saved,
-
-      ...context.personal
-
-    ];
-
+      web_used:
+        false
+    };
   }
 
 
   // ===================================================
-  // EXACT PREVIOUS
+  // AI UNDERSTANDING
+  // ===================================================
+
+  const plan =
+    await understandAndAnswer(
+      cleanMessage,
+      context
+    );
+
+  console.log(
+    'Conversation Plan:',
+    JSON.stringify(plan)
+  );
+
+
+  // ===================================================
+  // SAVE EXPLICIT MEMORY
+  // ===================================================
+
+  const saved =
+    await saveMemory(
+      userId,
+      plan.memory_candidates,
+      cleanMessage
+    );
+
+
+  // ===================================================
+  // EXACT PREVIOUS MESSAGE
   // ===================================================
 
   if (
     plan.mode ===
     'exact_previous'
   ) {
-
     return {
-
       response:
         formatHistory(
           context.history,
@@ -1586,9 +1330,7 @@ async function runConversation({
 
       web_used:
         false
-
     };
-
   }
 
 
@@ -1600,9 +1342,7 @@ async function runConversation({
     plan.mode ===
     'recent_history'
   ) {
-
     return {
-
       response:
         formatRecentHistory(
           context.history
@@ -1619,9 +1359,36 @@ async function runConversation({
 
       web_used:
         false
-
     };
+  }
 
+
+  // ===================================================
+  // HISTORY SUMMARY
+  // ===================================================
+
+  if (
+    plan.mode ===
+    'history_summary'
+  ) {
+    return {
+      response:
+        formatHistorySummary(
+          context.history
+        ),
+
+      model:
+        GROQ_MODEL,
+
+      intent:
+        'history',
+
+      memory_saved:
+        saved.length > 0,
+
+      web_used:
+        false
+    };
   }
 
 
@@ -1630,87 +1397,51 @@ async function runConversation({
   // ===================================================
 
   if (
-    plan.tool ===
-    'none'
+    !plan.tool ||
+    plan.tool === 'none'
   ) {
-
     return {
-
       response:
-
         plan.reply ||
-
-        'Mujhe samajh nahi aaya. Aap thoda aur bataiye.',
+        'Ji, bataiye.',
 
       model:
         GROQ_MODEL,
 
       intent:
-
-        plan.mode ===
-        'history_summary'
-
-          ? 'history'
-
-          : 'chat',
+        'chat',
 
       memory_saved:
         saved.length > 0,
 
       web_used:
         false
-
     };
-
   }
 
 
   // ===================================================
-  // TOOL
+  // TOOL EXECUTION
   // ===================================================
 
-  let toolResult =
-    await executeTool(
+  let toolResult;
 
-      plan,
-
-      userId,
-
-      location
-
+  try {
+    toolResult =
+      await executeTool(
+        plan,
+        userId,
+        location
+      );
+  } catch (error) {
+    console.error(
+      'Conversation tool error:',
+      error
     );
 
-
-  // ===================================================
-  // LOCATION REQUIRED
-  // ===================================================
-
-  if (
-    toolResult?.needs_location
-  ) {
-
-    let response;
-
-
-    if (
-      plan.tool ===
-      'services'
-    ) {
-
-      response =
-        'Nearby service dhoondhne ke liye mujhe aapka area/city bata dijiye, ya location permission de dijiye. 📍';
-
-    } else {
-
-      response =
-        'Mausam batane ke liye mujhe city/area ka naam bata dijiye, ya location permission de dijiye. 📍';
-
-    }
-
-
     return {
-
-      response,
+      response:
+        'Is request ko process karte waqt problem aa gayi. Kripya dobara try karein.',
 
       model:
         plan.tool,
@@ -1723,9 +1454,7 @@ async function runConversation({
 
       web_used:
         false
-
     };
-
   }
 
 
@@ -1736,18 +1465,18 @@ async function runConversation({
   if (
     toolResult?.needs_member
   ) {
+    const requested =
+      normalize(
+        plan.arguments?.member_name
+      );
 
-    if (
-      !plan.arguments?.member_name
-    ) {
-
+    if (!requested) {
       return {
-
         response:
           'Kis family member ki location dekhni hai?',
 
         model:
-          'gps',
+          GROQ_MODEL,
 
         intent:
           'gps',
@@ -1757,74 +1486,51 @@ async function runConversation({
 
         web_used:
           false
-
       };
-
     }
 
+    let family;
 
-    const family =
-      await getTool(
-        'family'
-      ).execute(
-        userId
+    try {
+      family =
+        await getTool(
+          'family'
+        ).execute(
+          userId
+        );
+    } catch (error) {
+      console.error(
+        'Family lookup error:',
+        error
       );
 
+      return {
+        response:
+          'Family members ki information nahi mil paayi.',
 
-    const requested =
-      normalize(
-        plan.arguments
-          .member_name
-      );
+        model:
+          'family',
 
+        intent:
+          'gps',
+
+        memory_saved:
+          saved.length > 0,
+
+        web_used:
+          false
+      };
+    }
 
     const member =
-      (
-        family.members ||
-        []
-      )
-        .find(
+      findFamilyMember(
+        family?.members || [],
+        requested
+      );
 
-          item => {
-
-            const name =
-              normalize(
-                item.name
-              );
-
-
-            const relation =
-              normalize(
-                item.relation
-              );
-
-
-            return (
-
-              name.includes(
-                requested
-              ) ||
-
-              relation.includes(
-                requested
-              )
-
-            );
-
-          }
-
-        );
-
-
-    if (
-      !member
-    ) {
-
+    if (!member) {
       const names =
-        (
-          family.members ||
-          []
-        )
+        (family?.members || [])
           .map(
             item =>
               item.name
@@ -1832,16 +1538,45 @@ async function runConversation({
           .filter(Boolean)
           .join(', ');
 
+      return {
+        response:
+          names
+            ? `"${plan.arguments.member_name}" nahi mila. Family members: ${names}`
+            : `"${plan.arguments.member_name}" family member nahi mila.`,
+
+        model:
+          GROQ_MODEL,
+
+        intent:
+          'gps',
+
+        memory_saved:
+          saved.length > 0,
+
+        web_used:
+          false
+      };
+    }
+
+    try {
+      toolResult =
+        await getTool(
+          'gps'
+        ).execute({
+          userId,
+
+          memberId:
+            member.id
+        });
+    } catch (error) {
+      console.error(
+        'GPS tool error:',
+        error
+      );
 
       return {
-
         response:
-
-          names
-
-            ? `Mujhe "${plan.arguments.member_name}" family member nahi mila. Family members: ${names}`
-
-            : `Mujhe "${plan.arguments.member_name}" family member nahi mila.`,
+          'Is family member ki location abhi available nahi hai.',
 
         model:
           'gps',
@@ -1854,52 +1589,31 @@ async function runConversation({
 
         web_used:
           false
-
       };
-
     }
-
-
-    toolResult =
-      await getTool(
-        'gps'
-      ).execute({
-
-        userId,
-
-        memberId:
-          member.id
-
-      });
-
   }
 
 
   // ===================================================
-  // FINAL TOOL RESPONSE
+  // FINAL NATURAL LANGUAGE RESPONSE
   // ===================================================
 
   const response =
     await finalToolAnswer({
-
-      message,
+      message:
+        cleanMessage,
 
       plan,
 
       result:
-        toolResult,
-
-      context
-
+        toolResult
     });
 
-
   return {
-
     response,
 
     model:
-      plan.tool,
+      GROQ_MODEL,
 
     intent:
       plan.tool,
@@ -1908,10 +1622,10 @@ async function runConversation({
       saved.length > 0,
 
     web_used:
-      false
-
+      Boolean(
+        plan.needs_web
+      )
   };
-
 }
 
 
@@ -1920,7 +1634,6 @@ async function runConversation({
 // =====================================================
 
 module.exports = {
-
   runConversation
-
 };
+  
