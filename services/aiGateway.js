@@ -249,24 +249,68 @@ Do not return explanations outside JSON.
     };
   }
 }
+
 // =====================================================
 // PROVIDER: GROQ
+// Compatible with old routeAI()
+// and new conversationEngine.js
 // =====================================================
 
 async function callGroq({
-  message,
+  message = '',
   history = [],
-  memoryText = ''
+  memoryText = '',
+
+  model = GROQ_MODEL,
+  messages = null,
+
+  temperature = 0.5,
+  max_tokens = 700,
+  max_completion_tokens = null,
+  reasoning_effort = null,
+  include_reasoning = null,
+  response_format = null
 }) {
 
   if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY is not configured');
+    throw new Error(
+      'GROQ_API_KEY is not configured'
+    );
   }
 
-  const messages = [
-    {
-      role: 'system',
-      content: `
+  /*
+   * New Conversation Engine sends:
+   * messages: [...]
+   *
+   * Old routeAI sends:
+   * message + history + memoryText
+   *
+   * Both formats are supported.
+   */
+
+  let finalMessages = [];
+
+  if (Array.isArray(messages)) {
+
+    finalMessages = messages
+      .filter(item =>
+        item &&
+        typeof item === 'object' &&
+        typeof item.role === 'string' &&
+        typeof item.content === 'string' &&
+        item.content.trim()
+      )
+      .map(item => ({
+        role: item.role,
+        content: item.content.trim()
+      }));
+
+  } else {
+
+    finalMessages = [
+      {
+        role: 'system',
+        content: `
 You are SamarthAI, a personal AI assistant.
 
 Rules:
@@ -279,35 +323,137 @@ Rules:
 - If a tool is required, the application should route the request to the appropriate tool.
 
 MEMORY:
-${memoryText}
-`
+${String(memoryText || '')}
+`.trim()
+      }
+    ];
+
+    if (Array.isArray(history)) {
+
+      for (const item of history) {
+
+        if (
+          item &&
+          typeof item.message === 'string' &&
+          item.message.trim()
+        ) {
+          finalMessages.push({
+            role: 'user',
+            content: item.message.trim()
+          });
+        }
+
+        if (
+          item &&
+          typeof item.response === 'string' &&
+          item.response.trim()
+        ) {
+          finalMessages.push({
+            role: 'assistant',
+            content: item.response.trim()
+          });
+        }
+
+      }
     }
-  ];
 
-  for (const item of history) {
-
-    if (item.message) {
-      messages.push({
+    if (
+      typeof message === 'string' &&
+      message.trim()
+    ) {
+      finalMessages.push({
         role: 'user',
-        content: item.message
+        content: message.trim()
       });
     }
-
-    if (item.response) {
-      messages.push({
-        role: 'assistant',
-        content: item.response
-      });
-    }
-
   }
 
-  messages.push({
-    role: 'user',
-    content: message
-  });
+  /*
+   * Never send undefined/null/empty message content.
+   */
+  finalMessages = finalMessages.filter(item =>
+    item &&
+    typeof item.role === 'string' &&
+    typeof item.content === 'string' &&
+    item.content.trim()
+  );
 
+  if (finalMessages.length === 0) {
+    throw new Error(
+      'Groq request contains no valid messages'
+    );
+  }
 
+  /*
+   * Final protocol validation.
+   */
+  for (const item of finalMessages) {
+
+    if (
+      !item.role ||
+      typeof item.content !== 'string' ||
+      !item.content.trim()
+    ) {
+      throw new Error(
+        'Invalid Groq message: role/content missing'
+      );
+    }
+  }
+
+  /*
+   * Build Groq request.
+   */
+  const body = {
+    model,
+    messages: finalMessages
+  };
+
+  if (
+    Number.isFinite(Number(max_completion_tokens)) &&
+    Number(max_completion_tokens) > 0
+  ) {
+    body.max_completion_tokens =
+      Number(max_completion_tokens);
+  } else {
+    body.max_tokens =
+      Number(max_tokens) > 0
+        ? Number(max_tokens)
+        : 700;
+  }
+
+  if (
+    Number.isFinite(Number(temperature))
+  ) {
+    body.temperature =
+      Number(temperature);
+  }
+
+  if (
+    typeof reasoning_effort === 'string' &&
+    reasoning_effort.trim()
+  ) {
+    body.reasoning_effort =
+      reasoning_effort.trim();
+  }
+
+  if (
+    typeof include_reasoning === 'boolean'
+  ) {
+    body.include_reasoning =
+      include_reasoning;
+  }
+
+  if (
+    response_format &&
+    typeof response_format === 'object'
+  ) {
+    body.response_format =
+      response_format;
+  }
+
+  /*
+   * Call Groq.
+   */
   const response = await fetch(
     'https://api.groq.com/openai/v1/chat/completions',
     {
@@ -321,42 +467,62 @@ ${memoryText}
           'application/json'
       },
 
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages,
-        temperature: 0.5,
-        max_tokens: 700
-      })
+      body: JSON.stringify(body)
     }
   );
 
+  let data;
 
-  const data = await response.json();
-
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new Error(
+      `Groq returned invalid JSON (${response.status})`
+    );
+  }
 
   if (!response.ok) {
 
     throw new Error(
       data?.error?.message ||
-      'Groq API request failed'
+      data?.message ||
+      `Groq API request failed (${response.status})`
     );
-
   }
 
+  const content =
+    data?.choices?.[0]?.message?.content;
 
+  if (
+    typeof content !== 'string' ||
+    !content.trim()
+  ) {
+    throw new Error(
+      'Groq returned an empty assistant response'
+    );
+  }
+
+  const cleanContent =
+    content.trim();
+
+  /*
+   * New Conversation Engine expects
+   * the model output directly.
+   */
+  if (Array.isArray(messages)) {
+    return cleanContent;
+  }
+
+  /*
+   * Old routeAI() compatibility.
+   */
   return {
-    text:
-      data.choices?.[0]?.message?.content ||
-      'Mujhe iska jawab nahi mil paaya.',
-
+    text: cleanContent,
     provider: 'groq',
-
-    model: GROQ_MODEL
+    model,
+    usage: data?.usage || null
   };
-
 }
-
-
 // =====================================================
 // PROVIDER: OPENAI GPT-6 ASTRA
 // =====================================================
