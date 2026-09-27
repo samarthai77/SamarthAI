@@ -419,6 +419,7 @@ async function loadContext(userId) {
     familyDirectory,
     history
   };
+}
   /* ---------------------------------------------------------
  * Planner protocol
  * --------------------------------------------------------- */
