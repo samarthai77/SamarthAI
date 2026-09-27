@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const { getTool } = require('./tools');
+const { callOpenAI } = require('./aiGateway');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -8,157 +9,155 @@ const supabase = createClient(
 
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 
-function clip(value, max) {
+/*
+=====================================================
+SAMARTHAI CONVERSATION ENGINE
+=====================================================
+
+Architecture:
+
+USER
+  ↓
+AI semantic understanding
+  ↓
+Conversation + memory + family context
+  ↓
+AI planning
+  ↓
+Security / permission boundary
+  ↓
+Controlled tool execution
+  ↓
+Tool result
+  ↓
+AI interpretation
+  ↓
+Final response
+
+IMPORTANT:
+
+The AI decides:
+- what the user means
+- what the user wants
+- what context is relevant
+- which capability is required
+- what arguments are required
+- how to interpret tool results
+- how to answer
+
+The backend decides only:
+- authentication
+- authorization
+- allowed capabilities
+- data boundaries
+- technical validation
+- tool execution
+- persistence
+=====================================================
+*/
+
+
+// =====================================================
+// BASIC UTILITIES
+// =====================================================
+
+function clip(value, max = 4000) {
   return String(value ?? '').slice(0, max);
 }
 
-function normalize(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+function clean(value) {
+  return String(value ?? '').trim();
 }
 
-function normalizeWeatherType(value) {
-  const v = normalize(value);
-
-  if (
-    [
-      'hourly',
-      'hour',
-      'hours',
-      'ghante',
-      'hour forecast'
-    ].includes(v)
-  ) {
-    return 'hourly';
-  }
-
-  if (
-    [
-      'daily',
-      'day',
-      'days',
-      'tomorrow',
-      'forecast',
-      'future',
-      'kal',
-      'aane wale din'
-    ].includes(v)
-  ) {
-    return 'daily';
-  }
-
-  return 'current';
+function normalized(value) {
+  return clean(value).toLocaleLowerCase();
 }
 
-function normalizeLocationMode(value) {
-  const v = normalize(value);
 
-  if (
-    [
-      'nearby',
-      'near me',
-      'near-me',
-      'paas',
-      'aas paas',
-      'nazdeek'
-    ].includes(v)
-  ) {
-    return 'nearby';
-  }
+// =====================================================
+// SECURITY BOUNDARY
+// =====================================================
+//
+// This is intentionally deterministic.
+// AI cannot create arbitrary tools or arbitrary
+// database operations.
+//
+// Adding a new capability requires adding its
+// controlled executor here / in the tool registry.
+//
+// This is SECURITY, not intent detection.
+// =====================================================
 
-  if (
-    [
-      'named',
-      'city',
-      'area',
-      'place',
-      'location_name'
-    ].includes(v)
-  ) {
-    return 'named';
-  }
+const ALLOWED_TOOLS = new Set([
+  'none',
+  'weather',
+  'family',
+  'gps',
+  'services',
+  'time',
+  'user_location',
+  'web'
+]);
 
-  if (
-    [
-      'device',
-      'gps',
-      'phone',
-      'current location'
-    ].includes(v)
-  ) {
-    return 'device';
-  }
 
-  return 'none';
-}
+// =====================================================
+// MEMORY TEXT
+// =====================================================
 
-function memoryText(
-  personal = [],
-  family = []
-) {
-  const p = personal
-    .slice(0, 25)
-    .map(
-      x =>
-        `- ${clip(x.key, 80)}: ${clip(x.value, 250)}`
+function buildMemoryText(personal, family) {
+  const personalText = (personal || [])
+    .slice(0, 30)
+    .map(item =>
+      `- ${clip(item.key, 100)}: ${clip(item.value, 400)}`
     )
     .join('\n');
 
-  const f = family
-    .slice(0, 25)
-    .map(
-      x =>
-        `- ${clip(x.key, 80)}: ${clip(x.value, 250)}`
+  const familyText = (family || [])
+    .slice(0, 30)
+    .map(item =>
+      `- ${clip(item.key, 100)}: ${clip(item.value, 400)}`
     )
     .join('\n');
 
-  return (
-    `PRIVATE PERSONAL MEMORY:\n` +
-    `${p || '(none)'}\n\n` +
-    `SHARED FAMILY MEMORY:\n` +
-    `${f || '(none)'}`
-  );
+  return [
+    'PRIVATE PERSONAL MEMORY:',
+    personalText || '(none)',
+    '',
+    'SHARED FAMILY MEMORY:',
+    familyText || '(none)'
+  ].join('\n');
 }
+
+
+// =====================================================
+// FAMILY MEMORY
+// =====================================================
 
 async function getFamilyMemory(userId) {
-  const {
-    data: member,
-    error: me
-  } = await supabase
-    .from('family_members')
-    .select('family_id,is_active')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle();
+  const { data: membership, error: membershipError } =
+    await supabase
+      .from('family_members')
+      .select('family_id,is_active')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
 
-  if (me) {
-    throw me;
+  if (membershipError) {
+    throw membershipError;
   }
 
-  if (!member?.family_id) {
+  if (!membership?.family_id) {
     return [];
   }
 
-  const {
-    data,
-    error
-  } = await supabase
-    .from('family_memory')
-    .select('key,value,updated_at')
-    .eq(
-      'family_id',
-      member.family_id
-    )
-    .order(
-      'updated_at',
-      {
-        ascending: false
-      }
-    )
-    .limit(30);
+  const { data, error } =
+    await supabase
+      .from('family_memory')
+      .select('key,value,updated_at')
+      .eq('family_id', membership.family_id)
+      .order('updated_at', { ascending: false })
+      .limit(30);
 
   if (error) {
     throw error;
@@ -167,96 +166,173 @@ async function getFamilyMemory(userId) {
   return data || [];
 }
 
-async function loadContext(userId) {
-  const [
-    historyResult,
-    personalResult,
-    family
-  ] = await Promise.all([
-    supabase
+
+// =====================================================
+// FAMILY DIRECTORY
+// =====================================================
+//
+// Only identity/relationship information is exposed
+// to the planning AI.
+//
+// Phone numbers, GPS coordinates and other sensitive
+// fields are NOT placed into the planning context.
+// Those are retrieved only through authorized tools.
+// =====================================================
+
+async function getFamilyDirectory(userId) {
+  const { data: membership, error: membershipError } =
+    await supabase
+      .from('family_members')
+      .select('family_id,is_active')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  if (!membership?.family_id) {
+    return [];
+  }
+
+  const { data, error } =
+    await supabase
+      .from('family_members')
+      .select(
+        'id,user_id,family_id,name,relation,role,is_active'
+      )
+      .eq('family_id', membership.family_id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+
+function familyDirectoryText(members) {
+  if (!members?.length) {
+    return '(no family directory available)';
+  }
+
+  return members
+    .map((member, index) => {
+      return [
+        `${index + 1}.`,
+        `name=${clip(member.name, 150)}`,
+        `relation=${clip(member.relation, 150)}`,
+        `role=${clip(member.role, 100)}`
+      ].join(' | ');
+    })
+    .join('\n');
+}
+
+
+// =====================================================
+// CONVERSATION HISTORY
+// =====================================================
+
+async function loadHistory(userId) {
+  /*
+   * IMPORTANT:
+   * descending + limit gets the newest records.
+   * The old engine used ascending + limit, which could
+   * return the oldest 100 records instead of the newest.
+   */
+
+  const { data, error } =
+    await supabase
       .from('chats')
       .select(
         'id,message,response,model,created_at'
       )
-      .eq(
-        'user_id',
-        userId
-      )
-      .order(
-        'created_at',
-        {
-          ascending: true
-        }
-      )
-      .limit(100),
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).reverse();
+}
+
+
+// =====================================================
+// LOAD COMPLETE CONTEXT
+// =====================================================
+
+async function loadContext(userId) {
+  const [
+    history,
+    personalResult,
+    family,
+    directory
+  ] = await Promise.all([
+    loadHistory(userId),
 
     supabase
       .from('personal_memory')
-      .select(
-        'id,key,value,updated_at'
-      )
-      .eq(
-        'user_id',
-        userId
-      )
-      .order(
-        'updated_at',
-        {
-          ascending: false
-        }
-      )
+      .select('id,key,value,updated_at')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
       .limit(30),
 
-    getFamilyMemory(userId)
-  ]);
+    getFamilyMemory(userId),
 
-  if (historyResult.error) {
-    throw historyResult.error;
-  }
+    getFamilyDirectory(userId)
+  ]);
 
   if (personalResult.error) {
     throw personalResult.error;
   }
 
   return {
-    history:
-      historyResult.data || [],
-
-    personal:
-      personalResult.data || [],
-
-    family:
-      family || []
+    history,
+    personal: personalResult.data || [],
+    family,
+    directory
   };
 }
 
-function compactHistory(history) {
-  const recent =
-    history.slice(-10);
 
-  if (!recent.length) {
+// =====================================================
+// HISTORY FOR AI
+// =====================================================
+
+function historyText(history) {
+  if (!history?.length) {
     return '(no previous conversation)';
   }
 
-  return recent
-    .map(
-      (item, i) =>
-        `[${i + 1}] USER: ${clip(
-          item.message,
-          280
-        )}\nASSISTANT: ${clip(
-          item.response,
-          450
-        )}`
-    )
+  return history
+    .slice(-20)
+    .map((item, index) => {
+      return [
+        `[${index + 1}]`,
+        `USER: ${clip(item.message, 900)}`,
+        `ASSISTANT: ${clip(item.response, 1400)}`
+      ].join('\n');
+    })
     .join('\n\n');
 }
+
+
+// =====================================================
+// EMPTY PLAN
+// =====================================================
 
 function emptyPlan() {
   return {
     reply: '',
     mode: 'chat',
     exact_target: 'exchange',
+
     tool: 'none',
     action: 'none',
 
@@ -266,7 +342,8 @@ function emptyPlan() {
       member_name: '',
       location_name: '',
       weather_type: 'current',
-      location_mode: 'none'
+      location_mode: 'none',
+      timezone: ''
     },
 
     memory_candidates: [],
@@ -274,6 +351,18 @@ function emptyPlan() {
     needs_web: false
   };
 }
+
+
+// =====================================================
+// AI PLAN SCHEMA
+// =====================================================
+//
+// Tool names are constrained here only because the
+// backend must have a secure executable boundary.
+//
+// This is NOT keyword routing.
+// The AI chooses the tool semantically.
+// =====================================================
 
 const conversationSchema = {
   type: 'object',
@@ -286,15 +375,37 @@ const conversationSchema = {
     },
 
     mode: {
-      type: 'string'
+      type: 'string',
+      enum: [
+        'chat',
+        'exact_previous',
+        'recent_history',
+        'history_summary',
+        'tool'
+      ]
     },
 
     exact_target: {
-      type: 'string'
+      type: 'string',
+      enum: [
+        'user',
+        'assistant',
+        'exchange'
+      ]
     },
 
     tool: {
-      type: 'string'
+      type: 'string',
+      enum: [
+        'none',
+        'weather',
+        'family',
+        'gps',
+        'services',
+        'time',
+        'user_location',
+        'web'
+      ]
     },
 
     action: {
@@ -324,10 +435,25 @@ const conversationSchema = {
         },
 
         weather_type: {
-          type: 'string'
+          type: 'string',
+          enum: [
+            'current',
+            'hourly',
+            'daily'
+          ]
         },
 
         location_mode: {
+          type: 'string',
+          enum: [
+            'none',
+            'named',
+            'nearby',
+            'device'
+          ]
+        },
+
+        timezone: {
           type: 'string'
         }
       },
@@ -338,7 +464,8 @@ const conversationSchema = {
         'member_name',
         'location_name',
         'weather_type',
-        'location_mode'
+        'location_mode',
+        'timezone'
       ]
     },
 
@@ -394,10 +521,12 @@ const conversationSchema = {
   ]
 };
 
-async function understandAndAnswer(
-  message,
-  context
-) {
+
+// =====================================================
+// AI SEMANTIC PLANNER
+// =====================================================
+
+async function understand(message, context) {
   if (!process.env.GROQ_API_KEY) {
     throw new Error(
       'GROQ_API_KEY is not configured'
@@ -405,419 +534,327 @@ async function understandAndAnswer(
   }
 
   const prompt = `
-You are SamarthAI's main conversation engine.
+You are the central semantic conversation engine of SamarthAI.
 
-Understand meaning, context and references.
+Your job is to understand the user's actual goal.
 
-Do not use keyword lists or regex logic.
+You are NOT a keyword classifier.
 
-Understand:
+Do NOT use:
+- keyword matching
+- regex matching
+- predefined phrases
+- hard-coded names
+- hard-coded service names
+- hard-coded relationship lists
+- fixed sentence patterns
 
-- Hindi
-- Roman Hindi
-- Hinglish
-- English
-- Devanagari
-- spelling mistakes
-- short replies
-- incomplete sentences
-- references to previous conversation
+Reason from meaning, context and available information.
 
-Never invent facts.
+The user may communicate in:
 
-Return ONLY JSON matching the supplied schema.
+Hindi
+Roman Hindi
+Hinglish
+English
+Devanagari
+mixed languages
+incorrect spelling
+short sentences
+incomplete sentences
+follow-up messages
+pronouns
+nicknames
+implicit references
 
-TOOLS:
+Understand the meaning even when wording changes.
 
-The following tools are available capabilities:
+=====================================================
+CONVERSATION CONTINUITY
+=====================================================
 
-none
+Treat the current message as part of an ongoing
+conversation.
+
+Use previous messages to resolve:
+
+- references
+- pronouns
+- omitted subjects
+- previous people
+- previous places
+- previous tasks
+- corrections
+- follow-up questions
+- "ye", "woh", "uska", "iske", "phir", etc.
+
+Do not make the user repeat information that is
+already reliably available.
+
+If a message is genuinely ambiguous, ask a concise
+clarifying question.
+
+=====================================================
+FAMILY CONTEXT
+=====================================================
+
+A family directory is supplied below.
+
+Use it to understand who a user is referring to.
+
+Do not invent a family member.
+
+If a family member exists in the directory, use the
+available name/relation/role information.
+
+If the user's question requires additional protected
+family information, select the family capability.
+
+Do not expose protected information merely because
+it appears in some internal data.
+
+=====================================================
+TOOLS
+=====================================================
+
+Available capabilities:
+
 weather
 family
 gps
 services
+time
+user_location
+web
+none
 
 These are capabilities, not keyword triggers.
 
-You must decide whether a tool is required by
-understanding the meaning, intent, context and
-required information of the user's request.
+Select a capability because the user's actual goal
+requires it.
 
-Never select a tool merely because a particular
-word appears in the message.
-
+Do NOT select a capability because a word happens
+to appear in the message.
 
 =====================================================
-AI TASK UNDERSTANDING
+WEATHER
 =====================================================
 
-You are responsible for understanding the user's
-complete task before deciding how to respond.
+If the user actually needs weather information,
+determine:
 
-For every user message:
+- location
+- current/hourly/daily requirement
 
-1. Understand the user's actual meaning.
-2. Consider the current conversation.
-3. Consider relevant previous messages.
-4. Consider available personal memory.
-5. Consider available family memory.
-6. Determine what information or action is required.
-7. Determine whether a tool is necessary.
-8. Select the appropriate tool only when it is
-   actually required.
-9. Determine the required arguments yourself.
-10. Execute the task through the appropriate tool.
-11. Use the returned information to produce the
-    final natural-language answer.
+Use context to resolve omitted locations.
 
-Do not depend on predefined phrases,
-keywords, names, examples, regex patterns,
-or fixed question formats.
-
-The user may express the same intention in
-any language, wording, spelling, sentence
-structure or conversational style.
-
-Understand semantic meaning rather than matching
-text patterns.
-
+Never invent a location.
 
 =====================================================
-CONTEXT REASONING
+SERVICES
 =====================================================
 
-Never treat every user message as an isolated request.
+If the user actually wants a service/provider,
+understand what service they need from the complete
+sentence.
 
-Use conversation history to resolve:
+Determine:
 
-- references
-- pronouns
-- omitted information
-- follow-up questions
-- corrections
-- previous subjects
-- previously discussed people
-- previously discussed locations
-- previously discussed tasks
+- service category
+- search description
+- location requirement
+- nearby requirement
 
-When the meaning of a short message depends on
-previous conversation, use that conversation
-context to determine the intended meaning.
-
-Do not ask the user to repeat information that
-is already reliably available in the current
-conversation or relevant memory.
-
+Do not rely on a predefined service-name list.
 
 =====================================================
-FAMILY INFORMATION
+GPS
 =====================================================
 
-When the user's request requires information
-about family members, family relationships,
-family roles, family records or other family
-data, determine this from the meaning of the
-request and conversation context.
+Determine whether the user wants:
 
-If the required information is available through
-the family capability, select the family tool.
+- their own location
+- another family member's location
+- a previously discussed person's location
 
-Do not require the user to explicitly mention
-that the family capability should be used.
+Resolve the target from context and family data.
 
-Do not assume that a person's name, relationship
-or identity has any fixed meaning.
-
-Determine the person's identity and relationship
-from the available family data.
-
-If the requested information cannot be found,
-clearly state that the available family data
-does not contain the requested information.
-
-Never invent family information.
-
+Never invent a member.
 
 =====================================================
-PERSON REFERENCE RESOLUTION
+CURRENT TIME / DATE
 =====================================================
 
-When the user refers to a person, determine who
-that person refers to using:
+If the user needs the current date or time,
+select the time capability.
 
-- current message
-- previous conversation
-- family information
-- relevant memory
-- available context
+Do NOT generate the current time yourself.
 
-The person may be referred to by any name,
-description, relationship, pronoun, nickname,
-or conversational reference.
-
-Do not maintain a predefined list of people
-or relationships.
-
-Resolve references dynamically from context.
-
-If the reference is genuinely ambiguous and
-cannot be resolved safely, ask a concise
-clarifying question.
-
+The runtime clock will provide it.
 
 =====================================================
-WEATHER TASKS
+CURRENT USER LOCATION
 =====================================================
 
-When the user's request requires weather
-information, determine:
+If the user asks for their own current location,
+select user_location.
 
-- whether current conditions are requested
-- whether future information is requested
-- whether hourly information is requested
-- whether daily information is requested
-- which location the request refers to
-
-Determine the weather type from semantic meaning.
-
-Determine the location from the user's message,
-conversation context, available location information
-and other reliable context.
-
-Do not depend on predefined weather phrases.
-
-If a specific location is provided, use it.
-
-If usable device coordinates are available and
-the user is asking about their current location,
-they may be used.
-
-Never invent or silently assume a location.
-
+Do not claim access to the device unless actual
+location data is supplied by the application.
 
 =====================================================
-SERVICE TASKS
+WEB
 =====================================================
 
-When the user's request requires finding or
-searching for a service, determine:
+If the request requires current public information
+that is not available from the local tools/data,
+select web.
 
-- what service is required
-- what category or description best represents it
-- whether the user wants nearby results
-- whether a specific location was provided
-- whether location information is required
-
-Determine these from semantic meaning.
-
-Do not depend on predefined service names,
-location phrases or keyword lists.
-
-If the task requires the user's physical
-location and reliable coordinates are unavailable,
-ask for the required location information instead
-of returning arbitrary results.
-
+Do not pretend that static model knowledge is live.
 
 =====================================================
-LOCATION AND GPS TASKS
+HISTORY
 =====================================================
 
-When a request requires location information,
-determine whether it refers to:
+If the user asks what they said previously,
+classify appropriately.
 
-- the user's location
-- another person's location
-- a family member's location
-- a previously discussed location
-- a named place
-- another location described in the conversation
+If they ask for the previous user message:
+exact_previous + user
 
-Resolve the target dynamically from context.
+If they ask for the previous assistant response:
+exact_previous + assistant
 
-Do not maintain hard-coded names or relationship
-lists.
+If they ask about the previous exchange:
+exact_previous + exchange
 
-For protected personal or family location data,
-use the appropriate backend authorization and
-tool validation.
+If they ask about recent conversation:
+recent_history
 
-Never bypass backend authorization because the
-AI believes access should be allowed.
+If they ask for a summary of previous conversation:
+history_summary
 
+Do not assume that "previous" always means the same
+thing. Use semantic context.
 
 =====================================================
-TOOL ARGUMENT REASONING
+MEMORY
 =====================================================
 
-Determine tool arguments from the complete
-meaning of the user's request.
+Only create memory candidates for durable facts,
+preferences or information explicitly stated by the
+user in the CURRENT message.
 
-Do not copy fixed argument values from examples.
+The evidence must be an exact substring of the
+current user message.
 
-Normalize arguments only when necessary for
-the tool's technical requirements.
-
-The AI determines WHAT the user wants.
-
-The backend determines WHETHER the requested
-operation is technically valid and authorized.
-
-Never invent missing factual arguments.
-
-If an essential argument cannot be reliably
-determined from context, ask the user for it.
-
+Never create memory from:
+- assistant statements
+- questions
+- guesses
+- tool results
+- assumptions
 
 =====================================================
-TOOL RESULT REASONING
+TOOL ARGUMENTS
 =====================================================
 
-After a tool returns information:
+Determine arguments from semantic understanding.
 
-1. Read the complete result.
-2. Compare it with the user's original request.
-3. Determine which information actually answers
-   the request.
-4. Ignore irrelevant tool output.
-5. Never invent information missing from the result.
-6. Answer naturally in the user's language and style.
+Do not invent missing factual information.
 
-Do not expose internal tool names, schemas,
-JSON structures or implementation details
-unless the user explicitly asks about them.
-
+If an essential argument cannot be resolved from
+context, ask for it.
 
 =====================================================
-IMPORTANT DECISION RULE
+FINAL RESPONSE
 =====================================================
 
-Do not use hard-coded intent rules.
+If no tool is needed, produce a natural answer.
 
-Do not use keyword-triggered routing.
+If a tool is needed, create the correct plan.
 
-Do not use predefined names.
+Do not explain your internal reasoning.
 
-Do not use predefined relationship lists.
+Return ONLY JSON matching the schema.
 
-Do not use example-based task matching.
+=====================================================
+FAMILY DIRECTORY
+=====================================================
 
-Do not assume that a specific phrase always
-means a specific task.
+${familyDirectoryText(context.directory)}
 
-Reason over the complete message, conversation,
-memory and available information.
+=====================================================
+PERSONAL + FAMILY MEMORY
+=====================================================
 
-Choose the appropriate capability based on
-semantic understanding.
-
-If no tool is required, answer directly.
-
-If a tool is required, select and use the
-appropriate capability.
-
-If multiple capabilities are required, determine
-the correct sequence yourself.
-
-If information is missing, ask only for the
-information that is actually necessary.
-
-Your responsibility is to understand the user's
-goal and determine the appropriate way to complete it.
-MEMORY:
-
-Create candidates only for durable facts
-or preferences explicitly stated by the user
-in THIS message.
-
-explicit must be true.
-
-evidence must be an exact substring
-of the current user message.
-
-Never create memory from questions,
-guesses or assistant information.
-
-CURRENT USER MESSAGE:
-
-${clip(
-  message,
-  2000
-)}
-
-RECENT CONVERSATION:
-
-${compactHistory(
-  context.history
-)}
-
-MEMORY:
-
-${memoryText(
+${buildMemoryText(
   context.personal,
   context.family
 )}
+
+=====================================================
+RECENT CONVERSATION
+=====================================================
+
+${historyText(context.history)}
+
+=====================================================
+CURRENT USER MESSAGE
+=====================================================
+
+${clip(message, 3000)}
 `;
 
-  const response =
-    await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
+  const response = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      method: 'POST',
 
-        headers: {
-          Authorization:
-            `Bearer ${process.env.GROQ_API_KEY}`,
+      headers: {
+        Authorization:
+          `Bearer ${process.env.GROQ_API_KEY}`,
 
-          'Content-Type':
-            'application/json'
-        },
+        'Content-Type':
+          'application/json'
+      },
 
-        body: JSON.stringify({
-          model:
-            GROQ_MODEL,
+      body: JSON.stringify({
+        model: GROQ_MODEL,
 
-          messages: [
-            {
-              role: 'system',
-
-              content:
-                'Return only valid JSON. No markdown.'
-            },
-
-            {
-              role: 'user',
-
-              content:
-                prompt
-            }
-          ],
-
-          response_format: {
-            type: 'json_schema',
-
-            json_schema: {
-              name:
-                'samarthai_conversation',
-
-              strict: true,
-
-              schema:
-                conversationSchema
-            }
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Return only valid JSON matching the supplied schema.'
           },
 
-          include_reasoning:
-            false,
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
 
-          temperature:
-            0.1,
+        response_format: {
+          type: 'json_schema',
 
-          max_completion_tokens:
-            900
-        })
-      }
-    );
+          json_schema: {
+            name:
+              'samarthai_conversation_plan',
+
+            strict: true,
+
+            schema:
+              conversationSchema
+          }
+        },
+
+        temperature: 0.1,
+
+        max_completion_tokens: 1200
+      })
+    }
+  );
 
   const data =
     await response.json();
@@ -825,124 +862,98 @@ ${memoryText(
   if (!response.ok) {
     throw new Error(
       data?.error?.message ||
-      'Conversation AI request failed'
+      'Conversation planner failed'
     );
   }
 
   const raw =
-    data
-      ?.choices?.[0]
-      ?.message?.content ||
-    '{}';
+    data?.choices?.[0]?.message?.content ||
+    '';
 
   let parsed;
 
   try {
-    parsed =
-      JSON.parse(raw);
+    parsed = JSON.parse(raw);
   } catch (error) {
     console.error(
-      'Conversation JSON parse error:',
+      'Conversation planner JSON error:',
       raw
     );
 
-    return emptyPlan();
+    throw new Error(
+      'AI returned invalid conversation plan'
+    );
   }
 
   const plan = {
     ...emptyPlan(),
-    ...parsed
+    ...parsed,
+
+    arguments: {
+      ...emptyPlan().arguments,
+      ...(parsed.arguments || {})
+    }
   };
-
-  plan.arguments = {
-    ...emptyPlan().arguments,
-    ...(parsed.arguments || {})
-  };
-// Normalize AI-generated semantic values
-  // on the server side instead of trusting
-  // strict enum values from the model.
-
-  plan.arguments.weather_type =
-    normalizeWeatherType(
-      plan.arguments.weather_type
-    );
-
-  plan.arguments.location_mode =
-    normalizeLocationMode(
-      plan.arguments.location_mode
-    );
 
   return plan;
 }
 
 
 // =====================================================
-// SAVE PERSONAL MEMORY
+// MEMORY SAVE
 // =====================================================
 
 async function saveMemory(
   userId,
   candidates,
-  userMessage
+  currentMessage
 ) {
   if (!Array.isArray(candidates)) {
     return [];
   }
 
   const source =
-    normalize(userMessage);
+    normalized(currentMessage);
 
   const saved = [];
 
-  for (
-    const item of candidates.slice(0, 5)
-  ) {
+  for (const candidate of candidates.slice(0, 5)) {
     if (
-      !item ||
-      item.explicit !== true
+      !candidate ||
+      candidate.explicit !== true
     ) {
       continue;
     }
 
     const key =
-      clip(item.key, 100).trim();
+      clean(candidate.key);
 
-    const value =
-      clip(item.value, 500).trim();
+ const value =
+  clean(candidate.value);
+const evidence =
+      normalized(candidate.evidence);
 
-    const evidence =
-      normalize(item.evidence);
-
-    if (
-      !key ||
-      !value ||
-      !evidence
-    ) {
+    if (!key || !value || !evidence) {
       continue;
     }
 
-    // Evidence must actually exist
-    // inside the current user message.
+    /*
+     * Security/data-integrity validation:
+     * Memory evidence must actually exist
+     * in the current user message.
+     */
     if (!source.includes(evidence)) {
       continue;
     }
 
-    const {
-      data: existing,
-      error: findError
-    } = await supabase
-      .from('personal_memory')
-      .select('id')
-      .eq(
-        'user_id',
-        userId
-      )
-      .eq(
-        'key',
-        key
-      )
-      .limit(1)
-      .maybeSingle();
+    const { data: existing, error: findError } =
+      await supabase
+        .from('personal_memory')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('key', key)
+        .limit(1)
+        .maybeSingle();
 
     if (findError) {
       console.error(
@@ -954,19 +965,15 @@ async function saveMemory(
     }
 
     if (existing?.id) {
-      const {
-        error
-      } = await supabase
-        .from('personal_memory')
-        .update({
-          value,
-          updated_at:
-            new Date().toISOString()
-        })
-        .eq(
-          'id',
-          existing.id
-        );
+      const { error } =
+        await supabase
+          .from('personal_memory')
+          .update({
+            value: clip(value, 500),
+            updated_at:
+              new Date().toISOString()
+          })
+          .eq('id', existing.id);
 
       if (error) {
         console.error(
@@ -977,20 +984,14 @@ async function saveMemory(
         continue;
       }
     } else {
-      const {
-        error
-      } = await supabase
-        .from('personal_memory')
-        .insert([
-          {
-            user_id:
-              userId,
-
-            key,
-
-            value
-          }
-        ]);
+      const { error } =
+        await supabase
+          .from('personal_memory')
+          .insert({
+            user_id: userId,
+            key: clip(key, 100),
+            value: clip(value, 500)
+          });
 
       if (error) {
         console.error(
@@ -1013,119 +1014,335 @@ async function saveMemory(
 
 
 // =====================================================
-// EXACT HISTORY
+// HISTORY RESPONSES
 // =====================================================
 
-function formatHistory(
-  history,
-  target
-) {
-  if (!history.length) {
-    return (
-      'Abhi koi pichhli conversation available nahi hai.'
-    );
+function previousExchange(history, target) {
+  if (!history?.length) {
+    return 'Abhi koi pichhli conversation available nahi hai.';
   }
 
   const previous =
-    history[
-      history.length - 1
-    ];
+    history[history.length - 1];
 
-  if (
-    target === 'user'
-  ) {
-    return (
-      `Aapka pichhla message tha: "${previous.message || ''}"`
-    );
+  if (target === 'user') {
+    return `Aapka pichhla message tha: "${previous.message || ''}"`;
   }
 
+  if (target === 'assistant') {
+    return `Mera pichhla jawab tha: "${previous.response || ''}"`;
+  }
+
+  return [
+    'Pichhla exchange:',
+    `Aap: ${previous.message || ''}`,
+    `SamarthAI: ${previous.response || ''}`
+  ].join('\n');
+}
+
+
+// =====================================================
+// RECENT CONVERSATION
+// =====================================================
+
+function recentConversation(history) {
+  if (!history?.length) {
+    return 'Abhi koi pichhli conversation available nahi hai.';
+  }
+
+  return history
+    .slice(-12)
+    .map((item, index) =>
+      [
+        `${index + 1}.`,
+        `Aap: ${item.message || ''}`,
+        `SamarthAI: ${item.response || ''}`
+      ].join('\n')
+    )
+    .join('\n\n');
+}
+
+
+// =====================================================
+// CONVERSATION SUMMARY
+// =====================================================
+
+function conversationSummary(history) {
+  if (!history?.length) {
+    return 'Abhi koi pichhli conversation available nahi hai.';
+  }
+
+  return history
+    .slice(-20)
+    .map(item =>
+      `User: ${item.message || ''}\nSamarthAI: ${item.response || ''}`
+    )
+    .join('\n\n');
+}
+
+
+// =====================================================
+// CURRENT TIME
+// =====================================================
+
+function currentTime(location, requestedTimezone) {
+  const timezone =
+    clean(requestedTimezone) ||
+    clean(location?.timezone) ||
+    clean(process.env.APP_TIMEZONE) ||
+    'UTC';
+
+  const now =
+    new Date();
+
+  try {
+    const parts =
+      new Intl.DateTimeFormat(
+        'en-IN',
+        {
+          timeZone: timezone,
+          dateStyle: 'full',
+          timeStyle: 'long'
+        }
+      ).formatToParts(now);
+
+    const values = {};
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        values[part.type] =
+          part.value;
+      }
+    }
+
+    return {
+      iso:
+        now.toISOString(),
+
+      timezone,
+
+      date:
+        `${values.weekday || ''}, ` +
+        `${values.day || ''} ` +
+        `${values.month || ''} ` +
+        `${values.year || ''}`,
+
+      time:
+        `${values.hour || ''}:${values.minute || ''}:${values.second || ''} ${values.dayPeriod || ''}`
+    };
+  } catch (error) {
+    return {
+      iso:
+        now.toISOString(),
+
+      timezone: 'UTC',
+
+      date:
+        now.toISOString().slice(0, 10),
+
+      time:
+        now.toISOString().slice(11, 19)
+    };
+  }
+}
+
+
+// =====================================================
+// CURRENT USER LOCATION
+// =====================================================
+
+function currentUserLocation(location) {
+  if (!location) {
+    return {
+      available: false
+    };
+  }
+
+  const result = {
+    available: false
+  };
+
   if (
-    target === 'assistant'
+    location.latitude != null &&
+    location.longitude != null
   ) {
-    return (
-      `Mera pichhla jawab tha: "${previous.response || ''}"`
-    );
+    result.available = true;
+    result.latitude =
+      location.latitude;
+    result.longitude =
+      location.longitude;
+  }
+
+  if (location.accuracy != null) {
+    result.accuracy =
+      location.accuracy;
+  }
+
+  if (location.city) {
+    result.city =
+      location.city;
+  }
+
+  if (location.area) {
+    result.area =
+      location.area;
+  }
+
+  if (location.address) {
+    result.address =
+      location.address;
+  }
+
+  if (location.timezone) {
+    result.timezone =
+      location.timezone;
+  }
+
+  return result;
+}
+
+
+// =====================================================
+// FAMILY MEMBER RESOLUTION
+// =====================================================
+
+function resolveFamilyMember(
+  members,
+  requestedName
+) {
+  const requested =
+    normalized(requestedName);
+
+  if (!requested) {
+    return null;
+  }
+
+  const exact =
+    members.find(member => {
+      const name =
+        normalized(member.name);
+
+      const relation =
+        normalized(member.relation);
+
+      return (
+        name === requested ||
+        relation === requested
+      );
+    });
+
+  if (exact) {
+    return exact;
   }
 
   return (
-    `Pichhla exchange:\n` +
-    `Aap: ${previous.message || ''}\n` +
-    `SamarthAI: ${previous.response || ''}`
+    members.find(member => {
+      const name =
+        normalized(member.name);
+
+      return (
+        name &&
+        (
+          name.includes(requested) ||
+          requested.includes(name)
+        )
+      );
+    }) ||
+    null
   );
 }
 
 
 // =====================================================
-// RECENT HISTORY
+// FAMILY RESULT SANITIZATION
 // =====================================================
 
-function formatRecentHistory(
-  history
+function sanitizeFamilyResult(
+  familyResult
 ) {
-  if (!history.length) {
-    return (
-      'Abhi koi pichhli conversation available nahi hai.'
-    );
+  if (!familyResult) {
+    return {
+      members: []
+    };
   }
 
-  return history
-    .slice(-12)
-    .map(
-      (item, index) =>
-        `${index + 1}. ` +
-        `Aap: ${item.message || ''}\n` +
-        `SamarthAI: ${item.response || ''}`
-    )
-    .join('\n\n');
+  const members =
+    (familyResult.members || [])
+      .map(member => ({
+        id: member.id,
+        user_id: member.user_id,
+        name: member.name,
+        relation: member.relation,
+        role: member.role
+      }));
+
+  return {
+    members
+  };
 }
 
 
 // =====================================================
-// HISTORY SUMMARY
+// CONTROLLED TOOL EXECUTION
 // =====================================================
 
-function formatHistorySummary(
-  history
-) {
-  if (!history.length) {
-    return (
-      'Abhi koi pichhli conversation available nahi hai.'
-    );
-  }
-
-  return history
-    .slice(-12)
-    .map(
-      item =>
-        `User: ${item.message || ''}\n` +
-        `SamarthAI: ${item.response || ''}`
-    )
-    .join('\n\n');
-}
-
-
-// =====================================================
-// EXECUTE TOOL
-// =====================================================
-
-async function executeTool(
+async function executePlannedTool({
   plan,
   userId,
   location
-) {
+}) {
   const toolName =
-    normalize(plan?.tool) ||
-    'none';
+    clean(plan.tool) || 'none';
 
-  const args =
-    plan?.arguments ||
-    {};
+  if (!ALLOWED_TOOLS.has(toolName)) {
+    return {
+      error:
+        'Requested capability is not permitted.'
+    };
+  }
 
-  if (
-    toolName === 'none'
-  ) {
+  if (toolName === 'none') {
     return null;
   }
+
+
+  // ===================================================
+  // TIME
+  // ===================================================
+
+  if (toolName === 'time') {
+    return currentTime(
+      location,
+      plan.arguments?.timezone
+    );
+  }
+
+
+  // ===================================================
+  // USER LOCATION
+  // ===================================================
+
+  if (toolName === 'user_location') {
+    return currentUserLocation(
+      location
+    );
+  }
+
+
+  // ===================================================
+  // WEB
+  // ===================================================
+
+  if (toolName === 'web') {
+    return {
+      requiresWeb: true
+    };
+  }
+
+
+  // ===================================================
+  // EXISTING TOOL REGISTRY
+  // ===================================================
 
   const tool =
     getTool(toolName);
@@ -1133,29 +1350,27 @@ async function executeTool(
   if (!tool) {
     return {
       error:
-        `Tool "${toolName}" is not available.`
+        'Requested capability is not available.'
     };
   }
 
-// ===================================================
+
+  // ===================================================
   // WEATHER
   // ===================================================
 
-  if (
-    toolName === 'weather'
-  ) {
-    const namedLocation =
-      String(
-        args.location_name || ''
-      ).trim();
+  if (toolName === 'weather') {
+    const locationName =
+      clean(
+        plan.arguments?.location_name
+      );
 
-    if (namedLocation) {
+    if (locationName) {
       return tool.execute({
-        locationName:
-          namedLocation,
+        locationName,
 
         type:
-          args.weather_type ||
+          plan.arguments?.weather_type ||
           'current'
       });
     }
@@ -1165,8 +1380,7 @@ async function executeTool(
       location?.longitude == null
     ) {
       return {
-        needs_location:
-          true
+        needs_location: true
       };
     }
 
@@ -1178,7 +1392,7 @@ async function executeTool(
         location.longitude,
 
       type:
-        args.weather_type ||
+        plan.arguments?.weather_type ||
         'current'
     });
   }
@@ -1188,11 +1402,14 @@ async function executeTool(
   // FAMILY
   // ===================================================
 
-  if (
-    toolName === 'family'
-  ) {
-    return tool.execute(
-      userId
+  if (toolName === 'family') {
+    const result =
+      await tool.execute(
+        userId
+      );
+
+    return sanitizeFamilyResult(
+      result
     );
   }
 
@@ -1201,11 +1418,9 @@ async function executeTool(
   // SERVICES
   // ===================================================
 
-  if (
-    toolName === 'services'
-  ) {
+  if (toolName === 'services') {
     const nearby =
-      args.location_mode ===
+      plan.arguments?.location_mode ===
       'nearby';
 
     if (
@@ -1216,20 +1431,25 @@ async function executeTool(
       )
     ) {
       return {
-        needs_location:
-          true
+        needs_location: true
       };
     }
 
     return tool.execute({
       query:
-        args.query || '',
+        clean(
+          plan.arguments?.query
+        ),
 
       category:
-        args.category || '',
+        clean(
+          plan.arguments?.category
+        ),
 
       location:
-        args.location_name || '',
+        clean(
+          plan.arguments?.location_name
+        ),
 
       latitude:
         location?.latitude ?? null,
@@ -1239,8 +1459,7 @@ async function executeTool(
 
       nearby,
 
-      limit:
-        10
+      limit: 10
     });
   }
 
@@ -1249,175 +1468,238 @@ async function executeTool(
   // GPS
   // ===================================================
 
-  if (
-    toolName === 'gps'
-  ) {
-    return {
-      needs_member:
-        true,
+  if (toolName === 'gps') {
+    const requested =
+      clean(
+        plan.arguments?.member_name
+      );
 
-      member_name:
-        args.member_name || ''
-    };
+    if (!requested) {
+      return {
+        needs_member: true
+      };
+    }
+
+    const familyTool =
+      getTool('family');
+
+    const family =
+      await familyTool.execute(
+        userId
+      );
+
+    const member =
+      resolveFamilyMember(
+        family?.members || [],
+        requested
+      );
+
+    if (!member) {
+      return {
+        member_not_found: true,
+        requested
+      };
+    }
+
+    return getTool('gps').execute({
+      userId,
+
+      memberId:
+        member.id
+    });
   }
-
 
   return {
     error:
-      `Unsupported tool "${toolName}".`
+      'Capability execution is not implemented.'
   };
 }
 
 
 // =====================================================
-// GPS MEMBER MATCHING
+// WEB EXECUTION
 // =====================================================
 
-function findFamilyMember(
-  members,
-  requested
-) {
-  const value =
-    normalize(requested);
+async function executeWeb({
+  message,
+  context
+}) {
+  const result =
+    await callOpenAI({
+      message,
 
-  if (!value) {
-    return null;
-  }
+      history:
+        context.history.slice(-20),
 
-  const exact =
-    members.find(
-      member => {
-        const name =
-          normalize(member.name);
+      memoryText:
+        buildMemoryText(
+          context.personal,
+          context.family
+        ),
 
-        const relation =
-          normalize(member.relation);
+      useWeb: true
+    });
 
-        return (
-          name === value ||
-          relation === value
-        );
-      }
-    );
+  return {
+    text:
+      result.text,
 
-  if (exact) {
-    return exact;
-  }
+    provider:
+      result.provider,
 
-  return (
-    members.find(
-      member => {
-        const name =
-          normalize(member.name);
+    model:
+      result.model,
 
-        const relation =
-          normalize(member.relation);
-
-        return (
-          name.includes(value) ||
-          value.includes(name) ||
-          relation.includes(value)
-        );
-      }
-    ) ||
-    null
-  );
+    web_used:
+      Boolean(result.web_used)
+  };
 }
+
+
 // =====================================================
-// FINAL TOOL RESPONSE
+// FINAL AI RESPONSE
 // =====================================================
 
-async function finalToolAnswer({
+async function generateFinalAnswer({
   message,
   plan,
-  result
+  result,
+  context
 }) {
-  if (
-    result?.needs_location
-  ) {
-    if (
-      plan.tool === 'services'
-    ) {
-      return (
-        'Nearby service dhoondhne ke liye ' +
-        'mujhe aapka city/area bata dijiye, ' +
-        'ya location permission de dijiye. 📍'
-      );
+  if (result?.needs_location) {
+    if (plan.tool === 'services') {
+      return {
+        text:
+          'Nearby service dhoondhne ke liye mujhe aapka city/area bata dijiye ya location permission de dijiye.',
+
+        model:
+          GROQ_MODEL
+      };
     }
 
-    return (
-      'Mausam batane ke liye mujhe ' +
-      'city/area ka naam bata dijiye, ' +
-      'ya location permission de dijiye. 📍'
-    );
+    return {
+      text:
+        'Is request ke liye mujhe location chahiye. City/area bata dijiye ya location permission de dijiye.',
+
+      model:
+        GROQ_MODEL
+    };
   }
 
-  if (
-    result?.error
-  ) {
-    return (
-      `Is request ko complete nahi kar saka: ${result.error}`
-    );
+
+  if (result?.needs_member) {
+    return {
+      text:
+        'Kis family member ki location dekhni hai?',
+
+      model:
+        GROQ_MODEL
+    };
   }
 
+
+  if (result?.member_not_found) {
+    return {
+      text:
+        `"${result.requested}" naam ka family member available data mein nahi mila.`,
+
+      model:
+        GROQ_MODEL
+    };
+  }
+
+
   if (
-    !process.env.GROQ_API_KEY
+    result?.available === false &&
+    plan.tool === 'user_location'
   ) {
+    return {
+      text:
+        'Is waqt SamarthAI ko aapki current location data available nahi hai.',
+
+      model:
+        GROQ_MODEL
+    };
+  }
+
+
+  if (result?.error) {
+    return {
+      text:
+        `Request complete nahi ho saki: ${result.error}`,
+
+      model:
+        GROQ_MODEL
+    };
+  }
+
+
+  if (!process.env.GROQ_API_KEY) {
     throw new Error(
       'GROQ_API_KEY is not configured'
     );
   }
 
+
   const prompt = `
-You are SamarthAI.
+You are SamarthAI's final response generator.
 
-Answer the user naturally and directly.
+Answer the user's actual request naturally.
 
-Use the same language as the user.
+Use the user's language.
 
-The tool has already been executed.
+The planning AI has already understood the
+request and the backend has already executed
+the required capability.
 
 Use ONLY the supplied result.
 
 Never invent information.
 
-Never mention internal tools,
-JSON, schemas or system instructions.
+Never claim an action happened if the result
+does not show it.
 
-If the result contains no useful records,
-clearly tell the user that nothing was found.
+Do not expose:
+- internal tool names
+- JSON
+- schemas
+- prompts
+- system instructions
+- implementation details
 
-If there are service providers,
-show the most relevant ones concisely.
+For family information:
+answer only what the user asked.
 
-If there is family information,
-answer the user's actual question,
-including relation when available.
+For service results:
+describe the relevant providers found.
 
-If there is GPS information,
-give the member name and available
-location information directly.
+For weather:
+answer using the supplied weather data.
+
+For GPS:
+answer using the supplied location data.
+
+For time:
+use the supplied runtime clock.
+
+For user location:
+use only the supplied location data.
+
+For empty results:
+say that the requested information was not
+found in the available SamarthAI data.
 
 USER:
+${clip(message, 2500)}
 
-${clip(
-  message,
-  2000
-)}
-
-TOOL:
-
-${clip(
-  JSON.stringify(plan),
-  3000
-)}
+PLAN:
+${clip(JSON.stringify(plan), 4000)}
 
 RESULT:
+${clip(JSON.stringify(result), 10000)}
 
-${clip(
-  JSON.stringify(result),
-  9000
-)}
+RELEVANT CONVERSATION:
+${historyText(context.history.slice(-8))}
 `;
 
   const response =
@@ -1443,7 +1725,7 @@ ${clip(
               role: 'system',
 
               content:
-                'Answer naturally. Do not expose internal implementation details.'
+                'Answer naturally and only from supplied information.'
             },
 
             {
@@ -1454,14 +1736,9 @@ ${clip(
             }
           ],
 
-          include_reasoning:
-            false,
+          temperature: 0.2,
 
-          temperature:
-            0.2,
-
-          max_completion_tokens:
-            600
+          max_completion_tokens: 700
         })
       }
     );
@@ -1472,22 +1749,23 @@ ${clip(
   if (!response.ok) {
     throw new Error(
       data?.error?.message ||
-      'Final AI response failed'
+      'Final response generation failed'
     );
   }
 
-  return (
-    data
-      ?.choices?.[0]
-      ?.message?.content
-      ?.trim() ||
-    'Mujhe iska jawab dene mein dikkat hui.'
-  );
+  return {
+    text:
+      data?.choices?.[0]?.message?.content?.trim() ||
+      'Mujhe iska jawab nahi mil paaya.',
+
+    model:
+      GROQ_MODEL
+  };
 }
 
 
 // =====================================================
-// MAIN CONVERSATION
+// MAIN CONVERSATION ENGINE
 // =====================================================
 
 async function runConversation({
@@ -1495,13 +1773,8 @@ async function runConversation({
   message,
   location = null
 }) {
-  const context =
-    await loadContext(
-      userId
-    );
-
   const cleanMessage =
-    String(message || '').trim();
+    clean(message);
 
   if (!cleanMessage) {
     return {
@@ -1524,17 +1797,27 @@ async function runConversation({
 
 
   // ===================================================
-  // AI UNDERSTANDING
+  // LOAD REAL APPLICATION CONTEXT
+  // ===================================================
+
+  const context =
+    await loadContext(
+      userId
+    );
+
+
+  // ===================================================
+  // AI SEMANTIC UNDERSTANDING
   // ===================================================
 
   const plan =
-    await understandAndAnswer(
+    await understand(
       cleanMessage,
       context
     );
 
   console.log(
-    'Conversation Plan:',
+    'SamarthAI semantic plan:',
     JSON.stringify(plan)
   );
 
@@ -1546,7 +1829,9 @@ async function runConversation({
   const saved =
     await saveMemory(
       userId,
+
       plan.memory_candidates,
+
       cleanMessage
     );
 
@@ -1561,7 +1846,7 @@ async function runConversation({
   ) {
     return {
       response:
-        formatHistory(
+        previousExchange(
           context.history,
           plan.exact_target
         ),
@@ -1582,7 +1867,7 @@ async function runConversation({
 
 
   // ===================================================
-  // RECENT HISTORY
+  // RECENT CONVERSATION
   // ===================================================
 
   if (
@@ -1591,7 +1876,7 @@ async function runConversation({
   ) {
     return {
       response:
-        formatRecentHistory(
+        recentConversation(
           context.history
         ),
 
@@ -1611,7 +1896,7 @@ async function runConversation({
 
 
   // ===================================================
-  // HISTORY SUMMARY
+  // CONVERSATION SUMMARY
   // ===================================================
 
   if (
@@ -1620,7 +1905,7 @@ async function runConversation({
   ) {
     return {
       response:
-        formatHistorySummary(
+        conversationSummary(
           context.history
         ),
 
@@ -1640,7 +1925,66 @@ async function runConversation({
 
 
   // ===================================================
-  // NORMAL CHAT
+  // WEB
+  // ===================================================
+
+  if (
+    plan.tool === 'web' ||
+    plan.needs_web === true
+  ) {
+    try {
+      const webResult =
+        await executeWeb({
+          message:
+            cleanMessage,
+
+          context
+        });
+
+      return {
+        response:
+          webResult.text,
+
+        model:
+          webResult.model,
+
+        intent:
+          'web',
+
+        memory_saved:
+          saved.length > 0,
+
+        web_used:
+          true
+      };
+    } catch (error) {
+      console.error(
+        'Web execution error:',
+        error
+      );
+
+      return {
+        response:
+          'Live web information access abhi complete nahi ho paaya.',
+
+        model:
+          GROQ_MODEL,
+
+        intent:
+          'web',
+
+        memory_saved:
+          saved.length > 0,
+
+        web_used:
+          false
+      };
+    }
+  }
+
+
+  // ===================================================
+  // NORMAL CONVERSATION
   // ===================================================
 
   if (
@@ -1668,32 +2012,60 @@ async function runConversation({
 
 
   // ===================================================
-  // TOOL EXECUTION
+  // SECURITY VALIDATION
   // ===================================================
 
-  let toolResult;
+  if (
+    !ALLOWED_TOOLS.has(
+      plan.tool
+    )
+  ) {
+    return {
+      response:
+        'Ye capability SamarthAI ke security layer se allowed nahi hai.',
+
+      model:
+        GROQ_MODEL,
+
+      intent:
+        'blocked',
+
+      memory_saved:
+        saved.length > 0,
+
+      web_used:
+        false
+    };
+  }
+
+
+  // ===================================================
+  // CONTROLLED TOOL EXECUTION
+  // ===================================================
+
+  let result;
 
   try {
-    toolResult =
-      await executeTool(
+    result =
+      await executePlannedTool({
         plan,
         userId,
         location
-      );
+      });
   } catch (error) {
     console.error(
-      'Conversation tool error:',
+      'Tool execution error:',
       error
     );
 
     return {
       response:
-        'Is request ko process karte waqt problem aa gayi. Kripya dobara try karein.',
+        'Request execute karte waqt technical problem aa gayi.',
 
       model:
-        plan.tool,
+        GROQ_MODEL,
 
-      intent:
+    intent:
         plan.tool,
 
       memory_saved:
@@ -1706,173 +2078,59 @@ async function runConversation({
 
 
   // ===================================================
-  // GPS MEMBER RESOLUTION
+  // FINAL AI INTERPRETATION
   // ===================================================
+  try {
+    const final =
+      await generateFinalAnswer({
+        message:
+          cleanMessage,
 
-  if (
-    toolResult?.needs_member
-  ) {
-    const requested =
-      normalize(
-        plan.arguments?.member_name
-      );
+        plan,
 
-    if (!requested) {
-      return {
-        response:
-          'Kis family member ki location dekhni hai?',
+        result,
 
-        model:
-          GROQ_MODEL,
+        context
+      });
 
-        intent:
-          'gps',
+    return {
+      response:
+        final.text,
 
-        memory_saved:
-          saved.length > 0,
+      model:
+        final.model,
 
-        web_used:
-          false
-      };
-    }
+      intent:
+        plan.tool,
 
-    let family;
+      memory_saved:
+        saved.length > 0,
 
-    try {
-      family =
-        await getTool(
-          'family'
-        ).execute(
-          userId
-        );
-    } catch (error) {
-      console.error(
-        'Family lookup error:',
-        error
-      );
+      web_used:
+        false
+    };
+  } catch (error) {
+    console.error(
+      'Final response error:',
+      error
+    );
 
-      return {
-        response:
-          'Family members ki information nahi mil paayi.',
+    return {
+      response:
+        'Information mil gayi hai, lekin final response generate karne mein problem aa gayi.',
+      model:
+        GROQ_MODEL,
 
-        model:
-          'family',
+      intent:
+        plan.tool,
 
-        intent:
-          'gps',
+      memory_saved:
+        saved.length > 0,
 
-        memory_saved:
-          saved.length > 0,
-
-        web_used:
-          false
-      };
-    }
-
-    const member =
-      findFamilyMember(
-        family?.members || [],
-        requested
-      );
-
-    if (!member) {
-      const names =
-        (family?.members || [])
-          .map(
-            item =>
-              item.name
-          )
-          .filter(Boolean)
-          .join(', ');
-
-      return {
-        response:
-          names
-            ? `"${plan.arguments.member_name}" nahi mila. Family members: ${names}`
-            : `"${plan.arguments.member_name}" family member nahi mila.`,
-
-        model:
-          GROQ_MODEL,
-
-        intent:
-          'gps',
-
-        memory_saved:
-          saved.length > 0,
-
-        web_used:
-          false
-      };
-    }
-
-    try {
-      toolResult =
-        await getTool(
-          'gps'
-        ).execute({
-          userId,
-
-          memberId:
-            member.id
-        });
-    } catch (error) {
-      console.error(
-        'GPS tool error:',
-        error
-      );
-
-      return {
-        response:
-          'Is family member ki location abhi available nahi hai.',
-
-        model:
-          'gps',
-
-        intent:
-          'gps',
-
-        memory_saved:
-          saved.length > 0,
-
-        web_used:
-          false
-      };
-    }
+      web_used:
+        false
+    };
   }
-
-
-  // ===================================================
-  // FINAL NATURAL LANGUAGE RESPONSE
-  // ===================================================
-
-  const response =
-    await finalToolAnswer({
-      message:
-        cleanMessage,
-
-      plan,
-
-      result:
-        toolResult
-    });
-
-  return {
-    response,
-
-    model:
-      GROQ_MODEL,
-
-    intent:
-      plan.tool,
-
-    memory_saved:
-      saved.length > 0,
-
-    web_used:
-      Boolean(
-        plan.needs_web
-      )
-  };
 }
 
 
@@ -1883,4 +2141,3 @@ async function runConversation({
 module.exports = {
   runConversation
 };
-  
