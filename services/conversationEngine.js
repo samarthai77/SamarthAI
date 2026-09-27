@@ -2227,11 +2227,9 @@ async function runConversation({
 /* ---------------------------------------------------------
  * Export
  * --------------------------------------------------------- */
+module.exports = runConversation;
 
-module.exports = {
-  runConversation,
-  loadContext,
-  planConversation,
-  executeTool
-}; 
-}
+module.exports.runConversation = runConversation;
+module.exports.loadContext = loadContext;
+module.exports.planConversation = planConversation;
+module.exports.executeTool = executeTool;
