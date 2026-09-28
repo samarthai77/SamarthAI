@@ -481,7 +481,65 @@ ${String(memoryText || '')}
     );
   }
 
-  if (!response.ok) {
+ if (!response.ok) {
+
+    /*
+     * Groq quota/rate-limit होने पर OpenAI fallback.
+     * इससे पूरा conversation engine बंद नहीं होगा.
+     */
+    if (
+      response.status === 429 &&
+      process.env.OPENAI_API_KEY
+    ) {
+
+      console.warn(
+        'Groq rate limit reached. Using OpenAI fallback.'
+      );
+
+      let fallbackResult;
+
+      if (Array.isArray(messages)) {
+
+        const fallbackMessage =
+          finalMessages
+            .map(item =>
+              `${item.role.toUpperCase()}:\n${item.content}`
+            )
+            .join('\n\n');
+
+        fallbackResult =
+          await callOpenAI({
+            message: fallbackMessage,
+            history: [],
+            memoryText: '',
+            useWeb: false
+          });
+
+      } else {
+
+        fallbackResult =
+          await callOpenAI({
+            message,
+            history,
+            memoryText,
+            useWeb: false
+          });
+
+      }
+
+      if (
+        fallbackResult &&
+        typeof fallbackResult.text === 'string' &&
+        fallbackResult.text.trim()
+      ) {
+
+        if (Array.isArray(messages)) {
+          return fallbackResult.text.trim();
+        }
+
+        return fallbackResult;
+      }
+    }
 
     throw new Error(
       data?.error?.message ||
@@ -489,7 +547,6 @@ ${String(memoryText || '')}
       `Groq API request failed (${response.status})`
     );
   }
-
   const content =
     data?.choices?.[0]?.message?.content;
 
