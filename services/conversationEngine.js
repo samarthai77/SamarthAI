@@ -70,7 +70,7 @@ const VALID_WEATHER_TYPES = new Set([
   'daily'
 ]);
 
-const MAX_HISTORY = 6;
+const MAX_HISTORY = 20;
 const MAX_MEMORY = 8;
 const MAX_DIRECTORY = 40;
 
@@ -380,16 +380,26 @@ async function getConversationHistory(userId) {
 
 function historyText(history = []) {
   if (!Array.isArray(history) || history.length === 0) {
-    return 'No recent conversation history.';
+    return 'No previous conversation is available.';
   }
 
   return history
     .slice(-MAX_HISTORY)
     .map((item, index) => {
+      const user = safeString(
+        item?.user || '',
+        3000
+      );
+
+      const assistant = safeString(
+        item?.assistant || '',
+        3000
+      );
+
       return [
-        `Turn ${index + 1}:`,
-        `User: ${safeString(item.user, 1500)}`,
-        `Assistant: ${safeString(item.assistant, 1500)}`
+        `CONVERSATION TURN ${index + 1}`,
+        `USER: ${user || '[empty]'}`,
+        `ASSISTANT: ${assistant || '[empty]'}`
       ].join('\n');
     })
     .join('\n\n');
@@ -584,7 +594,33 @@ ${safeString(message, 5000)}
 
 RECENT CONVERSATION:
 ${recentHistory}
+CONVERSATION UNDERSTANDING RULES:
 
+The current USER MESSAGE is part of the same ongoing conversation.
+
+Do NOT treat the current message as an isolated request.
+
+First understand what the user and assistant were discussing in the
+previous turns.
+
+Resolve short follow-up messages using the conversation context.
+
+Examples:
+- "Fatehpur me dekho" may refer to the service/location discussed immediately before.
+- "isko check karo" refers to the most relevant thing from previous turns.
+- "wahan" refers to the relevant previously mentioned place.
+- "haan", "nahi", "ye", "wo", "isme", "uske liye", "phir", "ab", "aur" etc.
+  must be interpreted from the conversation context.
+- If the user changes only one parameter, preserve the other relevant
+  parameters from the previous request.
+- Do not ask the user to repeat information that is already present in
+  recent conversation.
+- A short follow-up is NOT a new conversation.
+- Use the latest relevant turn first, then older turns when necessary.
+- Do not invent context that is not present.
+
+The previous conversation is contextual evidence, not a new user command.
+The CURRENT USER MESSAGE remains the command that must be executed.
 PERSONAL MEMORY:
 ${personalMem}
 
@@ -1861,7 +1897,7 @@ ${safeResult.tool}
 ACTUAL TOOL RESULT:
 ${JSON.stringify(safeResult.data)}
 
-RULES:
+RULES: 
 - Use only the actual tool result for current/factual values.
 - Do not invent missing information.
 - Do not claim that a tool was used if it was not.
@@ -1869,6 +1905,10 @@ RULES:
   API details or implementation details.
 - If the user asks a simple question, answer simply.
 - If the user asks in Hindi/Hinglish, answer naturally in Hindi/Hinglish.
+- Treat the current user message as part of the ongoing conversation unless the user clearly starts a new topic.
+- Resolve references, omitted subjects, locations and follow-up requests from RECENT CONVERSATION.
+- If the user changed only one part of the request, preserve the other relevant context.
+- Do not make the user repeat information already available in the conversation.
 - Do not unnecessarily repeat the complete conversation.
 - Do not add unrelated current time/date information.
 - For a service search, clearly distinguish registered SamarthAI
