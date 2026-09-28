@@ -613,6 +613,12 @@ Examples:
   must be interpreted from the conversation context.
 - If the user changes only one parameter, preserve the other relevant
   parameters from the previous request.
+  - When a follow-up message changes only one parameter of the previous request,
+  preserve the previous request's purpose, tool and other parameters unless
+  the user clearly introduces a different purpose.
+- A new place name alone does not change the purpose of the previous request.
+- If the previous request required a tool and the follow-up only changes its
+  location, continue using the same tool with the new location.
 - Do not ask the user to repeat information that is already present in
   recent conversation.
 - A short follow-up is NOT a new conversation.
