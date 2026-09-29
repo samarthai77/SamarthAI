@@ -1394,7 +1394,7 @@ grid-template-columns:repeat(4,1fr);
 <script>
 
 const CHAT_API =
-    'https://samarthai-backend.onrender.com/api/chat';
+    'https://samarthai-backend.onrender.com/api/autonomous/run';
 
 const PROFILE_API =
     'https://samarthai-backend.onrender.com/api/auth/profile';
@@ -2174,18 +2174,23 @@ const clientLocation =
                             'Bearer ' + token
                     },
 
-     body:JSON.stringify({
+   body: JSON.stringify({
 
     message:
         message,
 
-    conversation_id:
+    conversationId:
         currentConversationId,
 
-location:
-    clientLocation   
+    mode:
+        'conversation',
 
-})           
+    metadata: {
+        location:
+            clientLocation
+    }
+
+})
                 }
             );
 
@@ -2209,11 +2214,10 @@ location:
         }
 
 
-        const reply =
-            data.response ||
-            'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
-
-
+       const reply =
+    data?.result?.response ||
+    data?.response ||
+    'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
         addMessage(
             reply,
             false
