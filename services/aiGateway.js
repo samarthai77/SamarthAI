@@ -481,71 +481,187 @@ ${String(memoryText || '')}
     );
   }
 
- if (!response.ok) {
+if (!response.ok) {
 
     /*
-     * Groq quota/rate-limit होने पर OpenAI fallback.
-     * इससे पूरा conversation engine बंद नहीं होगा.
+     * Provider fallback chain:
+     *
+     * Groq
+     *   ↓
+     * OpenAI
+     *   ↓
+     * Claude
+     *
+     * Agar ek provider unavailable ho,
+     * next provider automatically try hoga.
      */
-    if (
-      response.status === 429 &&
-      process.env.OPENAI_API_KEY
-    ) {
+
+    if (response.status === 429) {
 
       console.warn(
-        'Groq rate limit reached. Using OpenAI fallback.'
+        'Groq rate limit reached. Trying fallback providers.'
       );
 
-      let fallbackResult;
+      /*
+       * ============================================
+       * FALLBACK 1 — OPENAI
+       * ============================================
+       */
 
-      if (Array.isArray(messages)) {
+      if (process.env.OPENAI_API_KEY) {
 
-        const fallbackMessage =
-          finalMessages
-            .map(item =>
-              `${item.role.toUpperCase()}:\n${item.content}`
-            )
-            .join('\n\n');
+        try {
 
-        fallbackResult =
-          await callOpenAI({
-            message: fallbackMessage,
-            history: [],
-            memoryText: '',
-            useWeb: false
-          });
+          let fallbackResult;
 
-      } else {
+          if (Array.isArray(messages)) {
 
-        fallbackResult =
-          await callOpenAI({
-            message,
-            history,
-            memoryText,
-            useWeb: false
-          });
+            const fallbackMessage =
+              finalMessages
+                .map(item =>
+                  `${item.role.toUpperCase()}:\n${item.content}`
+                )
+                .join('\n\n');
 
-      }
+            fallbackResult =
+              await callOpenAI({
+                message:
+                  fallbackMessage,
+                history: [],
+                memoryText: '',
+                useWeb: false
+              });
 
-      if (
-        fallbackResult &&
-        typeof fallbackResult.text === 'string' &&
-        fallbackResult.text.trim()
-      ) {
+          } else {
 
-        if (Array.isArray(messages)) {
-          return fallbackResult.text.trim();
+            fallbackResult =
+              await callOpenAI({
+                message,
+                history,
+                memoryText,
+                useWeb: false
+              });
+
+          }
+
+          if (
+            fallbackResult &&
+            typeof fallbackResult.text === 'string' &&
+            fallbackResult.text.trim()
+          ) {
+
+            console.warn(
+              'OpenAI fallback succeeded.'
+            );
+
+            if (Array.isArray(messages)) {
+
+              return fallbackResult.text.trim();
+
+            }
+
+            return fallbackResult;
+
+          }
+
+        } catch (openAIError) {
+
+          console.error(
+            'OpenAI fallback failed:',
+            openAIError.message
+          );
+
         }
 
-        return fallbackResult;
       }
+
+
+      /*
+       * ============================================
+       * FALLBACK 2 — CLAUDE
+       * ============================================
+       */
+
+      if (process.env.ANTHROPIC_API_KEY) {
+
+        try {
+
+          let fallbackResult;
+
+          if (Array.isArray(messages)) {
+
+            const fallbackMessage =
+              finalMessages
+                .map(item =>
+                  `${item.role.toUpperCase()}:\n${item.content}`
+                )
+                .join('\n\n');
+
+            fallbackResult =
+              await callClaude({
+                message:
+                  fallbackMessage,
+                history: [],
+                memoryText: ''
+              });
+
+          } else {
+
+            fallbackResult =
+              await callClaude({
+                message,
+                history,
+                memoryText
+              });
+
+          }
+
+          if (
+            fallbackResult &&
+            typeof fallbackResult.text === 'string' &&
+            fallbackResult.text.trim()
+          ) {
+
+            console.warn(
+              'Claude fallback succeeded.'
+            );
+
+            if (Array.isArray(messages)) {
+
+              return fallbackResult.text.trim();
+
+            }
+
+            return fallbackResult;
+
+          }
+
+        } catch (claudeError) {
+
+          console.error(
+            'Claude fallback failed:',
+            claudeError.message
+          );
+
+        }
+
+      }
+
     }
+
+
+    /*
+     * ============================================
+     * ALL PROVIDERS FAILED
+     * ============================================
+     */
 
     throw new Error(
       data?.error?.message ||
       data?.message ||
       `Groq API request failed (${response.status})`
     );
+
   }
   const content =
     data?.choices?.[0]?.message?.content;
