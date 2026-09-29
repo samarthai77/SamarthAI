@@ -2045,6 +2045,8 @@ async function getClientLocation(){
 
     if(!navigator.geolocation){
         return {
+            latitude: null,
+            longitude: null,
             timezone
         };
     }
@@ -2059,8 +2061,8 @@ async function getClientLocation(){
                         resolve,
                         reject,
                         {
-                            enableHighAccuracy:false,
-                            timeout:8000,
+                            enableHighAccuracy:true,
+                            timeout:15000,
                             maximumAge:300000
                         }
                     );
@@ -2068,16 +2070,25 @@ async function getClientLocation(){
                 }
             );
 
+        const latitude =
+            Number(position.coords.latitude);
+
+        const longitude =
+            Number(position.coords.longitude);
+
+        if(
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+        ){
+            throw new Error(
+                'Invalid GPS coordinates'
+            );
+        }
+
         return {
-
-            latitude:
-                Number(position.coords.latitude),
-
-            longitude:
-                Number(position.coords.longitude),
-
+            latitude,
+            longitude,
             timezone
-
         };
 
     }catch(error){
@@ -2088,12 +2099,15 @@ async function getClientLocation(){
         );
 
         return {
-            timezone
+            latitude: null,
+            longitude: null,
+            timezone,
+            locationUnavailable: true
         };
 
     }
 
-}  
+}
 /* =====================================================
    SEND MESSAGE — CONVERSATION AWARE
 ===================================================== */
