@@ -2029,6 +2029,69 @@ function showTyping(show){
                 ? 'block'
                 : 'none';
 }
+  /* =====================================================
+   CLIENT LOCATION
+   Weather / location tools ke liye
+===================================================== */
+
+async function getClientLocation(){
+
+    const timezone =
+        Intl.DateTimeFormat()
+            .resolvedOptions()
+            .timeZone;
+
+    if(!navigator.geolocation){
+        return {
+            timezone
+        };
+    }
+
+    try{
+
+        const position =
+            await new Promise(
+                (resolve,reject)=>{
+
+                    navigator.geolocation.getCurrentPosition(
+                        resolve,
+                        reject,
+                        {
+                            enableHighAccuracy:false,
+                            timeout:8000,
+                            maximumAge:300000
+                        }
+                    );
+
+                }
+            );
+
+        return {
+
+            latitude:
+                Number(position.coords.latitude),
+
+            longitude:
+                Number(position.coords.longitude),
+
+            timezone
+
+        };
+
+    }catch(error){
+
+        console.warn(
+            '[LOCATION]',
+            error.message
+        );
+
+        return {
+            timezone
+        };
+
+    }
+
+}  
 /* =====================================================
    SEND MESSAGE — CONVERSATION AWARE
 ===================================================== */
@@ -2049,7 +2112,8 @@ async function sendMessage(){
         input.value.trim();
 
     if(!message) return;
-
+const clientLocation =
+    await getClientLocation();
 
     /*
      * Safety:
@@ -2118,12 +2182,8 @@ async function sendMessage(){
     conversation_id:
         currentConversationId,
 
-    location:{
-        timezone:
-            Intl.DateTimeFormat()
-                .resolvedOptions()
-                .timeZone
-    }
+location:
+    clientLocation   
 
 })           
                 }
