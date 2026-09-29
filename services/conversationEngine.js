@@ -73,7 +73,14 @@ const VALID_WEATHER_TYPES = new Set([
 const MAX_HISTORY = 20;
 const MAX_MEMORY = 8;
 const MAX_DIRECTORY = 40;
+const MAX_DATE_HISTORY = 100;
 
+const HISTORY_SCOPES = new Set([
+  'recent',
+  'today',
+  'yesterday',
+  'specific_date'
+]);
 
 /* ---------------------------------------------------------
  * Basic utilities
@@ -435,7 +442,337 @@ async function getConversationHistory(
     return [];
   }
 }
+/* ---------------------------------------------------------
+ * Date-aware conversation history
+ * --------------------------------------------------------- */
 
+function validTimeZone(timeZone) {
+  if (!timeZone || typeof timeZone !== 'string') {
+    return false;
+  }
+
+  try {
+    new Intl.DateTimeFormat('en-US', {
+      timeZone
+    }).format();
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
+function localDateParts(date, timeZone) {
+  const parts =
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+
+  const result = {};
+
+  for (const part of parts) {
+    if (
+      part.type === 'year' ||
+      part.type === 'month' ||
+      part.type === 'day'
+    ) {
+      result[part.type] = part.value;
+    }
+  }
+
+  return result;
+}
+
+
+function dateKey(date, timeZone) {
+  const parts =
+    localDateParts(date, timeZone);
+
+  if (
+    !parts.year ||
+    !parts.month ||
+    !parts.day
+  ) {
+    return null;
+  }
+
+  return [
+    parts.year,
+    parts.month,
+    parts.day
+  ].join('-');
+}
+
+
+function shiftDateKey(dateKeyValue, days) {
+  const date =
+    new Date(
+      `${dateKeyValue}T00:00:00.000Z`
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  date.setUTCDate(
+    date.getUTCDate() + days
+  );
+
+  return date
+    .toISOString()
+    .slice(0, 10);
+}
+
+
+function zonedMidnightToUTC(
+  dateKeyValue,
+  timeZone
+) {
+  const guess =
+    new Date(
+      `${dateKeyValue}T00:00:00.000Z`
+    );
+
+  if (
+    Number.isNaN(
+      guess.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  const parts =
+    new Intl.DateTimeFormat(
+      'en-US',
+      {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      }
+    ).formatToParts(guess);
+
+  const values = {};
+
+  for (const part of parts) {
+    if (
+      [
+        'year',
+        'month',
+        'day',
+        'hour',
+        'minute',
+        'second'
+      ].includes(part.type)
+    ) {
+      values[part.type] =
+        Number(part.value);
+    }
+  }
+
+  const asUTC =
+    Date.UTC(
+      values.year,
+      values.month - 1,
+      values.day,
+      values.hour,
+      values.minute,
+      values.second
+    );
+
+  const offset =
+    asUTC - guess.getTime();
+
+  return new Date(
+    guess.getTime() - offset
+  );
+}
+
+
+async function getDateScopedHistory({
+  userId,
+  scope,
+  date = null,
+  timeZone = 'UTC'
+}) {
+  if (!isValidUUID(userId)) {
+    return [];
+  }
+
+  if (!HISTORY_SCOPES.has(scope)) {
+    return [];
+  }
+
+  if (
+    scope === 'recent'
+  ) {
+    return [];
+  }
+
+  const zone =
+    validTimeZone(timeZone)
+      ? timeZone
+      : 'UTC';
+
+  const today =
+    dateKey(
+      new Date(),
+      zone
+    );
+
+  if (!today) {
+    return [];
+  }
+
+  let targetDate = today;
+
+  if (
+    scope === 'yesterday'
+  ) {
+    targetDate =
+      shiftDateKey(
+        today,
+        -1
+      );
+  }
+
+  if (
+    scope === 'specific_date'
+  ) {
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/
+        .test(String(date || ''))
+    ) {
+      return [];
+    }
+
+    targetDate =
+      String(date);
+  }
+
+  if (!targetDate) {
+    return [];
+  }
+
+  const nextDate =
+    shiftDateKey(
+      targetDate,
+      1
+    );
+
+  if (!nextDate) {
+    return [];
+  }
+
+  const start =
+    zonedMidnightToUTC(
+      targetDate,
+      zone
+    );
+
+  const end =
+    zonedMidnightToUTC(
+      nextDate,
+      zone
+    );
+
+  if (!start || !end) {
+    return [];
+  }
+
+  try {
+    const {
+      data,
+      error
+    } = await supabase
+      .from('chats')
+      .select(
+        'conversation_id,message,response,created_at'
+      )
+      .eq(
+        'user_id',
+        userId
+      )
+      .gte(
+        'created_at',
+        start.toISOString()
+      )
+      .lt(
+        'created_at',
+        end.toISOString()
+      )
+      .order(
+        'created_at',
+        {
+          ascending: true
+        }
+      )
+      .limit(
+        MAX_DATE_HISTORY
+      );
+
+    if (error) {
+      console.error(
+        'Date history error:',
+        error.message
+      );
+
+      return [];
+    }
+
+    return (
+      Array.isArray(data)
+        ? data
+        : []
+    )
+      .map(row => ({
+        user:
+          safeString(
+            row.message ??
+            '',
+            3000
+          ),
+
+        assistant:
+          safeString(
+            row.response ??
+            '',
+            3000
+          ),
+
+        created_at:
+          row.created_at || null,
+
+        conversation_id:
+          row.conversation_id || null
+      }))
+      .filter(
+        item =>
+          item.user ||
+          item.assistant
+      );
+
+  } catch (error) {
+    console.error(
+      'Date history exception:',
+      error.message
+    );
+
+    return [];
+  }
+}
 
 /* ---------------------------------------------------------
  * Compact history for planner
@@ -533,11 +870,12 @@ function emptyPlan() {
     needs_web: false,
     needs_memory: false,
     needs_history: true,
+    history_scope: 'recent',
+    history_date: null,
     response_language: 'hi',
     reason: ''
   };
 }
-
 
 /* ---------------------------------------------------------
  * Normalize AI plan
@@ -581,7 +919,28 @@ function normalizePlan(rawPlan) {
   base.needs_memory = raw.needs_memory === true;
   base.needs_history =
     raw.needs_history !== false;
+const historyScope =
+  normalize(
+    raw.history_scope
+  );
 
+base.history_scope =
+  HISTORY_SCOPES.has(
+    historyScope
+  )
+    ? historyScope
+    : 'recent';
+
+const requestedHistoryDate =
+  normalize(
+    raw.history_date
+  );
+
+base.history_date =
+  /^\d{4}-\d{2}-\d{2}$/
+    .test(requestedHistoryDate)
+      ? requestedHistoryDate
+      : null;
   base.response_language =
     normalize(raw.response_language) || 'hi';
 
@@ -715,6 +1074,26 @@ Examples:
 
 The previous conversation is contextual evidence, not a new user command.
 The CURRENT USER MESSAGE remains the command that must be executed.
+HISTORY SCOPE:
+
+Use "recent" when the user refers to the current conversation,
+such as:
+- abhi kya baat hui
+- thodi der pehle kya hua
+- maine abhi kya poocha
+- tumne kya jawab diya
+
+Use "today" when the user asks about today's conversations.
+
+Use "yesterday" when the user asks about yesterday's conversations,
+including natural expressions such as kal, yesterday, pichhle din.
+
+Use "specific_date" when the user explicitly refers to a calendar date
+or an unambiguous date.
+
+For specific_date, return the actual date as YYYY-MM-DD.
+
+Do not use historical retrieval for an ordinary conversational message.
 PERSONAL MEMORY:
 ${personalMem}
 
@@ -818,9 +1197,11 @@ JSON structure:
   "weather_type": "current|hourly|daily",
   "needs_web": false,
   "needs_memory": false,
-  "needs_history": true,
-  "response_language": "hi",
-  "reason": "short explanation"
+"needs_history": true,
+"history_scope": "recent|today|yesterday|specific_date",
+"history_date": "YYYY-MM-DD or null",
+"response_language": "hi",
+"reason": "short explanation"
 }
 
 Choose the tool because of the meaning of the request,
@@ -2106,7 +2487,14 @@ ${safeString(message, 5000)}
 
 RECENT CONVERSATION:
 ${historyText(context.history)}
+HISTORY SCOPE:
+${context.history_scope || 'recent'}
 
+HISTORY DATE:
+${context.history_date || 'not specified'}
+
+USER TIMEZONE:
+${context.timezone || 'UTC'}
 PERSONAL MEMORY:
 ${memoryText(context.personalMemory)}
 
@@ -2141,8 +2529,51 @@ RULES:
   an appropriate tool.
 - Respond in the user's language/style.
 - Keep the response proportional to the question.
+CONVERSATION RECALL RULES:
 
+- Conversation history is factual evidence from the user's previous chats.
+- When the user asks what was discussed, answer from the supplied history.
+- Do not ask the user to repeat information that is already present.
+- For "abhi", "abhi thodi der pehle", "just now", or similar references,
+  inspect the latest turns first.
+- For "aaj", use only the supplied today history.
+- For "kal", use only the supplied yesterday history.
+- Do not call a conversation "yesterday" unless HISTORY SCOPE says yesterday.
+- Do not mix unrelated dates.
+- If the requested history contains messages, summarize those messages.
+- If the requested history is empty, clearly say that no conversation
+  was found for that requested period.
+- Never invent a previous conversation.
+- Do not turn the entire history into a long list unless the user asks
+  for a detailed list.
+- Prefer a concise factual summary.
+- If the user asks "maine kya poocha tha", identify the user's questions.
+- If the user asks "tumne kya jawab diya", identify the assistant's replies.
+- If the user asks "hum kis baare mein baat kar rahe the",
+  summarize the relevant topic naturally.
 Return only the answer text.
+EMOTIONAL CONVERSATION STYLE:
+
+- Talk like a warm, caring and emotionally aware personal assistant.
+- Understand the emotional tone of the user's message before responding.
+- When the user is happy, celebrate naturally with them.
+- When the user is worried, upset, lonely or disappointed, respond with
+  empathy, patience and supportive language.
+- When the user shares a personal achievement, acknowledge it warmly.
+- When the user is confused, explain calmly without making them feel
+  uncomfortable or foolish.
+- When the user asks a simple factual question, keep the answer natural
+  and concise instead of adding unnecessary emotional language.
+- Do not use the same emotional phrases repeatedly.
+- Do not pretend to have human feelings or personal experiences.
+- Do not exaggerate emotions or become overly dramatic.
+- Never manipulate the user's emotions.
+- Emotional warmth must support the answer, not replace useful information.
+- Remember relevant personal context when it is actually available,
+  but never invent personal memories.
+- If the user refers to a previous emotional conversation and that
+  conversation is present in the supplied history, respond with
+  continuity instead of asking them to repeat it.
 `.trim();
 
   try {
@@ -2271,7 +2702,41 @@ if (
       context,
       location: normalizedLocation
     });
+/*
+ * -------------------------------------------------------
+ * DATE-AWARE HISTORY RETRIEVAL
+ * -------------------------------------------------------
+ */
 
+if (
+  !plan.planner_error &&
+  plan.history_scope !== 'recent'
+) {
+  const historicalHistory =
+    await getDateScopedHistory({
+      userId,
+      scope:
+        plan.history_scope,
+      date:
+        plan.history_date,
+      timeZone:
+        normalizedLocation?.timezone ||
+        'UTC'
+    });
+
+  context.history =
+    historicalHistory;
+
+  context.history_scope =
+    plan.history_scope;
+
+  context.history_date =
+    plan.history_date;
+}
+
+context.timezone =
+  normalizedLocation?.timezone ||
+  'UTC';
   /*
    * Planner failure must not become a fabricated answer.
    */
