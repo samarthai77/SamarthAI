@@ -2066,24 +2066,19 @@ async function executeTool({
        * Web search is intentionally performed only here.
        * Planner decides whether external information is needed.
        */
-      const result =
-        await callOpenAI({
-          model:
-            process.env.OPENAI_MODEL ||
-            'gpt-6-astra',
-          messages: [
-            {
-              role: 'system',
-              content:
-                'Answer using current web information. Be factual and concise.'
-            },
-            {
-              role: 'user',
-              content: query
-            }
-          ],
-          useWeb: true
-        });
+     const result =
+    await callOpenAI({
+        message:
+            query,
+
+        history: [],
+
+        memoryText:
+            '',
+
+        useWeb:
+            true
+    });
 
       return {
         ok: true,
