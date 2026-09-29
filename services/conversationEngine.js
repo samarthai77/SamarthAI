@@ -1129,7 +1129,25 @@ weather_type must be one of:
 current
 hourly
 daily
+For a named city/area/place, set:
+location_mode: "named_place"
 
+and include the place in:
+tool_args: {
+  "locationName": "city or area name"
+}
+
+If the user says "my area", "mere area",
+"yahan", or similar and reliable GPS coordinates
+are available, use:
+location_mode: "current_user"
+
+If reliable GPS coordinates are unavailable
+and no named place is provided, still use:
+tool: "weather"
+
+and leave locationName empty so the final
+response can ask the user for their city/area.
 3. family
 Use when the user needs family/member information,
 family relationships, family directory information,
@@ -1646,6 +1664,15 @@ function buildWeatherArgs({
   let longitude =
     safeNumber(args.longitude);
 
+  const locationName =
+    normalize(
+      args.locationName ||
+      args.location ||
+      args.city ||
+      args.place ||
+      ''
+    );
+
   if (
     !validLatitude(latitude) &&
     validLatitude(normalizedLocation?.latitude)
@@ -1662,19 +1689,37 @@ function buildWeatherArgs({
       normalizedLocation.longitude;
   }
 
+  /*
+   * GPS available ho to coordinates use honge.
+   * GPS unavailable ho lekin named place ho,
+   * weatherTool khud geocode karega.
+   */
   if (
     !validLatitude(latitude) ||
     !validLongitude(longitude)
   ) {
-    throw new Error(
-      'Weather location is unavailable. Valid latitude and longitude are required.'
-    );
+    if (!locationName) {
+      return {
+        ...args,
+        latitude: null,
+        longitude: null,
+        locationName: null,
+        type:
+          VALID_WEATHER_TYPES.has(
+            normalize(args.type)
+          )
+            ? normalize(args.type)
+            : plan.weather_type
+      };
+    }
   }
 
   return {
     ...args,
     latitude,
     longitude,
+    locationName:
+      locationName || null,
     type:
       VALID_WEATHER_TYPES.has(
         normalize(args.type)
@@ -2176,9 +2221,16 @@ function deterministicToolFallback({
       return 'Current time batane ke liye reliable timezone available nahi hai.';
     }
 
-    if (tool === 'weather') {
-      return 'Mausam ki jankari abhi nahi mil pa rahi hai.';
-    }
+ if (tool === 'weather') {
+  if (
+    toolResult.error ===
+    'weather_location_required'
+  ) {
+    return 'Aap kis city ya area ka mausam jaana chahte hain?';
+  }
+
+  return 'Mausam ki jankari abhi nahi mil pa rahi hai.';
+}  
 
     if (tool === 'services') {
       return 'Service providers ki jankari abhi nahi mil pa rahi hai.';
