@@ -1394,8 +1394,10 @@ grid-template-columns:repeat(4,1fr);
 <script>
 
 const CHAT_API =
-    'https://samarthai-backend.onrender.com/api/autonomous/run';
+    'https://samarthai-backend.onrender.com/api/chat';
 
+const AUTONOMOUS_API =
+    'https://samarthai-backend.onrender.com/api/autonomous/run';
 const PROFILE_API =
     'https://samarthai-backend.onrender.com/api/auth/profile';
 
@@ -2162,7 +2164,7 @@ const clientLocation =
 
         const res =
             await fetch(
-                CHAT_API,
+                AUTONOMOUS_API,
                 {
                     method:'POST',
 
