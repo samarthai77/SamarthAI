@@ -1094,6 +1094,18 @@ or an unambiguous date.
 For specific_date, return the actual date as YYYY-MM-DD.
 
 Do not use historical retrieval for an ordinary conversational message.
+HISTORICAL CONVERSATION PRIORITY:
+
+If the user is asking what was discussed, asked, answered,
+or talked about in the past, use conversation history first.
+
+For historical recall requests such as "kal kya baat hui",
+"kal maine kya poocha", "aaj humne kya discuss kiya",
+or "thodi der pehle kya baat hui", do not use a live external
+tool merely to answer the historical question.
+
+Use a live tool only when the user explicitly asks for
+current/new information.
 PERSONAL MEMORY:
 ${personalMem}
 
