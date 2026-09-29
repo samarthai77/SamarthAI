@@ -6,50 +6,53 @@ const {
 
 const {
   runConversation
-} = require(
-  '../services/conversationEngine'
+} = require('../services/conversationEngine');
+
+const router = express.Router();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
 );
 
-const router =
-  express.Router();
-
-
-const supabase =
-  createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  );
-
-
-const JWT_SECRET =
-  process.env.JWT_SECRET;
-
+const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-
   throw new Error(
     'JWT_SECRET environment variable is required'
   );
-
 }
 
 
-// =====================================================
-// AUTH
-// =====================================================
+/* =====================================================
+   BASIC HELPERS
+===================================================== */
+
+function normalize(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function isValidUUID(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    .test(String(value || ''));
+}
+
+
+/* =====================================================
+   AUTH
+===================================================== */
 
 function getUserId(req) {
 
   const token =
-    req.headers
-      .authorization
+    req.headers.authorization
       ?.split(' ')[1];
-
 
   if (!token) {
     return null;
   }
-
 
   try {
 
@@ -59,11 +62,7 @@ function getUserId(req) {
         JWT_SECRET
       );
 
-
-    return (
-      decoded?.id ||
-      null
-    );
+    return decoded?.id || null;
 
   } catch (error) {
 
@@ -72,39 +71,30 @@ function getUserId(req) {
       error.message
     );
 
-
     return null;
-
   }
-
 }
 
 
-// =====================================================
-// IMAGE ANALYSIS
-// =====================================================
+/* =====================================================
+   IMAGE ANALYSIS
+===================================================== */
 
 async function analyzeImage(
   imageBase64,
   message = ''
 ) {
 
-  if (
-    !process.env.GEMINI_API_KEY
-  ) {
-
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error(
       'GEMINI_API_KEY is not configured'
     );
-
   }
-
 
   const base64Data =
     imageBase64.includes(',')
       ? imageBase64.split(',')[1]
       : imageBase64;
-
 
   const mimeType =
     imageBase64.match(
@@ -112,71 +102,52 @@ async function analyzeImage(
     )?.[1] ||
     'image/png';
 
-
   const response =
     await fetch(
 
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
 
       {
-
-        method:
-          'POST',
+        method: 'POST',
 
         headers: {
-
           'Content-Type':
             'application/json'
-
         },
 
-        body:
-          JSON.stringify({
+        body: JSON.stringify({
 
-            contents: [
+          contents: [
 
-              {
+            {
+              parts: [
 
-                parts: [
+                {
+                  text:
+                    message ||
+                    'Is image ko dhyan se samjho aur Hindi/Hinglish me accurate jawab do.'
+                },
 
-                  {
+                {
+                  inline_data: {
+                    mime_type:
+                      mimeType,
 
-                    text:
-                      message ||
-                      'Is image ko dhyan se samjho aur Hindi/Hinglish me accurate jawab do.'
-
-                  },
-
-                  {
-
-                    inline_data: {
-
-                      mime_type:
-                        mimeType,
-
-                      data:
-                        base64Data
-
-                    }
-
+                    data:
+                      base64Data
                   }
+                }
 
-                ]
+              ]
+            }
 
-              }
-
-            ]
-
-          })
-
+          ]
+        })
       }
-
     );
-
 
   const data =
     await response.json();
-
 
   if (
     !response.ok ||
@@ -187,9 +158,7 @@ async function analyzeImage(
       data?.error?.message ||
       'Image analysis failed'
     );
-
   }
-
 
   return (
     data
@@ -198,16 +167,252 @@ async function analyzeImage(
       ?.text ||
     'Image ko samajh nahi paaya.'
   );
-
 }
 
 
-// =====================================================
-// SAVE CHAT
-// =====================================================
+/* =====================================================
+   CONVERSATION HELPERS
+===================================================== */
+
+/*
+ * Create a new conversation.
+ *
+ * Title is initially generated from the user's first
+ * message. Later the AI/title system can improve it.
+ */
+
+async function createConversation(
+  userId,
+  title = 'New Chat'
+) {
+
+  const cleanTitle =
+    normalize(title)
+      .slice(0, 80) ||
+    'New Chat';
+
+  const {
+    data,
+    error
+  } = await supabase
+
+    .from('conversations')
+
+    .insert([
+
+      {
+        user_id:
+          userId,
+
+        title:
+          cleanTitle
+      }
+
+    ])
+
+    .select(
+      'id,user_id,title,created_at,updated_at'
+    )
+
+    .single();
+
+  if (error) {
+    console.error(
+      'Conversation create error:',
+      error
+    );
+
+    throw error;
+  }
+
+  return data;
+}
+
+
+/*
+ * Verify that a conversation belongs to the
+ * authenticated user.
+ */
+
+async function getOwnedConversation(
+  userId,
+  conversationId
+) {
+
+  if (!isValidUUID(conversationId)) {
+    return null;
+  }
+
+  const {
+    data,
+    error
+  } = await supabase
+
+    .from('conversations')
+
+    .select(
+      'id,user_id,title,created_at,updated_at'
+    )
+
+    .eq(
+      'id',
+      conversationId
+    )
+
+    .eq(
+      'user_id',
+      userId
+    )
+
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      'Conversation lookup error:',
+      error
+    );
+
+    throw error;
+  }
+
+  return data || null;
+}
+
+
+/*
+ * If old frontend sends a message without
+ * conversation_id, continue using the latest
+ * conversation instead of breaking compatibility.
+ */
+
+async function resolveConversation(
+  userId,
+  conversationId,
+  firstMessage = ''
+) {
+
+  if (conversationId) {
+
+    const existing =
+      await getOwnedConversation(
+        userId,
+        conversationId
+      );
+
+    if (!existing) {
+      const error =
+        new Error(
+          'Conversation not found'
+        );
+
+      error.status = 404;
+
+      throw error;
+    }
+
+    return existing;
+  }
+
+
+  /*
+   * Backward compatibility:
+   * use the user's latest conversation.
+   */
+
+  const {
+    data,
+    error
+  } = await supabase
+
+    .from('conversations')
+
+    .select(
+      'id,user_id,title,created_at,updated_at'
+    )
+
+    .eq(
+      'user_id',
+      userId
+    )
+
+    .order(
+      'updated_at',
+      {
+        ascending: false
+      }
+    )
+
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (data) {
+    return data;
+  }
+
+
+  /*
+   * First conversation for this user.
+   */
+
+  return createConversation(
+    userId,
+    firstMessage || 'New Chat'
+  );
+}
+
+
+/*
+ * Update conversation activity.
+ */
+
+async function touchConversation(
+  userId,
+  conversationId
+) {
+
+  const {
+    error
+  } = await supabase
+
+    .from('conversations')
+
+    .update({
+      updated_at:
+        new Date().toISOString()
+    })
+
+    .eq(
+      'id',
+      conversationId
+    )
+
+    .eq(
+      'user_id',
+      userId
+    );
+
+  if (error) {
+
+    console.error(
+      'Conversation update error:',
+      error
+    );
+  }
+}
+
+
+/*
+ * Save one chat turn inside a conversation.
+ */
 
 async function saveChat(
   userId,
+  conversationId,
   message,
   response,
   model
@@ -217,26 +422,30 @@ async function saveChat(
     data,
     error
   } = await supabase
+
     .from('chats')
+
     .insert([
 
       {
-
         user_id:
           userId,
+
+        conversation_id:
+          conversationId,
 
         message,
 
         response,
 
         model
-
       }
 
     ])
-    .select()
-    .single();
 
+    .select()
+
+    .single();
 
   if (error) {
 
@@ -246,21 +455,84 @@ async function saveChat(
     );
 
     return null;
-
   }
 
-
-  return (
-    data?.id ||
-    null
+  await touchConversation(
+    userId,
+    conversationId
   );
 
+  return data?.id || null;
 }
 
 
-// =====================================================
-// LOAD CHAT HISTORY
-// =====================================================
+/* =====================================================
+   CREATE NEW CHAT
+===================================================== */
+
+router.post(
+  '/conversations',
+  async (req, res) => {
+
+    const userId =
+      getUserId(req);
+
+    if (!userId) {
+
+      return res
+        .status(401)
+        .json({
+          error:
+            'Authentication required'
+        });
+    }
+
+    try {
+
+      const title =
+        normalize(
+          req.body?.title ||
+          'New Chat'
+        );
+
+      const conversation =
+        await createConversation(
+          userId,
+          title
+        );
+
+      return res.json({
+
+        success: true,
+
+        conversation
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        'New conversation error:',
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+
+          error:
+            error.message ||
+            'Conversation creation failed'
+
+        });
+    }
+  }
+);
+
+
+/* =====================================================
+   CONVERSATION LIST
+===================================================== */
 
 router.get(
   '/history',
@@ -268,7 +540,6 @@ router.get(
 
     const userId =
       getUserId(req);
-
 
     if (!userId) {
 
@@ -280,11 +551,121 @@ router.get(
             'Authentication required'
 
         });
-
     }
 
+    try {
+
+      const {
+        data,
+        error
+      } = await supabase
+
+        .from('conversations')
+
+        .select(
+          'id,title,created_at,updated_at'
+        )
+
+        .eq(
+          'user_id',
+          userId
+        )
+
+        .order(
+          'updated_at',
+          {
+            ascending:
+              false
+          }
+        )
+
+        .limit(100);
+
+      if (error) {
+        throw error;
+      }
+
+      return res.json({
+
+        success: true,
+
+        conversations:
+          data || [],
+
+        /*
+         * Kept for backward compatibility.
+         * New frontend will use conversations.
+         */
+        chats: []
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Conversation history error:',
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+
+          error:
+            'Conversation history load failed'
+
+        });
+    }
+  }
+);
+
+
+/* =====================================================
+   LOAD ONE CONVERSATION
+===================================================== */
+
+router.get(
+  '/history/:conversationId',
+  async (req, res) => {
+
+    const userId =
+      getUserId(req);
+
+    if (!userId) {
+
+      return res
+        .status(401)
+        .json({
+
+          error:
+            'Authentication required'
+
+        });
+    }
+
+    const conversationId =
+      req.params.conversationId;
 
     try {
+
+      const conversation =
+        await getOwnedConversation(
+          userId,
+          conversationId
+        );
+
+      if (!conversation) {
+
+        return res
+          .status(404)
+          .json({
+
+            error:
+              'Conversation not found'
+
+          });
+      }
+
 
       const {
         data,
@@ -294,12 +675,17 @@ router.get(
         .from('chats')
 
         .select(
-          'id,message,response,model,created_at'
+          'id,conversation_id,message,response,model,created_at'
         )
 
         .eq(
           'user_id',
           userId
+        )
+
+        .eq(
+          'conversation_id',
+          conversationId
         )
 
         .order(
@@ -310,18 +696,17 @@ router.get(
           }
         )
 
-        .limit(200);
-
+        .limit(500);
 
       if (error) {
         throw error;
       }
 
-
       return res.json({
 
-        success:
-          true,
+        success: true,
+
+        conversation,
 
         chats:
           data || []
@@ -331,37 +716,33 @@ router.get(
     } catch (error) {
 
       console.error(
-        'Chat history error:',
+        'Conversation load error:',
         error
       );
-
 
       return res
         .status(500)
         .json({
 
           error:
-            'Chat history load failed'
+            'Conversation load failed'
 
         });
-
     }
-
   }
 );
 
 
-// =====================================================
-// MAIN CHAT
-// =====================================================
+/* =====================================================
+   DELETE ONE CONVERSATION
+===================================================== */
 
-router.post(
-  '/',
+router.delete(
+  '/history/:conversationId',
   async (req, res) => {
 
     const userId =
       getUserId(req);
-
 
     if (!userId) {
 
@@ -373,7 +754,104 @@ router.post(
             'Authentication required'
 
         });
+    }
 
+    const conversationId =
+      req.params.conversationId;
+
+    try {
+
+      const conversation =
+        await getOwnedConversation(
+          userId,
+          conversationId
+        );
+
+      if (!conversation) {
+
+        return res
+          .status(404)
+          .json({
+
+            error:
+              'Conversation not found'
+
+          });
+      }
+
+
+      const {
+        error
+      } = await supabase
+
+        .from('conversations')
+
+        .delete()
+
+        .eq(
+          'id',
+          conversationId
+        )
+
+        .eq(
+          'user_id',
+          userId
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      return res.json({
+
+        success: true,
+
+        conversation_id:
+          conversationId
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Conversation delete error:',
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+
+          error:
+            'Conversation delete failed'
+
+        });
+    }
+  }
+);
+
+
+/* =====================================================
+   MAIN CHAT
+===================================================== */
+
+router.post(
+  '/',
+  async (req, res) => {
+
+    const userId =
+      getUserId(req);
+
+    if (!userId) {
+
+      return res
+        .status(401)
+        .json({
+
+          error:
+            'Authentication required'
+
+        });
     }
 
 
@@ -383,14 +861,20 @@ router.post(
 
       image = null,
 
-      location = null
+      location = null,
+
+      conversation_id = null
 
     } =
       req.body || {};
 
 
+    const cleanMessage =
+      normalize(message);
+
+
     if (
-      !String(message).trim() &&
+      !cleanMessage &&
       !image
     ) {
 
@@ -402,22 +886,45 @@ router.post(
             'Message or image required'
 
         });
-
     }
 
 
     try {
 
-      // =================================================
-      // IMAGE CHAT
-      // =================================================
+      /*
+       * Resolve conversation before AI processing.
+       */
+
+      const conversation =
+        await resolveConversation(
+
+          userId,
+
+          conversation_id,
+
+          cleanMessage ||
+            'Image Chat'
+
+        );
+
+
+      const conversationId =
+        conversation.id;
+
+
+      /* ===============================================
+         IMAGE CHAT
+      =============================================== */
 
       if (image) {
 
         const response =
           await analyzeImage(
+
             image,
-            message
+
+            clean
+            cleanMessage
           );
 
 
@@ -426,7 +933,9 @@ router.post(
 
             userId,
 
-            message ||
+            conversationId,
+
+            cleanMessage ||
               '[Image]',
 
             response,
@@ -438,10 +947,17 @@ router.post(
 
         return res.json({
 
+          success: true,
+
           response,
 
           chat_id:
             chatId,
+
+          conversation_id:
+            conversationId,
+
+          conversation,
 
           provider:
             'gemini',
@@ -457,15 +973,9 @@ router.post(
       }
 
 
-      // =================================================
-      // AI CONVERSATION ENGINE
-      // =================================================
-
-      const cleanMessage =
-        String(
-          message
-        ).trim();
-
+      /* ===============================================
+         AI CONVERSATION ENGINE
+      =============================================== */
 
       const result =
         await runConversation({
@@ -475,19 +985,23 @@ router.post(
           message:
             cleanMessage,
 
-          location
+          location,
+
+          conversationId
 
         });
 
 
-      // =================================================
-      // SAVE RESPONSE
-      // =================================================
+      /* ===============================================
+         SAVE RESPONSE
+      =============================================== */
 
       const chatId =
         await saveChat(
 
           userId,
+
+          conversationId,
 
           cleanMessage,
 
@@ -498,17 +1012,24 @@ router.post(
         );
 
 
-      // =================================================
-      // RESPONSE
-      // =================================================
+      /* ===============================================
+         RESPONSE
+      =============================================== */
 
       return res.json({
+
+        success: true,
 
         response:
           result.response,
 
         chat_id:
           chatId,
+
+        conversation_id:
+          conversationId,
+
+        conversation,
 
         provider:
           'samarthai-conversation-engine',
@@ -539,8 +1060,12 @@ router.post(
       );
 
 
+      const status =
+        Number(error?.status) || 500;
+
+
       return res
-        .status(500)
+        .status(status)
         .json({
 
           error:
@@ -555,9 +1080,9 @@ router.post(
 );
 
 
-// =====================================================
-// EXPORT
-// =====================================================
+/* =====================================================
+   EXPORT
+===================================================== */
 
 module.exports =
   router;
