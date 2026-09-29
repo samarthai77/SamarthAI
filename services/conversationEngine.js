@@ -1662,7 +1662,16 @@ function buildWeatherArgs({
       normalizedLocation.longitude;
   }
 
-  const result = {
+  if (
+    !validLatitude(latitude) ||
+    !validLongitude(longitude)
+  ) {
+    throw new Error(
+      'Weather location is unavailable. Valid latitude and longitude are required.'
+    );
+  }
+
+  return {
     ...args,
     latitude,
     longitude,
@@ -1673,11 +1682,7 @@ function buildWeatherArgs({
         ? normalize(args.type)
         : plan.weather_type
   };
-
-  return result;
 }
-
-
 /* ---------------------------------------------------------
  * GPS arguments
  * --------------------------------------------------------- */
