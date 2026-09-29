@@ -1,7 +1,6 @@
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 const OPENAI_MODEL = 'gpt-6-astra';
-const CLAUDE_MODEL = 'claude-fable-5-1';
-
+const CLAUDE_MODEL = 'claude-fable-5';
 function cleanText(value) {
   return String(value || '').trim();
 }
