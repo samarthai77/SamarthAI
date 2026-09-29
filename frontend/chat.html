@@ -2110,17 +2110,22 @@ async function sendMessage(){
                             'Bearer ' + token
                     },
 
-                    body:JSON.stringify({
+     body:JSON.stringify({
 
-                        message:
+    message:
+        message,
 
-                            message,
+    conversation_id:
+        currentConversationId,
 
-                        conversation_id:
+    location:{
+        timezone:
+            Intl.DateTimeFormat()
+                .resolvedOptions()
+                .timeZone
+    }
 
-                            currentConversationId
-
-                    })
+})           
                 }
             );
 
