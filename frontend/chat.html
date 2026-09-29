@@ -833,7 +833,175 @@ grid-template-columns:repeat(4,1fr);
     }
 
 }
-   
+ /* =====================================================
+   CONVERSATION DRAWER
+===================================================== */
+
+#conversationPanel{
+    position:fixed;
+    inset:0;
+    z-index:50000;
+    visibility:hidden;
+    pointer-events:none;
+}
+
+#conversationPanel.open{
+    visibility:visible;
+    pointer-events:auto;
+}
+
+.conversation-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    backdrop-filter:blur(2px);
+}
+
+.conversation-drawer{
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:min(340px,88vw);
+    background:#fff;
+    box-shadow:12px 0 35px rgba(0,0,0,.18);
+    display:flex;
+    flex-direction:column;
+    padding:14px;
+    transform:translateX(-105%);
+    transition:transform .22s ease;
+}
+
+#conversationPanel.open .conversation-drawer{
+    transform:translateX(0);
+}
+
+.conversation-header{
+    height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    color:#003366;
+    font-size:19px;
+}
+
+.conversation-header button{
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:50%;
+    background:#f1f5f9;
+    font-size:24px;
+    color:#52677d;
+}
+
+.new-chat-button{
+    width:100%;
+    height:46px;
+    border:0;
+    border-radius:13px;
+    background:#003366;
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+    margin:8px 0 18px;
+}
+
+.conversation-title{
+    font-size:12px;
+    color:#7b8b9b;
+    font-weight:700;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+
+.conversation-list{
+    flex:1;
+    overflow-y:auto;
+}
+
+.conversation-item{
+    width:100%;
+    border:0;
+    background:transparent;
+    border-radius:12px;
+    padding:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:left;
+    cursor:pointer;
+    margin-bottom:4px;
+}
+
+.conversation-item:hover,
+.conversation-item.active{
+    background:#eef5fb;
+}
+
+.conversation-icon{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    background:#f1f6fa;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+}
+
+.conversation-text{
+    min-width:0;
+    flex:1;
+}
+
+.conversation-text b{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#24384b;
+    font-size:13px;
+}
+
+.conversation-text small{
+    display:block;
+    margin-top:2px;
+    color:#91a0ad;
+    font-size:10px;
+}
+
+.empty-history{
+    padding:20px 10px;
+    text-align:center;
+    color:#8a98a6;
+    font-size:13px;
+}
+
+.conversation-footer{
+    border-top:1px solid #e8edf2;
+    padding-top:10px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+}
+
+.conversation-footer button{
+    height:40px;
+    border:0;
+    border-radius:10px;
+    background:#f4f7fa;
+    color:#003366;
+    font-size:12px;
+}
+
+@media(max-width:600px){
+
+    .conversation-drawer{
+        width:min(330px,88vw);
+    }
+
+}  
 </style>
 </head>
 
@@ -1476,24 +1644,30 @@ function getTime(){
 
 /* ===== LOAD CHAT HISTORY ===== */
 
-async function loadChatHistory(){
+/* =====================================================
+   CONVERSATION / THREAD SYSTEM
+===================================================== */
+
+let currentConversationId = null;
+let conversations = [];
+
+
+/* ===== LOAD CONVERSATION LIST ===== */
+
+async function loadConversations(){
 
     const token =
-        localStorage.getItem(
-            'token'
-        );
+        localStorage.getItem('token');
 
-    if(!token) return;
+    if(!token) return [];
 
     try{
 
         const res =
             await fetch(
-                CHAT_API +
-                '/history',
+                CHAT_API + '/history',
                 {
                     method:'GET',
-
                     headers:{
                         'Authorization':
                             'Bearer ' + token
@@ -1504,35 +1678,187 @@ async function loadChatHistory(){
         if(!res.ok){
 
             console.warn(
-                '[CHAT HISTORY]',
-                'Failed to load history'
+                '[CONVERSATIONS]',
+                'History load failed'
             );
 
-            return;
+            return [];
+
         }
 
         const data =
             await res.json();
+
+        conversations =
+            Array.isArray(data.conversations)
+                ? data.conversations
+                : [];
+
+        return conversations;
+
+    }catch(error){
+
+        console.error(
+            '[CONVERSATIONS]',
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+/* ===== CREATE NEW CONVERSATION ===== */
+
+async function createNewConversation(){
+
+    const token =
+        localStorage.getItem('token');
+
+    if(!token) return null;
+
+    try{
+
+        const res =
+            await fetch(
+                CHAT_API + '/conversations',
+                {
+                    method:'POST',
+
+                    headers:{
+                        'Content-Type':
+                            'application/json',
+
+                        'Authorization':
+                            'Bearer ' + token
+                    },
+
+                    body:JSON.stringify({
+                        title:'New Chat'
+                    })
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if(
+            !res.ok ||
+            !data.success ||
+            !data.conversation
+        ){
+
+            console.error(
+                '[NEW CHAT]',
+                data
+            );
+
+            return null;
+
+        }
+
+        currentConversationId =
+            data.conversation.id;
+
+        conversations.unshift(
+            data.conversation
+        );
+
+        clearChatScreen();
+
+        renderConversationList();
+
+        closeConversationPanel();
+
+        document
+            .getElementById('chatInput')
+            ?.focus();
+
+        return data.conversation;
+
+    }catch(error){
+
+        console.error(
+            '[NEW CHAT]',
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+/* ===== OPEN EXISTING CONVERSATION ===== */
+
+async function openConversation(
+    conversationId
+){
+
+    if(!conversationId) return;
+
+    const token =
+        localStorage.getItem('token');
+
+    if(!token) return;
+
+    try{
+
+        showTyping(true);
+
+        const res =
+            await fetch(
+                CHAT_API +
+                '/history/' +
+                encodeURIComponent(
+                    conversationId
+                ),
+                {
+                    method:'GET',
+
+                    headers:{
+                        'Authorization':
+                            'Bearer ' + token
+                    }
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if(
+            !res.ok ||
+            !data.success
+        ){
+
+            console.error(
+                '[OPEN CONVERSATION]',
+                data
+            );
+
+            return;
+
+        }
+
+        currentConversationId =
+            data.conversation?.id ||
+            conversationId;
+
+        clearChatScreen();
 
         const chats =
             Array.isArray(data.chats)
                 ? data.chats
                 : [];
 
-        const box =
-            document.getElementById(
-                'chatMessages'
-            );
-
-        if(!box) return;
-
-        box.innerHTML = '';
-
         chats.forEach(chat => {
 
             if(
                 chat.message &&
-                chat.message.trim()
+                String(chat.message).trim()
             ){
 
                 addMessage(
@@ -1544,7 +1870,7 @@ async function loadChatHistory(){
 
             if(
                 chat.response &&
-                chat.response.trim()
+                String(chat.response).trim()
             ){
 
                 addMessage(
@@ -1556,14 +1882,85 @@ async function loadChatHistory(){
 
         });
 
+        renderConversationList();
+
+        closeConversationPanel();
+
+        document
+            .getElementById('chatInput')
+            ?.focus();
+
     }catch(error){
 
         console.error(
-            '[CHAT HISTORY]',
+            '[OPEN CONVERSATION]',
             error
         );
 
+    }finally{
+
+        showTyping(false);
+
     }
+
+}
+
+
+/* ===== CLEAR CURRENT CHAT SCREEN ===== */
+
+function clearChatScreen(){
+
+    const box =
+        document.getElementById(
+            'chatMessages'
+        );
+
+    if(box){
+
+        box.innerHTML = '';
+
+    }
+
+}
+
+
+/* ===== INITIALIZE CURRENT CONVERSATION ===== */
+
+async function initializeConversation(){
+
+    const list =
+        await loadConversations();
+
+    /*
+     * Agar history hai to latest conversation
+     * automatically open hogi.
+     */
+
+    if(list.length > 0){
+
+        await openConversation(
+            list[0].id
+        );
+
+        return;
+
+    }
+
+    /*
+     * Agar user ki koi conversation nahi hai,
+     * to automatically New Chat create hoga.
+     */
+
+    await createNewConversation();
+
+}
+
+
+/* ===== OLD FUNCTION NAME KE LIYE COMPATIBILITY ===== */
+
+async function loadChatHistory(){
+
+    await initializeConversation();
 
 }
 /* ===== ADD MESSAGE ===== */
@@ -1631,11 +2028,9 @@ function showTyping(show){
             show
                 ? 'block'
                 : 'none';
-
-}
-
-
-/* ===== SEND MESSAGE ===== */
+/* =====================================================
+   SEND MESSAGE — CONVERSATION AWARE
+===================================================== */
 
 async function sendMessage(){
 
@@ -1654,27 +2049,51 @@ async function sendMessage(){
 
     if(!message) return;
 
+
+    /*
+     * Safety:
+     * Message bhejne se pehle conversation
+     * hona zaroori hai.
+     */
+
+    if(!currentConversationId){
+
+        const newConversation =
+            await createNewConversation();
+
+        if(
+            !newConversation ||
+            !newConversation.id
+        ){
+
+            addMessage(
+                'Chat start nahi ho paayi. Dobara try karein. 🙏',
+                false
+            );
+
+            return;
+
+        }
+
+    }
+
+
     addMessage(
         message,
         true
     );
 
-    input.value =
-        '';
+    input.value = '';
 
-    btn.disabled =
-        true;
+    btn.disabled = true;
 
-    showTyping(
-        true
-    );
+    showTyping(true);
+
 
     try{
 
         const token =
-            localStorage.getItem(
-                'token'
-            );
+            localStorage.getItem('token');
 
         const res =
             await fetch(
@@ -1690,37 +2109,72 @@ async function sendMessage(){
                             'Bearer ' + token
                     },
 
-                    body:
-                        JSON.stringify({
-                            message
-                        })
+                    body:JSON.stringify({
+
+                        message:
+
+                            message,
+
+                        conversation_id:
+
+                            currentConversationId
+
+                    })
                 }
             );
+
 
         const data =
             await res.json();
 
-        showTyping(
-            false
-        );
+
+        if(!res.ok){
+
+            console.error(
+                '[CHAT API]',
+                data
+            );
+
+            throw new Error(
+                data.error ||
+                'Chat request failed'
+            );
+
+        }
+
 
         const reply =
             data.response ||
             'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
+
 
         addMessage(
             reply,
             false
         );
 
+
         speakAIResponse(
             reply
         );
 
-    }catch(e){
 
-        showTyping(
-            false
+        /*
+         * Conversation list ko refresh karo,
+         * taki updated_at change ke according
+         * conversation upar aa jaye.
+         */
+
+        await loadConversations();
+
+        renderConversationList();
+
+
+    }catch(error){
+
+        console.error(
+            '[SEND MESSAGE]',
+            error
         );
 
         addMessage(
@@ -1728,15 +2182,17 @@ async function sendMessage(){
             false
         );
 
+    }finally{
+
+        showTyping(false);
+
+        btn.disabled = false;
+
+        input.focus();
+
     }
 
-    btn.disabled =
-        false;
-
-    input.focus();
-
 }
-
 
 /* ===== VOICE RECOGNITION ===== */
 
@@ -2132,6 +2588,294 @@ if(chatInput && window.visualViewport){
     );
 
 }
+ /* =====================================================
+   CONVERSATION PANEL
+===================================================== */
+
+function createConversationPanel(){
+
+    if(
+        document.getElementById(
+            'conversationPanel'
+        )
+    ){
+
+        return;
+
+    }
+
+
+    const panel =
+        document.createElement('div');
+
+    panel.id =
+        'conversationPanel';
+
+
+    panel.innerHTML = `
+
+        <div class="conversation-overlay"
+             onclick="closeConversationPanel()">
+        </div>
+
+        <aside class="conversation-drawer">
+
+            <div class="conversation-header">
+
+                <strong>SamarthAI</strong>
+
+                <button
+                    type="button"
+                    onclick="closeConversationPanel()">
+                    ×
+                </button>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="new-chat-button"
+                onclick="createNewConversation()">
+
+                ＋ New Chat
+
+            </button>
+
+
+            <div class="conversation-title">
+                Chat History
+            </div>
+
+
+            <div
+                id="conversationList"
+                class="conversation-list">
+            </div>
+
+
+            <div class="conversation-footer">
+
+                <button
+                    type="button"
+                    onclick="location.href='profile.html'">
+
+                    👤 Profile
+
+                </button>
+
+                <button
+                    type="button"
+                    onclick="location.href='dashboard.html'">
+
+                    🏠 Home
+
+                </button>
+
+            </div>
+
+        </aside>
+
+    `;
+
+
+    document.body.appendChild(
+        panel
+    );
+
+}
+
+
+/* ===== OPEN PANEL ===== */
+
+function openConversationPanel(){
+
+    createConversationPanel();
+
+    document
+        .getElementById(
+            'conversationPanel'
+        )
+        ?.classList.add('open');
+
+    renderConversationList();
+
+}
+
+
+/* ===== CLOSE PANEL ===== */
+
+function closeConversationPanel(){
+
+    document
+        .getElementById(
+            'conversationPanel'
+        )
+        ?.classList.remove('open');
+
+}
+
+
+/* ===== RENDER HISTORY ===== */
+
+function renderConversationList(){
+
+    const box =
+        document.getElementById(
+            'conversationList'
+        );
+
+    if(!box) return;
+
+
+    box.innerHTML = '';
+
+
+    if(!conversations.length){
+
+        box.innerHTML =
+            '<div class="empty-history">Abhi koi chat nahi hai.</div>';
+
+        return;
+
+    }
+
+
+    conversations.forEach(
+        conversation => {
+
+            const item =
+                document.createElement(
+                    'button'
+                );
+
+            item.type =
+                'button';
+
+            item.className =
+                'conversation-item';
+
+
+            if(
+                conversation.id ===
+                currentConversationId
+            ){
+
+                item.classList.add(
+                    'active'
+                );
+
+            }
+
+
+            const title =
+                conversation.title ||
+                'New Chat';
+
+
+            const date =
+                conversation.updated_at
+                    ? new Date(
+                        conversation.updated_at
+                      ).toLocaleDateString(
+                        'hi-IN',
+                        {
+                            day:'2-digit',
+                            month:'short'
+                        }
+                      )
+                    : '';
+
+
+            item.innerHTML = `
+
+                <span class="conversation-icon">
+                    💬
+                </span>
+
+                <span class="conversation-text">
+
+                    <b>
+                        ${escapeHtml(title)}
+                    </b>
+
+                    <small>
+                        ${date}
+                    </small>
+
+                </span>
+
+            `;
+
+
+            item.onclick =
+                () =>
+                    openConversation(
+                        conversation.id
+                    );
+
+
+            box.appendChild(
+                item
+            );
+
+        }
+    );
+
+}
+
+
+/* ===== HTML ESCAPE ===== */
+
+function escapeHtml(value){
+
+    return String(value || '')
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+        .replace(
+            /</g,
+            '&lt;'
+        )
+        .replace(
+            />/g,
+            '&gt;'
+        )
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+        .replace(
+            /'/g,
+            '&#039;'
+        );
+
+}
+
+
+/* ===== REPLACE TOP MENU ACTION ===== */
+
+const menuButton =
+    document.querySelector(
+        '.menu-btn'
+    );
+
+if(menuButton){
+
+    menuButton.onclick =
+        function(){
+
+            openConversationPanel();
+
+        };
+
+}
+
+
+/* ===== CREATE PANEL ON LOAD ===== */
+
+createConversationPanel();   
 </script>
 
 </body>
