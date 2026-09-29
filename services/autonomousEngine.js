@@ -19,12 +19,22 @@
 
 const crypto = require('crypto');
 
-const conversationEngine = require('./conversationEngine');
+const {
+  createClient
+} = require('@supabase/supabase-js');
+
+const conversationEngine =
+  require('./conversationEngine');
 
 const runConversation =
   conversationEngine.runConversation ||
   conversationEngine;
 
+const supabase =
+  createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+  );
 /* =========================================================
    AGENT REGISTRY
    ========================================================= */
@@ -107,7 +117,101 @@ function normalizeMessage(message) {
   return message.trim();
 }
 
+async function saveAutonomousChat({
+  userId,
+  conversationId,
+  message,
+  response,
+  agentId
+}) {
+  try {
 
+    const {
+      data,
+      error
+    } = await supabase
+      .from('chats')
+      .insert([
+        {
+          user_id:
+            userId,
+
+          conversation_id:
+            conversationId,
+
+          message,
+          response,
+
+          model:
+            `samarthai-autonomous-${agentId || 'chat'}`
+        }
+      ])
+      .select('id')
+      .single();
+
+    if(error){
+      console.error(
+        '❌ Autonomous chat save error:',
+        error
+      );
+
+      return null;
+    }
+
+    const {
+      data: conversation
+    } = await supabase
+      .from('conversations')
+      .select('title')
+      .eq('id', conversationId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const currentTitle =
+      String(
+        conversation?.title || ''
+      ).trim();
+
+    const cleanTitle =
+      String(message || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, 70);
+
+    const updateData = {
+      updated_at:
+        new Date().toISOString()
+    };
+
+    if(
+      cleanTitle &&
+      (
+        !currentTitle ||
+        currentTitle === 'New Chat'
+      )
+    ){
+      updateData.title =
+        cleanTitle;
+    }
+
+    await supabase
+      .from('conversations')
+      .update(updateData)
+      .eq('id', conversationId)
+      .eq('user_id', userId);
+
+    return data?.id || null;
+
+  }catch(error){
+
+    console.error(
+      '❌ Autonomous persistence error:',
+      error
+    );
+
+    return null;
+  }
+}
 /* =========================================================
    AGENT RESOLUTION
    ========================================================= */
@@ -212,44 +316,63 @@ async function run(options = {}) {
      EXECUTE EXISTING ENGINE
      ------------------------- */
 
- const result = await runConversation({
-  userId,
-  conversationId,
-  message: normalizedMessage,
-  location:
-    metadata &&
-    typeof metadata === 'object'
-      ? metadata.location || null
-      : null
-});
-  /* -------------------------
-     RESOLVE AGENT
-     ------------------------- */
+const result =
+    await runConversation({
+      userId,
+      conversationId,
+      message:
+        normalizedMessage,
+      location:
+        metadata &&
+        typeof metadata === 'object'
+          ? metadata.location || null
+          : null
+    });
 
-  const agent = getAgentForResult(result);
+  const agent =
+    getAgentForResult(result);
+
+  const savedChatId =
+    await saveAutonomousChat({
+      userId,
+      conversationId,
+      message:
+        normalizedMessage,
+      response:
+        result?.response || '',
+      agentId:
+        agent.id
+    });
 
   /* -------------------------
      AUTONOMOUS RESPONSE
      ------------------------- */
+return {
+  success: true,
 
-  return {
-    success: true,
+  autonomous: true,
 
-    autonomous: true,
+  runId,
 
-    runId,
+  agent: {
+    id: agent.id,
+    name: agent.name,
+    status: agent.status
+  },
 
-    agent: {
-      id: agent.id,
-      name: agent.name,
-      status: agent.status
-    },
+  mode,
 
-    mode,
+  persistence: {
+    saved:
+      Boolean(savedChatId),
 
-    result
-  };
-}
+    chatId:
+      savedChatId
+  },
+
+  result
+};
+
 
 
 /* =========================================================
