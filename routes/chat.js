@@ -923,7 +923,7 @@ router.post(
 
             image,
 
-            clean
+            
             cleanMessage
           );
 
