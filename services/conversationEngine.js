@@ -324,25 +324,75 @@ async function getFamilyDirectory(userId) {
  * Conversation history
  * --------------------------------------------------------- */
 
-async function getConversationHistory(userId) {
+async function getConversationHistory(
+  userId,
+  conversationId = null
+) {
   if (!isValidUUID(userId)) {
     return [];
   }
 
+  if (
+    conversationId &&
+    !isValidUUID(conversationId)
+  ) {
+    return [];
+  }
+
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('chats')
       .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .eq('user_id', userId);
 
-    if (error) {
-      console.error('Conversation history error:', error.message);
+    /*
+     * IMPORTANT:
+     * Chat history must belong to the
+     * currently opened conversation.
+     *
+     * Personal memory remains global.
+     */
+    if (conversationId) {
+      query = query.eq(
+        'conversation_id',
+        conversationId
+      );
+    } else {
+      /*
+       * No conversation ID means there is
+       * no thread-specific history to load.
+       *
+       * This prevents Chat A and Chat B
+       * from accidentally mixing.
+       */
       return [];
     }
 
-    const rows = Array.isArray(data) ? data : [];
+    const {
+      data,
+      error
+    } = await query
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      )
+      .limit(100);
+
+    if (error) {
+      console.error(
+        'Conversation history error:',
+        error.message
+      );
+
+      return [];
+    }
+
+    const rows =
+      Array.isArray(data)
+        ? data
+        : [];
 
     /*
      * Database se latest first aata hai.
@@ -358,17 +408,30 @@ async function getConversationHistory(userId) {
           '',
           3000
         ),
+
         assistant: safeString(
           row.response ??
           row.assistant_message ??
           '',
           3000
         ),
-        created_at: row.created_at || null
+
+        created_at:
+          row.created_at || null
       }))
-      .filter(item => item.user || item.assistant);
+      .filter(
+        item =>
+          item.user ||
+          item.assistant
+      );
+
   } catch (error) {
-    console.error('Conversation history exception:', error.message);
+
+    console.error(
+      'Conversation history exception:',
+      error.message
+    );
+
     return [];
   }
 }
@@ -410,17 +473,42 @@ function historyText(history = []) {
  * Complete context loader
  * --------------------------------------------------------- */
 
-async function loadContext(userId) {
+async function loadContext(
+  userId,
+  conversationId = null
+) {
   const [
     personalMemory,
     familyMemory,
     familyDirectory,
     history
   ] = await Promise.all([
+
+    /*
+     * Personal memory is GLOBAL.
+     * It is not restricted to a chat.
+     */
     getPersonalMemory(userId),
+
+    /*
+     * Family memory is GLOBAL for the
+     * authorized family context.
+     */
     getFamilyMemory(userId),
+
+    /*
+     * Family directory is also GLOBAL
+     * within the authorized family.
+     */
     getFamilyDirectory(userId),
-    getConversationHistory(userId)
+
+    /*
+     * Conversation history is THREAD-SPECIFIC.
+     */
+    getConversationHistory(
+      userId,
+      conversationId
+    )
   ]);
 
   return {
@@ -2121,12 +2209,13 @@ Return only the answer text.
 /* ---------------------------------------------------------
  * Main conversation runner
  * --------------------------------------------------------- */
-
 async function runConversation({
   userId,
   message,
-  location = null
+  location = null,
+  conversationId = null
 }) {
+
   const cleanMessage =
     safeString(message, 5000);
 
@@ -2149,16 +2238,30 @@ async function runConversation({
       memory_saved: false
     };
   }
-
+if (
+    !conversationId ||
+    !isValidUUID(conversationId)
+  ) {
+    return {
+      response:
+        'Conversation information valid nahi hai.',
+      intent: 'conversation',
+      tool: 'none',
+      web_used: false,
+      memory_saved: false
+    };
+  }
   const normalizedLocation =
     normalizeLocation(location);
 
   /*
    * Load all relevant context before planning.
    */
-  const context =
-    await loadContext(userId);
-
+ const context =
+  await loadContext(
+    userId,
+    conversationId
+  );
   /*
    * AI decides what the user means and which tool is required.
    */
