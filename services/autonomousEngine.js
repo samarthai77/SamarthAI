@@ -212,14 +212,16 @@ async function run(options = {}) {
      EXECUTE EXISTING ENGINE
      ------------------------- */
 
-  const result = await runConversation({
-    userId,
-    conversationId,
-    message: normalizedMessage,
-    mode,
-    metadata
-  });
-
+ const result = await runConversation({
+  userId,
+  conversationId,
+  message: normalizedMessage,
+  location:
+    metadata &&
+    typeof metadata === 'object'
+      ? metadata.location || null
+      : null
+});
   /* -------------------------
      RESOLVE AGENT
      ------------------------- */
