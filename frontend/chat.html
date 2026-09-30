@@ -1236,6 +1236,405 @@ body{
         max-width:88% !important;
     }
 
+}   
+/* =========================================================
+   SAMARTHAI REALISTIC RUNNING GALAXY
+   ========================================================= */
+
+.chat-container{
+    position:relative !important;
+    overflow:hidden !important;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(70,120,255,.20), transparent 28%),
+        radial-gradient(circle at 20% 20%, rgba(150,70,255,.16), transparent 30%),
+        radial-gradient(circle at 85% 75%, rgba(0,180,255,.12), transparent 32%),
+        linear-gradient(145deg,#07152f 0%,#0b1740 45%,#10133b 100%) !important;
+}
+
+/* Moving star field */
+.chat-container::before{
+    content:"";
+    position:absolute;
+    inset:-40%;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+        radial-gradient(circle,rgba(255,255,255,.90) 0 1px,transparent 1.6px),
+        radial-gradient(circle,rgba(120,190,255,.65) 0 1px,transparent 1.8px),
+        radial-gradient(circle,rgba(255,255,255,.45) 0 1.4px,transparent 2px);
+    background-size:
+        115px 115px,
+        175px 175px,
+        260px 260px;
+    background-position:
+        10px 20px,
+        60px 90px,
+        130px 40px;
+    opacity:.55;
+    animation:starDrift 55s linear infinite;
+}
+
+@keyframes starDrift{
+    from{
+        transform:translate3d(0,0,0) rotate(0deg);
+    }
+    to{
+        transform:translate3d(90px,55px,0) rotate(2deg);
+    }
+}
+
+/* Soft galaxy nebula */
+.chat-container::after{
+    content:"";
+    position:absolute;
+    width:900px;
+    height:500px;
+    left:50%;
+    top:42%;
+    transform:translate(-50%,-50%) rotate(-12deg);
+    z-index:0;
+    pointer-events:none;
+    border-radius:50%;
+    background:
+        radial-gradient(
+            ellipse,
+            rgba(100,170,255,.16) 0%,
+            rgba(125,80,255,.10) 32%,
+            rgba(20,50,130,.05) 55%,
+            transparent 72%
+        );
+    filter:blur(18px);
+    animation:nebulaPulse 12s ease-in-out infinite alternate;
+}
+
+@keyframes nebulaPulse{
+    from{
+        opacity:.55;
+        transform:translate(-50%,-50%) rotate(-12deg) scale(1);
+    }
+    to{
+        opacity:.95;
+        transform:translate(-50%,-50%) rotate(-8deg) scale(1.08);
+    }
+}
+
+/* =========================================================
+   SOLAR SYSTEM 3D SPACE
+   ========================================================= */
+
+.galaxy-system{
+    position:absolute;
+    width:100%;
+    height:100%;
+    left:0;
+    top:0;
+    z-index:1;
+    pointer-events:none;
+    perspective:1100px;
+    transform-style:preserve-3d;
+    overflow:hidden;
+}
+
+/* Sun */
+.sun-core{
+    position:absolute;
+    left:50%;
+    top:43%;
+    width:72px;
+    height:72px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #fff9bd 0%,
+            #ffe66b 18%,
+            #ffb300 48%,
+            #ff6b00 72%,
+            #e83b00 100%
+        );
+    box-shadow:
+        0 0 20px #ffd75a,
+        0 0 45px rgba(255,180,0,.75),
+        0 0 90px rgba(255,120,0,.42);
+    animation:sunPulse 3.8s ease-in-out infinite;
+}
+
+@keyframes sunPulse{
+    0%,100%{
+        transform:translate(-50%,-50%) scale(1);
+        box-shadow:
+            0 0 20px #ffd75a,
+            0 0 45px rgba(255,180,0,.75),
+            0 0 90px rgba(255,120,0,.42);
+    }
+    50%{
+        transform:translate(-50%,-50%) scale(1.07);
+        box-shadow:
+            0 0 28px #fff0a0,
+            0 0 60px rgba(255,190,0,.82),
+            0 0 115px rgba(255,100,0,.48);
+    }
+}
+
+/* Orbital rings */
+.solar-orbit{
+    position:absolute;
+    left:50%;
+    top:43%;
+    border:1px solid rgba(150,210,255,.16);
+    border-radius:50%;
+    transform-style:preserve-3d;
+    transform:translate(-50%,-50%) rotateX(67deg);
+    animation:orbitSpin linear infinite;
+}
+
+.orbit-1{
+    width:105px;
+    height:105px;
+    animation-duration:7s;
+}
+
+.orbit-2{
+    width:145px;
+    height:145px;
+    animation-duration:10s;
+}
+
+.orbit-3{
+    width:190px;
+    height:190px;
+    animation-duration:14s;
+}
+
+.orbit-4{
+    width:235px;
+    height:235px;
+    animation-duration:18s;
+}
+
+.orbit-5{
+    width:300px;
+    height:300px;
+    animation-duration:24s;
+}
+
+.orbit-6{
+    width:370px;
+    height:370px;
+    animation-duration:30s;
+}
+
+.orbit-7{
+    width:440px;
+    height:440px;
+    animation-duration:36s;
+}
+
+.orbit-8{
+    width:515px;
+    height:515px;
+    animation-duration:43s;
+}
+
+.orbit-9{
+    width:590px;
+    height:590px;
+    animation-duration:50s;
+}
+
+@keyframes orbitSpin{
+    from{
+        transform:translate(-50%,-50%) rotateX(67deg) rotateZ(0deg);
+    }
+    to{
+        transform:translate(-50%,-50%) rotateX(67deg) rotateZ(360deg);
+    }
+}
+
+/* Planets */
+.planet{
+    position:absolute;
+    left:50%;
+    top:-5px;
+    transform:translateX(-50%);
+    border-radius:50%;
+    box-shadow:
+        inset -5px -5px 10px rgba(0,0,0,.48),
+        0 0 10px rgba(150,210,255,.35);
+}
+
+/* Mercury */
+.mercury{
+    width:7px;
+    height:7px;
+    background:linear-gradient(135deg,#eee,#777);
+}
+
+/* Venus */
+.venus{
+    width:10px;
+    height:10px;
+    background:linear-gradient(135deg,#fff0ad,#c47a24);
+}
+
+/* Earth */
+.earth{
+    width:12px;
+    height:12px;
+    background:
+        radial-gradient(circle at 35% 30%,#55d8ff 0 18%,transparent 19%),
+        radial-gradient(circle at 60% 65%,#38a85b 0 25%,transparent 26%),
+        linear-gradient(135deg,#116cff,#052b83);
+}
+
+/* Mars */
+.mars{
+    width:10px;
+    height:10px;
+    background:linear-gradient(135deg,#ff8b5c,#8e2415);
+}
+
+/* Jupiter */
+.jupiter{
+    width:23px;
+    height:23px;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            #d8a76a 0 3px,
+            #f1d3a2 3px 6px,
+            #a86f42 6px 9px
+        );
+}
+
+/* Saturn */
+.saturn{
+    width:20px;
+    height:20px;
+    background:linear-gradient(135deg,#ffe7a8,#9b7440);
+}
+
+.saturn::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:36px;
+    height:11px;
+    transform:translate(-50%,-50%) rotate(-12deg);
+    border:2px solid rgba(240,215,160,.72);
+    border-radius:50%;
+}
+
+/* Uranus */
+.uranus{
+    width:16px;
+    height:16px;
+    background:linear-gradient(135deg,#c8ffff,#54b8c5);
+}
+
+/* Neptune */
+.neptune{
+    width:15px;
+    height:15px;
+    background:linear-gradient(135deg,#70b8ff,#163aaf);
+}
+
+/* Pluto */
+.pluto{
+    width:8px;
+    height:8px;
+    background:linear-gradient(135deg,#ddd0bd,#756654);
+}
+
+/* Planet labels */
+.planet-label{
+    position:absolute;
+    top:14px;
+    left:50%;
+    transform:translateX(-50%);
+    white-space:nowrap;
+    font-size:7px;
+    font-weight:600;
+    color:rgba(225,240,255,.68);
+    text-shadow:0 1px 5px #000;
+}
+
+/* Keep chat above galaxy */
+.welcome-hero,
+.messages,
+.typing-indicator,
+.feature-area{
+    position:relative;
+    z-index:3;
+}
+
+/* Glass chat layer */
+.messages{
+    background:linear-gradient(
+        180deg,
+        rgba(5,15,38,.08),
+        rgba(5,15,38,.16)
+    ) !important;
+}
+
+/* Mobile scaling */
+@media(max-width:600px){
+
+    .sun-core{
+        width:54px;
+        height:54px;
+    }
+
+    .orbit-1{
+        width:78px;
+        height:78px;
+    }
+
+    .orbit-2{
+        width:110px;
+        height:110px;
+    }
+
+    .orbit-3{
+        width:145px;
+        height:145px;
+    }
+
+    .orbit-4{
+        width:180px;
+        height:180px;
+    }
+
+    .orbit-5{
+        width:225px;
+        height:225px;
+    }
+
+    .orbit-6{
+        width:275px;
+        height:275px;
+    }
+
+    .orbit-7{
+        width:325px;
+        height:325px;
+    }
+
+    .orbit-8{
+        width:375px;
+        height:375px;
+    }
+
+    .orbit-9{
+        width:425px;
+        height:425px;
+    }
+
+    .planet-label{
+        display:none;
+    }
 }    
 </style>
 </head>
@@ -1292,7 +1691,65 @@ body{
 
 
 <div class="chat-container">
+<div class="galaxy-system">
 
+    <div class="sun-core"></div>
+
+    <div class="solar-orbit orbit-1">
+        <div class="planet mercury">
+            <span class="planet-label">Mercury</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-2">
+        <div class="planet venus">
+            <span class="planet-label">Venus</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-3">
+        <div class="planet earth">
+            <span class="planet-label">Earth</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-4">
+        <div class="planet mars">
+            <span class="planet-label">Mars</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-5">
+        <div class="planet jupiter">
+            <span class="planet-label">Jupiter</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-6">
+        <div class="planet saturn">
+            <span class="planet-label">Saturn</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-7">
+        <div class="planet uranus">
+            <span class="planet-label">Uranus</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-8">
+        <div class="planet neptune">
+            <span class="planet-label">Neptune</span>
+        </div>
+    </div>
+
+    <div class="solar-orbit orbit-9">
+        <div class="planet pluto">
+            <span class="planet-label">Pluto</span>
+        </div>
+    </div>
+
+</div>
     <!-- PROFILE / ASSISTANT -->
     <div class="welcome-hero">
 
