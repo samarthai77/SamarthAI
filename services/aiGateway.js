@@ -1,6 +1,7 @@
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 const OPENAI_MODEL = 'gpt-6-astra';
 const CLAUDE_MODEL = 'claude-fable-5';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 function cleanText(value) {
   return String(value || '').trim();
 }
@@ -516,81 +517,54 @@ if (!response.ok) {
     if (shouldFallback) {
 
       console.warn(
-        `Groq unavailable (${response.status}). Trying Anthropic Claude.`
+      `Groq unavailable (${response.status}). Trying Gemini.`  
       );
 
-      /*
-       * ===================================================
-       * FALLBACK 1 — ANTHROPIC CLAUDE
-       * ===================================================
-       */
+   /*
+ * ===================================================
+ * FALLBACK 1 — GOOGLE GEMINI
+ * ===================================================
+ */
 
-      if (process.env.ANTHROPIC_API_KEY) {
+if (process.env.GEMINI_API_KEY) {
 
-        try {
+  try {
 
-          let fallbackResult;
+    const fallbackResult =
+      await callGemini({
+        message,
+        history,
+        memoryText,
+        messages,
+        model: GEMINI_MODEL,
+        temperature,
+        max_tokens,
+        response_format
+      });
 
-          if (Array.isArray(messages)) {
+    console.warn(
+      'Gemini fallback succeeded.'
+    );
 
-            const fallbackMessage =
-              finalMessages
-                .map(item =>
-                  `${item.role.toUpperCase()}:\n${item.content}`
-                )
-                .join('\n\n');
+    return fallbackResult;
 
-            fallbackResult =
-              await callClaude({
-                message: fallbackMessage,
-                history: [],
-                memoryText: ''
-              });
+  } catch (geminiError) {
 
-          } else {
+    console.error(
+      'Gemini fallback failed:',
+      geminiError.message
+    );
 
-            fallbackResult =
-              await callClaude({
-                message,
-                history,
-                memoryText
-              });
+  }
 
-          }
+} else {
 
-          if (
-            fallbackResult &&
-            typeof fallbackResult.text === 'string' &&
-            fallbackResult.text.trim()
-          ) {
+  console.warn(
+    'GEMINI_API_KEY is not configured.'
+  );
 
-            console.warn(
-              'Anthropic Claude fallback succeeded.'
-            );
-
-            if (Array.isArray(messages)) {
-              return fallbackResult.text.trim();
-            }
-
-            return fallbackResult;
-          }
-
-        } catch (claudeError) {
-
-          console.error(
-            'Anthropic Claude fallback failed:',
-            claudeError.message
-          );
-
-        }
-
-      } else {
-
-        console.warn(
-          'ANTHROPIC_API_KEY is not configured.'
-        );
-
-      }
+}  
+      
 
 
       /*
@@ -717,6 +691,272 @@ if (!response.ok) {
     model,
     usage: data?.usage || null
   };
+}
+// =====================================================
+// PROVIDER: GOOGLE GEMINI
+// =====================================================
+
+async function callGemini({
+  message = '',
+  history = [],
+  memoryText = '',
+  model = GEMINI_MODEL,
+  messages = null,
+  temperature = 0.5,
+  max_tokens = 700,
+  response_format = null
+}) {
+
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error(
+      'GEMINI_API_KEY is not configured'
+    );
+  }
+
+  let finalMessages = [];
+
+  if (Array.isArray(messages)) {
+
+    finalMessages = messages
+      .filter(item =>
+        item &&
+        typeof item.role === 'string' &&
+        typeof item.content === 'string' &&
+        item.content.trim()
+      );
+
+  } else {
+
+    finalMessages = [
+      {
+        role: 'system',
+        content: `
+You are SamarthAI, a personal AI assistant.
+
+Understand Hindi, Roman Hindi, Hinglish and English.
+
+Answer naturally and directly.
+
+Never invent memories.
+
+MEMORY:
+${String(memoryText || '')}
+`
+      }
+    ];
+
+    for (const item of history) {
+
+      if (
+        item &&
+        typeof item.message === 'string' &&
+        item.message.trim()
+      ) {
+
+        finalMessages.push({
+          role: 'user',
+          content: item.message.trim()
+        });
+
+      }
+
+      if (
+        item &&
+        typeof item.response === 'string' &&
+        item.response.trim()
+      ) {
+
+        finalMessages.push({
+          role: 'assistant',
+          content: item.response.trim()
+        });
+
+      }
+
+    }
+
+    if (
+      typeof message === 'string' &&
+      message.trim()
+    ) {
+
+      finalMessages.push({
+        role: 'user',
+        content: message.trim()
+      });
+
+    }
+
+  }
+
+  const systemParts = [];
+  const contents = [];
+
+  for (const item of finalMessages) {
+
+    if (item.role === 'system') {
+
+      systemParts.push(
+        item.content
+      );
+
+      continue;
+
+    }
+
+    contents.push({
+
+      role:
+        item.role === 'assistant'
+          ? 'model'
+          : 'user',
+
+      parts: [
+        {
+          text: item.content
+        }
+      ]
+
+    });
+
+  }
+
+  if (!contents.length) {
+
+    throw new Error(
+      'Gemini request contains no user messages'
+    );
+
+  }
+
+  const body = {
+
+    contents,
+
+    generationConfig: {
+
+      temperature:
+        Number.isFinite(Number(temperature))
+          ? Number(temperature)
+          : 0.5,
+
+      maxOutputTokens:
+        Number(max_tokens) > 0
+          ? Number(max_tokens)
+          : 700
+
+    }
+
+  };
+
+  if (systemParts.length) {
+
+    body.systemInstruction = {
+
+      parts: [
+        {
+          text:
+            systemParts.join('\n\n')
+        }
+      ]
+
+    };
+
+  }
+
+  if (
+    response_format &&
+    typeof response_format === 'object' &&
+    response_format.type === 'json_object'
+  ) {
+
+    body.generationConfig.responseMimeType =
+      'application/json';
+
+  }
+
+  const response = await fetch(
+
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+
+    {
+
+      method: 'POST',
+
+      headers: {
+
+        'x-goog-api-key':
+          process.env.GEMINI_API_KEY,
+
+        'Content-Type':
+          'application/json'
+
+      },
+
+      body:
+        JSON.stringify(body)
+
+    }
+
+  );
+
+  let data;
+
+  try {
+
+    data =
+      await response.json();
+
+  } catch {
+
+    throw new Error(
+      `Gemini returned invalid JSON (${response.status})`
+    );
+
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data?.error?.message ||
+      `Gemini API request failed (${response.status})`
+    );
+
+  }
+
+  const text =
+    (data?.candidates?.[0]?.content?.parts || [])
+      .map(part => part?.text || '')
+      .join('')
+      .trim();
+
+  if (!text) {
+
+    throw new Error(
+      'Gemini returned an empty assistant response'
+    );
+
+  }
+
+  if (Array.isArray(messages)) {
+
+    return text;
+
+  }
+
+  return {
+
+    text,
+
+    provider: 'gemini',
+
+    model,
+
+    usage:
+      data?.usageMetadata || null
+
+  };
+
 }
 // =====================================================
 // PROVIDER: OPENAI GPT-6 ASTRA
