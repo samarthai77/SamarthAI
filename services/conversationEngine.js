@@ -2043,21 +2043,34 @@ async function executeTool({
         !validLatitude(args.latitude) ||
         !validLongitude(args.longitude)
       ) {
-        const place =
-          normalize(
-            args.location ||
-            args.city ||
-            args.place ||
-            ''
-          );
+     const place =
+    normalize(
+        args.locationName ||
+        args.location ||
+        args.city ||
+        args.place ||
+        ''
+    );
 
-        if (!place) {
-          return {
+if(!place){
+
+    if(plan.location_mode === 'current_user'){
+
+        return {
             ok: false,
             tool: 'weather',
-            error: 'weather_location_required'
-          };
-        }
+            error: 'current_location_unavailable'
+        };
+
+    }
+
+    return {
+        ok: false,
+        tool: 'weather',
+        error: 'weather_location_required'
+    };
+
+}
       }
 
       const raw =
@@ -2235,16 +2248,29 @@ function deterministicToolFallback({
       return 'Current time batane ke liye reliable timezone available nahi hai.';
     }
 
- if (tool === 'weather') {
-  if (
-    toolResult.error ===
-    'weather_location_required'
-  ) {
-    return 'Aap kis city ya area ka mausam jaana chahte hain?';
-  }
+ if(tool === 'weather'){
 
-  return 'Mausam ki jankari abhi nahi mil pa rahi hai.';
-}  
+    if(
+        toolResult.error ===
+        'current_location_unavailable'
+    ){
+
+        return 'Aapki current location available nahi hai. Phone ki Location permission ON karke dobara try kijiye.';
+
+    }
+
+    if(
+        toolResult.error ===
+        'weather_location_required'
+    ){
+
+        return 'Aap kis city ya area ka mausam jaana chahte hain?';
+
+    }
+
+    return 'Mausam ki jankari abhi nahi mil pa rahi hai.';
+
+}
 
     if (tool === 'services') {
       return 'Service providers ki jankari abhi nahi mil pa rahi hai.';
