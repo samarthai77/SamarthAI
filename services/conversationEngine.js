@@ -1136,7 +1136,21 @@ and include the place in:
 tool_args: {
   "locationName": "city or area name"
 }
+If the user asks for weather without naming a city,
+area, or place, and CLIENT LOCATION contains
+valid latitude and longitude, use:
 
+location_mode: "current_user"
+
+Do not ask for a city when reliable current-user
+coordinates are already available.
+
+For example:
+"Mausam batao kal kaisa rahega"
+"Mere yahan kal mausam kaisa rahega"
+"Kal weather kaisa rahega"
+
+should use the current user's location.
 If the user says "my area", "mere area",
 "yahan", or similar and reliable GPS coordinates
 are available, use:
