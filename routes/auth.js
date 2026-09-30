@@ -1,11 +1,36 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 const router = express.Router();
+// =====================================================
+// AUTH SECURITY RATE LIMITERS
+// =====================================================
 
+// Login: brute-force protection
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'Too many login attempts. Please try again later.'
+  }
+});
+
+// Registration: bot/account-abuse protection
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'Too many registration attempts. Please try again later.'
+  }
+});
 // Supabase Client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -45,7 +70,10 @@ const upload = multer({
 
 // ============ REGISTER ============
 
-router.post('/register', async (req, res) => {
+router.post(
+  '/register',
+  registerLimiter,
+  async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
@@ -54,7 +82,7 @@ router.post('/register', async (req, res) => {
         error: 'Name, email and password are required'
       });
     }
-
+  };
     const { data: existingUsers, error: existingUserError } =
       await supabase
         .from('users')
@@ -129,7 +157,10 @@ router.post('/register', async (req, res) => {
 
 // ============ LOGIN ============
 
-router.post('/login', async (req, res) => {
+router.post(
+  '/login',
+  loginLimiter,
+  async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -138,7 +169,7 @@ router.post('/login', async (req, res) => {
         error: 'Email and password are required'
       });
     }
-
+  };
     const { data: users, error } = await supabase
       .from('users')
       .select('*')
