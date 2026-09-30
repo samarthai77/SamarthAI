@@ -128,14 +128,34 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        message: `Describe this image: ${dataURL}`,
-                        image: dataURL.split(',')[1]
-                    })
+     body: JSON.stringify({
+    image: dataURL
+})             
                 });
                 const data = await res.json();
-                const reply = data.response || 'No description available.';
-                analysisText.textContent = reply;
+           const data = await res.json();
+
+if (!res.ok) {
+    analysisText.textContent =
+        '❌ ' +
+        (data.error || `Scanner failed (${res.status})`);
+
+    console.error(
+        'Scanner API error:',
+        res.status,
+        data
+    );
+
+    return;
+}
+
+const reply =
+    typeof data.response === 'string' &&
+    data.response.trim()
+        ? data.response.trim()
+        : '❌ Scanner ne koi result nahi diya.';
+
+analysisText.textContent = reply;   
             } catch (error) {
                 analysisText.textContent = 'Error analyzing image: ' + error.message;
             }
