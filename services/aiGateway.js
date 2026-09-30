@@ -483,28 +483,120 @@ ${String(memoryText || '')}
 if (!response.ok) {
 
     /*
-     * Provider fallback chain:
+     * =====================================================
+     * PROVIDER FALLBACK CHAIN
      *
-     * Groq
-     *   ↓
-     * OpenAI
-     *   ↓
-     * Claude
+     * PRIMARY:
+     *   Groq
      *
-     * Agar ek provider unavailable ho,
-     * next provider automatically try hoga.
+     * FALLBACK 1:
+     *   Anthropic Claude
+     *
+     * FALLBACK 2:
+     *   OpenAI
+     *
+     * IMPORTANT:
+     * Web/current-information requests are handled
+     * separately through callOpenAI({ useWeb: true }).
+     * =====================================================
      */
 
-    if (response.status === 429) {
+    const retryableStatuses = new Set([
+      408,
+      429,
+      500,
+      502,
+      503,
+      504
+    ]);
+
+    const shouldFallback =
+      retryableStatuses.has(response.status);
+
+    if (shouldFallback) {
 
       console.warn(
-        'Groq rate limit reached. Trying fallback providers.'
+        `Groq unavailable (${response.status}). Trying Anthropic Claude.`
       );
 
       /*
-       * ============================================
-       * FALLBACK 1 — OPENAI
-       * ============================================
+       * ===================================================
+       * FALLBACK 1 — ANTHROPIC CLAUDE
+       * ===================================================
+       */
+
+      if (process.env.ANTHROPIC_API_KEY) {
+
+        try {
+
+          let fallbackResult;
+
+          if (Array.isArray(messages)) {
+
+            const fallbackMessage =
+              finalMessages
+                .map(item =>
+                  `${item.role.toUpperCase()}:\n${item.content}`
+                )
+                .join('\n\n');
+
+            fallbackResult =
+              await callClaude({
+                message: fallbackMessage,
+                history: [],
+                memoryText: ''
+              });
+
+          } else {
+
+            fallbackResult =
+              await callClaude({
+                message,
+                history,
+                memoryText
+              });
+
+          }
+
+          if (
+            fallbackResult &&
+            typeof fallbackResult.text === 'string' &&
+            fallbackResult.text.trim()
+          ) {
+
+            console.warn(
+              'Anthropic Claude fallback succeeded.'
+            );
+
+            if (Array.isArray(messages)) {
+              return fallbackResult.text.trim();
+            }
+
+            return fallbackResult;
+          }
+
+        } catch (claudeError) {
+
+          console.error(
+            'Anthropic Claude fallback failed:',
+            claudeError.message
+          );
+
+        }
+
+      } else {
+
+        console.warn(
+          'ANTHROPIC_API_KEY is not configured.'
+        );
+
+      }
+
+
+      /*
+       * ===================================================
+       * FALLBACK 2 — OPENAI
+       * ===================================================
        */
 
       if (process.env.OPENAI_API_KEY) {
@@ -524,8 +616,7 @@ if (!response.ok) {
 
             fallbackResult =
               await callOpenAI({
-                message:
-                  fallbackMessage,
+                message: fallbackMessage,
                 history: [],
                 memoryText: '',
                 useWeb: false
@@ -554,13 +645,10 @@ if (!response.ok) {
             );
 
             if (Array.isArray(messages)) {
-
               return fallbackResult.text.trim();
-
             }
 
             return fallbackResult;
-
           }
 
         } catch (openAIError) {
@@ -572,77 +660,11 @@ if (!response.ok) {
 
         }
 
-      }
+      } else {
 
-
-      /*
-       * ============================================
-       * FALLBACK 2 — CLAUDE
-       * ============================================
-       */
-
-      if (process.env.ANTHROPIC_API_KEY) {
-
-        try {
-
-          let fallbackResult;
-
-          if (Array.isArray(messages)) {
-
-            const fallbackMessage =
-              finalMessages
-                .map(item =>
-                  `${item.role.toUpperCase()}:\n${item.content}`
-                )
-                .join('\n\n');
-
-            fallbackResult =
-              await callClaude({
-                message:
-                  fallbackMessage,
-                history: [],
-                memoryText: ''
-              });
-
-          } else {
-
-            fallbackResult =
-              await callClaude({
-                message,
-                history,
-                memoryText
-              });
-
-          }
-
-          if (
-            fallbackResult &&
-            typeof fallbackResult.text === 'string' &&
-            fallbackResult.text.trim()
-          ) {
-
-            console.warn(
-              'Claude fallback succeeded.'
-            );
-
-            if (Array.isArray(messages)) {
-
-              return fallbackResult.text.trim();
-
-            }
-
-            return fallbackResult;
-
-          }
-
-        } catch (claudeError) {
-
-          console.error(
-            'Claude fallback failed:',
-            claudeError.message
-          );
-
-        }
+        console.warn(
+          'OPENAI_API_KEY is not configured.'
+        );
 
       }
 
@@ -650,9 +672,9 @@ if (!response.ok) {
 
 
     /*
-     * ============================================
+     * ===================================================
      * ALL PROVIDERS FAILED
-     * ============================================
+     * ===================================================
      */
 
     throw new Error(
@@ -661,7 +683,8 @@ if (!response.ok) {
       `Groq API request failed (${response.status})`
     );
 
-  }
+}
+  
   const content =
     data?.choices?.[0]?.message?.content;
 
