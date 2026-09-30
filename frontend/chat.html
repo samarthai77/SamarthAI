@@ -1002,6 +1002,241 @@ grid-template-columns:repeat(4,1fr);
     }
 
 }  
+/* =====================================================
+   SAMARTHAI GALAXY CHAT UI
+===================================================== */
+
+html,
+body{
+    background:#020617 !important;
+    color:#eaf2ff !important;
+}
+
+.samarth-topbar{
+    background:rgba(3,8,24,.88) !important;
+    border-bottom:1px solid rgba(120,170,255,.14) !important;
+    box-shadow:0 4px 24px rgba(0,0,0,.35) !important;
+    backdrop-filter:blur(18px);
+}
+
+.menu-btn{
+    color:#dce9ff !important;
+}
+
+.menu-btn:active{
+    background:rgba(255,255,255,.08) !important;
+}
+
+.brand-name{
+    color:#f4f8ff !important;
+}
+
+.brand-name span{
+    color:#ff7a18 !important;
+}
+
+.brand-tagline{
+    display:none !important;
+}
+
+.top-actions button{
+    background:rgba(255,255,255,.07) !important;
+    color:#dce9ff !important;
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.chat-container{
+    width:100% !important;
+    max-width:none !important;
+    height:calc(100vh - 64px) !important;
+    background:
+        radial-gradient(
+            circle at 18% 15%,
+            rgba(91,65,255,.22),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 82% 28%,
+            rgba(0,170,255,.18),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 50% 85%,
+            rgba(130,40,255,.12),
+            transparent 32%
+        ),
+        linear-gradient(
+            180deg,
+            #020617 0%,
+            #071126 48%,
+            #02040c 100%
+        ) !important;
+    position:relative;
+}
+
+.chat-container::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:.55;
+    background-image:
+        radial-gradient(circle,rgba(255,255,255,.9) 0 1px,transparent 1.5px),
+        radial-gradient(circle,rgba(130,190,255,.8) 0 1px,transparent 1.5px),
+        radial-gradient(circle,rgba(255,255,255,.6) 0 1px,transparent 1.5px);
+    background-size:
+        170px 170px,
+        230px 230px,
+        310px 310px;
+    background-position:
+        20px 30px,
+        90px 80px,
+        150px 10px;
+    z-index:0;
+}
+
+.welcome-hero{
+    display:none !important;
+}
+
+.feature-area{
+    display:none !important;
+}
+
+.messages{
+    position:relative;
+    z-index:2;
+    flex:1 !important;
+    min-height:0 !important;
+    padding:20px 18px 120px !important;
+    background:transparent !important;
+}
+
+.messages:empty{
+    flex:1 !important;
+    height:auto !important;
+    min-height:0 !important;
+    padding:0 18px 120px !important;
+}
+
+.messages::-webkit-scrollbar{
+    width:6px;
+}
+
+.messages::-webkit-scrollbar-thumb{
+    background:rgba(150,190,255,.25);
+    border-radius:20px;
+}
+
+.msg-wrapper{
+    margin-bottom:14px !important;
+}
+
+.msg{
+    max-width:min(78%,680px) !important;
+    padding:11px 14px !important;
+    border-radius:18px !important;
+    box-shadow:0 8px 28px rgba(0,0,0,.18) !important;
+    backdrop-filter:blur(14px);
+}
+
+.user-msg{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,75,160,.92),
+            rgba(0,125,220,.72)
+        ) !important;
+    color:#fff !important;
+    border:1px solid rgba(130,205,255,.18) !important;
+    border-bottom-right-radius:5px !important;
+}
+
+.ai-msg{
+    background:rgba(255,255,255,.075) !important;
+    color:#edf5ff !important;
+    border:1px solid rgba(160,200,255,.15) !important;
+    border-bottom-left-radius:5px !important;
+}
+
+.msg-time{
+    color:rgba(220,235,255,.55) !important;
+}
+
+.typing-indicator{
+    background:rgba(12,24,48,.92) !important;
+    border:1px solid rgba(140,190,255,.16) !important;
+    color:#fff !important;
+    backdrop-filter:blur(15px);
+}
+
+.typing-indicator span{
+    background:#8bc8ff !important;
+}
+
+.input-area{
+    background:rgba(2,7,20,.86) !important;
+    border-top:1px solid rgba(130,180,255,.13) !important;
+    backdrop-filter:blur(20px);
+}
+
+.chat-input-box{
+    background:rgba(255,255,255,.075) !important;
+    border:1px solid rgba(160,200,255,.16) !important;
+}
+
+.chat-input-box input{
+    color:#edf5ff !important;
+}
+
+.chat-input-box input::placeholder{
+    color:rgba(220,235,255,.48) !important;
+}
+
+.attach-btn{
+    color:#a9c4e5 !important;
+}
+
+.send-btn{
+    background:linear-gradient(135deg,#ff6500,#ff8c00) !important;
+    box-shadow:0 5px 18px rgba(255,107,0,.25);
+}
+
+.mic-btn{
+    background:linear-gradient(135deg,#063b72,#075ba5) !important;
+}
+
+.feature-menu{
+    background:rgba(7,18,38,.96) !important;
+    border:1px solid rgba(150,200,255,.15) !important;
+}
+
+.menu-feature{
+    background:rgba(255,255,255,.07) !important;
+    color:#eaf3ff !important;
+}
+
+/* Mobile galaxy layout */
+
+@media(max-width:600px){
+
+    .samarth-topbar{
+        height:58px !important;
+    }
+
+    .chat-container{
+        height:calc(100dvh - 58px) !important;
+    }
+
+    .messages{
+        padding:14px 12px 130px !important;
+    }
+
+    .msg{
+        max-width:88% !important;
+    }
+
+}    
 </style>
 </head>
 
@@ -2124,12 +2359,24 @@ async function sendMessage(){
             'sendBtn'
         );
 
+    if(!input || !btn) return;
+
+    if(btn.disabled) return;
+
     const message =
         input.value.trim();
 
     if(!message) return;
-const clientLocation =
-    await getClientLocation();
+
+    /*
+     * IMPORTANT:
+     * Lock immediately, before ANY await.
+     * This prevents double click / double Enter.
+     */
+    btn.disabled = true;
+
+    const clientLocation =
+        await getClientLocation();
 
     /*
      * Safety:
@@ -2166,7 +2413,7 @@ const clientLocation =
 
     input.value = '';
 
-    btn.disabled = true;
+  
 
     showTyping(true);
 
@@ -2588,17 +2835,18 @@ function speakAIResponse(text){
 /* ===== ENTER SEND ===== */
 
 document
-    .getElementById(
-        'chatInput'
-    )
+    .getElementById('chatInput')
     .addEventListener(
-        'keypress',
+        'keydown',
         e => {
 
             if(
-                e.key ===
-                'Enter'
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !e.repeat
             ){
+
+                e.preventDefault();
 
                 sendMessage();
 
