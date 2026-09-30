@@ -82,7 +82,7 @@ router.post(
         error: 'Name, email and password are required'
       });
     }
-  };
+  
     const { data: existingUsers, error: existingUserError } =
       await supabase
         .from('users')
@@ -169,7 +169,7 @@ router.post(
         error: 'Email and password are required'
       });
     }
-  };
+  
     const { data: users, error } = await supabase
       .from('users')
       .select('*')
