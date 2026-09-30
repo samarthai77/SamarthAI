@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 // ===== SUPABASE DIAGNOSTIC START =====
@@ -43,12 +44,102 @@ const dns = require('dns').promises;
 
 const app = express();
 
+// =====================================================
+// SECURITY HEADERS
+// =====================================================
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
+app.disable('x-powered-by');
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+
+// =====================================================
+// CORS
+// =====================================================
+//
+// अभी frontend इसी backend से serve हो रहा है.
+// इसलिए same deployed origin को allow करते हैं.
+// Capacitor/Play Store native origin की जरूरत आने पर
+// इसे अलग से configure करेंगे.
+//
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://samarthai-backend.onrender.com'
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+
+      // Server-to-server / same-origin requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error('CORS origin not allowed')
+      );
+    },
+
+    credentials: true,
+
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS'
+    ],
+
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization'
+    ]
+  })
+);
+
+// =====================================================
+// GLOBAL REQUEST SIZE LIMIT
+// =====================================================
+
+app.use(
+  express.json({
+  limit: '8mb'
+  })
+);
+
+// =====================================================
+// GLOBAL RATE LIMIT
+// =====================================================
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+
+  limit: 300,
+
+  standardHeaders: 'draft-8',
+
+  legacyHeaders: false,
+
+  message: {
+    error: 'Too many requests. Please try again later.'
+  },
+
+  skip: (req) => {
+    return req.path === '/';
+  }
+});
+
+app.use(globalLimiter);
 // ===== USER ACTIVITY TRACKER =====
 const activityTracker = require('./middleware/activityTracker');
 app.use(activityTracker);
