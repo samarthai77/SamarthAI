@@ -55,17 +55,50 @@
         document.getElementById('startBtn').addEventListener('click', startCamera);
         document.getElementById('captureBtn').addEventListener('click', captureAndAnalyze);
 
-        async function startCamera() {
-            try {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-            } catch (error) {
-                alert('Camera access denied: ' + error.message);
-            }
+ async function startCamera() {
+    try {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
         }
+
+        // Prefer the rear/back camera on mobile
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: {
+                        ideal: "environment"
+                    }
+                },
+                audio: false
+            });
+        } catch (environmentError) {
+            console.warn(
+                "Back camera unavailable. Trying default camera.",
+                environmentError
+            );
+
+            // Fallback for laptops/desktops or devices
+            // that do not expose a rear camera.
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
+        }
+
+        video.srcObject = stream;
+
+        await video.play();
+
+    } catch (error) {
+        console.error("Camera error:", error);
+
+        alert(
+            "Camera start nahi ho paya: " +
+            (error.message || "Camera unavailable")
+        );
+    }
+}    
 
         async function captureAndAnalyze() {
             if (!stream) {
