@@ -1,5 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -31,6 +32,29 @@ const registerLimiter = rateLimit({
     error: 'Too many registration attempts. Please try again later.'
   }
 });
+// =====================================================
+// PASSWORD RECOVERY RATE LIMITERS
+// =====================================================
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'Too many password reset requests. Please try again later.'
+  }
+});
+
+const resetPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'Too many password reset attempts. Please try again later.'
+  }
+});
 // Supabase Client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -43,7 +67,93 @@ const JWT_EXPIRES_IN = '1h';
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
+// =====================================================
+// PASSWORD RESET EMAIL
+// =====================================================
 
+async function sendPasswordResetEmail({
+  email,
+  resetUrl
+}) {
+  const resendApiKey =
+    process.env.RESEND_API_KEY;
+
+  const emailFrom =
+    process.env.EMAIL_FROM;
+
+  if (!resendApiKey || !emailFrom) {
+    throw new Error(
+      'Password reset email service is not configured'
+    );
+  }
+
+  const response = await fetch(
+    'https://api.resend.com/emails',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: [email],
+        subject: 'SamarthAI Password Reset',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
+            <h2>SamarthAI Password Reset</h2>
+
+            <p>
+              We received a request to reset your SamarthAI password.
+            </p>
+
+            <p>
+              This link will expire in
+              <strong>15 minutes</strong>
+              and can only be used once.
+            </p>
+
+            <p>
+              <a
+                href="${resetUrl}"
+                style="
+                  display:inline-block;
+                  padding:12px 20px;
+                  background:#ff6b00;
+                  color:white;
+                  text-decoration:none;
+                  border-radius:8px;
+                "
+              >
+                Reset Password
+              </a>
+            </p>
+
+            <p>
+              If you did not request this, you can safely ignore this email.
+            </p>
+
+            <p>— SamarthAI Security</p>
+          </div>
+        `
+      })
+    }
+  );
+
+  if (!response.ok) {
+    let data = null;
+
+    try {
+      data = await response.json();
+    } catch {}
+
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      `Email provider failed (${response.status})`
+    );
+  }
+}
 // ============ MULTER PROFILE PHOTO UPLOAD ============
 
 const upload = multer({
@@ -225,7 +335,288 @@ router.post(
     });
   }
 });
+// =====================================================
+// FORGOT PASSWORD
+// =====================================================
 
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  async (req, res) => {
+    const genericResponse = {
+      message:
+        'If an account exists for this email, a password reset link has been sent.'
+    };
+
+    try {
+      const email =
+        typeof req.body?.email === 'string'
+          ? req.body.email.trim().toLowerCase()
+          : '';
+
+      if (!email) {
+        return res.status(200).json(genericResponse);
+      }
+
+      const {
+        data: users,
+        error: userError
+      } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', email)
+        .limit(1);
+
+      if (userError) {
+        console.error(
+          'Password reset user lookup failed:',
+          userError.message
+        );
+
+        return res.status(200).json(genericResponse);
+      }
+
+      const user = users?.[0];
+
+      if (!user) {
+        return res.status(200).json(genericResponse);
+      }
+
+      const rawToken =
+        crypto.randomBytes(32).toString('hex');
+
+      const tokenHash =
+        crypto
+          .createHash('sha256')
+          .update(rawToken)
+          .digest('hex');
+
+      const expiresAt =
+        new Date(
+          Date.now() + 15 * 60 * 1000
+        ).toISOString();
+
+      const {
+        error: deleteOldTokensError
+      } = await supabase
+        .from('password_reset_tokens')
+        .delete()
+        .eq('user_id', user.id)
+        .is('used_at', null);
+
+      if (deleteOldTokensError) {
+        console.error(
+          'Password reset cleanup failed:',
+          deleteOldTokensError.message
+        );
+
+        return res.status(200).json(genericResponse);
+      }
+
+      const {
+        error: insertTokenError
+      } = await supabase
+        .from('password_reset_tokens')
+        .insert({
+          user_id: user.id,
+          token_hash: tokenHash,
+          expires_at: expiresAt
+        });
+
+      if (insertTokenError) {
+        console.error(
+          'Password reset token creation failed:',
+          insertTokenError.message
+        );
+
+        return res.status(200).json(genericResponse);
+      }
+
+      const publicAppUrl =
+        (
+          process.env.PUBLIC_APP_URL ||
+          'https://samarthai-backend.onrender.com'
+        ).replace(/\/+$/, '');
+
+      const resetUrl =
+        `${publicAppUrl}/reset-password.html?token=${encodeURIComponent(
+          rawToken
+        )}`;
+
+      try {
+        await sendPasswordResetEmail({
+          email: user.email,
+          resetUrl
+        });
+      } catch (emailError) {
+        console.error(
+          'Password reset email failed:',
+          emailError.message
+        );
+
+        await supabase
+          .from('password_reset_tokens')
+          .delete()
+          .eq('token_hash', tokenHash);
+      }
+
+      return res.status(200).json(genericResponse);
+
+    } catch (error) {
+      console.error(
+        'Forgot password error:',
+        error.message
+      );
+
+      return res.status(200).json(genericResponse);
+    }
+  }
+);
+// =====================================================
+// RESET PASSWORD
+// =====================================================
+
+router.post(
+  '/reset-password',
+  resetPasswordLimiter,
+  async (req, res) => {
+    try {
+      const {
+        token,
+        password
+      } = req.body || {};
+
+      if (
+        typeof token !== 'string' ||
+        !/^[a-f0-9]{64}$/i.test(token)
+      ) {
+        return res.status(400).json({
+          error: 'Invalid or expired reset link'
+        });
+      }
+
+      if (
+        typeof password !== 'string' ||
+        password.length < 8
+      ) {
+        return res.status(400).json({
+          error:
+            'Password must be at least 8 characters'
+        });
+      }
+
+      const tokenHash =
+        crypto
+          .createHash('sha256')
+          .update(token)
+          .digest('hex');
+
+      const {
+        data: resetTokens,
+        error: tokenLookupError
+      } = await supabase
+        .from('password_reset_tokens')
+        .select(
+          'id, user_id, expires_at, used_at'
+        )
+        .eq('token_hash', tokenHash)
+        .limit(1);
+
+      if (
+        tokenLookupError ||
+        !resetTokens?.length
+      ) {
+        return res.status(400).json({
+          error: 'Invalid or expired reset link'
+        });
+      }
+
+      const resetToken = resetTokens[0];
+
+      if (resetToken.used_at) {
+        return res.status(400).json({
+          error: 'Invalid or expired reset link'
+        });
+      }
+
+      if (
+        new Date(resetToken.expires_at).getTime()
+        <= Date.now()
+      ) {
+        return res.status(400).json({
+          error: 'Invalid or expired reset link'
+        });
+      }
+
+      const {
+        data: consumedToken,
+        error: consumeError
+      } = await supabase
+        .from('password_reset_tokens')
+        .update({
+          used_at: new Date().toISOString()
+        })
+        .eq('id', resetToken.id)
+        .is('used_at', null)
+        .select('id')
+        .maybeSingle();
+
+      if (
+        consumeError ||
+        !consumedToken
+      ) {
+        return res.status(400).json({
+          error: 'Invalid or expired reset link'
+        });
+      }
+
+      const hashedPassword =
+        await bcrypt.hash(password, 12);
+
+      const {
+        error: passwordUpdateError
+      } = await supabase
+        .from('users')
+        .update({
+          password: hashedPassword
+        })
+        .eq('id', resetToken.user_id);
+
+      if (passwordUpdateError) {
+        console.error(
+          'Password update failed:',
+          passwordUpdateError.message
+        );
+
+        return res.status(500).json({
+          error:
+            'Unable to reset password. Please request a new link.'
+        });
+      }
+
+      await supabase
+        .from('password_reset_tokens')
+        .delete()
+        .eq('user_id', resetToken.user_id);
+
+      return res.json({
+        success: true,
+        message:
+          'Password reset successfully. Please login with your new password.'
+      });
+
+    } catch (error) {
+      console.error(
+        'Reset password error:',
+        error.message
+      );
+
+      return res.status(500).json({
+        error: 'Unable to reset password'
+      });
+    }
+  }
+);
 // ============ PROFILE GET ============
 
 router.get('/profile', async (req, res) => {
