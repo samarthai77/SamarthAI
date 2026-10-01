@@ -962,7 +962,7 @@ router.post(
             'gemini',
 
           model:
-            'gemini-1.5-flash',
+       'gemini-3.8-flash',    
 
           intent:
             'image'
