@@ -14,7 +14,7 @@
   "@supabase/supabase-js": "^2.38.0",
   "multer": "^2.0.2",
   "express-rate-limit": "^8.2.1",
-  "helmet": "^8.1.0"
-  "razorpay": "^2.9.6",
+ "helmet": "^8.1.0",
+ "razorpay": "^2.9.6"
 }
 }
