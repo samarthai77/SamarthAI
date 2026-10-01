@@ -156,7 +156,8 @@ app.use('/js', express.static(__dirname + '/frontend'));
 // ======= Routes =========
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
-
+const paymentRoutes = require('./routes/payment');
+app.use('/api/payment', paymentRoutes);
 const chatRoutes = require('./routes/chat');
 app.use('/api/chat', chatRoutes);
 
