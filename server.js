@@ -106,7 +106,18 @@ app.use(
     ]
   })
 );
+// =====================================================
+// RAZORPAY WEBHOOK RAW BODY
+// Must run BEFORE express.json()
+// =====================================================
 
+app.use(
+  '/api/payment/webhook',
+  express.raw({
+    type: 'application/json',
+    limit: '1mb'
+  })
+);
 // =====================================================
 // GLOBAL REQUEST SIZE LIMIT
 // =====================================================
