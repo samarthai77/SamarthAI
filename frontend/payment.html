@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Choose Plan — SamarthAI</title>
+
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .payment-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 16px 50px;
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .payment-header h1 {
+            margin-bottom: 8px;
+            color: #003366;
+        }
+
+        .payment-header p {
+            color: #666;
+            margin: 0;
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .plan-card {
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            padding: 24px 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .plan-card h2 {
+            margin: 0 0 10px;
+            color: #003366;
+        }
+
+        .plan-price {
+            font-size: 30px;
+            font-weight: bold;
+            margin: 12px 0 4px;
+            color: #111;
+        }
+
+        .plan-period {
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        .pay-button {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            background: #003366;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pay-button:hover {
+            opacity: 0.9;
+        }
+
+        .pay-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #paymentMessage {
+            margin: 22px auto 0;
+            max-width: 700px;
+            text-align: center;
+            font-weight: 600;
+            min-height: 24px;
+        }
+
+        .security-note {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #003366;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="payment-container">
+
+    <div class="payment-header">
+        <h1>Choose Your SamarthAI Plan</h1>
+
+        <p>
+            Upgrade your SamarthAI experience with a monthly plan.
+        </p>
+    </div>
+
+    <div class="plans-grid">
+
+        <!-- BASIC -->
+        <div class="plan-card">
+
+            <h2>Basic</h2>
+
+            <div class="plan-price">
+                ₹199
+            </div>
+
+            <div class="plan-period">
+                per month
+            </div>
+
+            <button
+                class="pay-button"
+                data-plan="basic"
+                onclick="startSubscription('basic', this)"
+            >
+                Upgrade to Basic
+            </button>
+
+        </div>
+
+
+        <!-- PRO -->
+        <div class="plan-card">
+
+            <h2>Pro</h2>
+
+            <div class="plan-price">
+                ₹399
+            </div>
+
+            <div class="plan-period">
+                per month
+            </div>
+
+            <button
+                class="pay-button"
+                data-plan="pro"
+                onclick="startSubscription('pro', this)"
+            >
+                Upgrade to Pro
+            </button>
+
+        </div>
+
+
+        <!-- PREMIUM -->
+        <div class="plan-card">
+
+            <h2>Premium</h2>
+
+            <div class="plan-price">
+                ₹1,499
+            </div>
+
+            <div class="plan-period">
+                per month
+            </div>
+
+            <button
+                class="pay-button"
+                data-plan="premium"
+                onclick="startSubscription('premium', this)"
+            >
+                Upgrade to Premium
+            </button>
+
+        </div>
+
+
+        <!-- POWER -->
+        <div class="plan-card">
+
+            <h2>Power</h2>
+
+            <div class="plan-price">
+                ₹2,999
+            </div>
+
+            <div class="plan-period">
+                per month
+            </div>
+
+            <button
+                class="pay-button"
+                data-plan="power"
+                onclick="startSubscription('power', this)"
+            >
+                Upgrade to Power
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div id="paymentMessage"></div>
+
+
+    <div class="security-note">
+        🔒 Secure payment powered by Razorpay.<br>
+        Your Razorpay secret credentials are never exposed to the browser.
+    </div>
+
+
+    <a
+        href="profile.html"
+        class="back-link"
+    >
+        ← Back to Profile
+    </a>
+
+</div>
+
+
+<script>
+
+const API_BASE =
+    'https://samarthai-backend.onrender.com/api';
+
+
+// =====================================================
+// MESSAGE
+// =====================================================
+
+function showMessage(message, type = 'info') {
+
+    const element =
+        document.getElementById('paymentMessage');
+
+    element.textContent = message;
+
+    if (type === 'success') {
+        element.style.color = 'green';
+    } else if (type === 'error') {
+        element.style.color = '#b00020';
+    } else {
+        element.style.color = '#003366';
+    }
+}
+
+
+// =====================================================
+// GET TOKEN
+// =====================================================
+
+function getToken() {
+
+    return localStorage.getItem('token');
+
+}
+
+
+// =====================================================
+// START SUBSCRIPTION
+// =====================================================
+
+async function startSubscription(planId, button) {
+
+    const token = getToken();
+
+    if (!token) {
+
+        showMessage(
+            'Please login first.',
+            'error'
+        );
+
+        window.location.href =
+            'login.html';
+
+        return;
+    }
+
+
+    if (
+        typeof Razorpay === 'undefined'
+    ) {
+
+        showMessage(
+            'Razorpay Checkout could not be loaded.',
+            'error'
+        );
+
+        return;
+    }
+
+
+    button.disabled = true;
+
+    const originalText =
+        button.textContent;
+
+    button.textContent =
+        'Creating payment...';
+
+
+    showMessage(
+        'Preparing secure payment...',
+        'info'
+    );
+
+
+    try {
+
+        // -------------------------------------------------
+        // CREATE SUBSCRIPTION ON OUR SERVER
+        // -------------------------------------------------
+
+        const response =
+            await fetch(
+                `${API_BASE}/payment/create-subscription`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+
+                        'Authorization':
+                            `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        planId
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                'Unable to create subscription.'
+            );
+        }
+
+
+        const subscription =
+            data.subscription || {};
+
+        const razorpayKeyId =
+            data.razorpayKeyId;
+
+
+        if (!subscription.id) {
+
+            throw new Error(
+                'Subscription ID was not received.'
+            );
+        }
+
+
+        if (!razorpayKeyId) {
+
+            throw new Error(
+                'Razorpay Key ID was not received.'
+            );
+        }
+
+
+        // -------------------------------------------------
+        // OPEN RAZORPAY CHECKOUT
+        // -------------------------------------------------
+
+        const options = {
+
+            key: razorpayKeyId,
+
+            subscription_id:
+                subscription.id,
+
+            name:
+                'SamarthAI',
+
+            description:
+                `${data.plan?.name || planId} Monthly Subscription`,
+
+            image:
+                'https://samarthai.life/favicon.ico',
+
+            theme: {
+                color: '#003366'
+            },
+
+
+            // -------------------------------------------------
+            // PAYMENT SUCCESS
+            // -------------------------------------------------
+
+            handler: function (response) {
+
+                console.log(
+                    'Razorpay subscription response:',
+                    response
+                );
+
+
+                showMessage(
+                    '✅ Payment authorization completed. Subscription is being processed.',
+                    'success'
+                );
+
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * Abhi webhook + server-side subscription
+                 * activation next step mein add hoga.
+                 *
+                 * Isliye yahan frontend se plan ko
+                 * "active" declare nahi kar rahe.
+                 */
+
+
+                setTimeout(() => {
+
+                    window.location.href =
+                        'profile.html';
+
+                }, 2500);
+
+            },
+
+
+            // -------------------------------------------------
+            // MODAL CLOSED
+            // -------------------------------------------------
+
+            modal: {
+
+                ondismiss: function () {
+
+                    showMessage(
+                        'Payment window closed.',
+                        'info'
+                    );
+
+                    button.disabled = false;
+
+                    button.textContent =
+                        originalText;
+                }
+
+            },
+
+
+            prefill: {},
+
+
+            notes: {
+                plan_id: planId
+            }
+        };
+
+
+        const razorpay =
+            new Razorpay(options);
+
+
+        razorpay.on(
+            'payment.failed',
+            function (response) {
+
+                console.error(
+                    'Razorpay payment failed:',
+                    response
+                );
+
+
+                showMessage(
+                    response?.error?.description ||
+                    'Payment failed. Please try again.',
+                    'error'
+                );
+
+
+                button.disabled = false;
+
+                button.textContent =
+                    originalText;
+            }
+        );
+
+
+        razorpay.open();
+
+
+    } catch (error) {
+
+        console.error(
+            'Subscription checkout error:',
+            error
+        );
+
+
+        showMessage(
+            error.message ||
+            'Unable to start payment.',
+            'error'
+        );
+
+
+        button.disabled = false;
+
+        button.textContent =
+            originalText;
+    }
+
+}
+
+</script>
+
+</body>
+</html>
