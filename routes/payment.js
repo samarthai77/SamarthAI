@@ -38,14 +38,14 @@ const supabase = createClient(
 // SERVER-SIDE PLAN CATALOG
 // NEVER TRUST PRICE FROM FRONTEND
 // =====================================================
-
 const PLANS = Object.freeze({
   basic: {
     id: 'basic',
     name: 'Basic',
     amountPaise: 19900,
     currency: 'INR',
-    interval: 'monthly'
+    interval: 'monthly',
+    razorpayPlanId: 'plan_TivCWQkgKrBgYu'
   },
 
   pro: {
@@ -53,7 +53,8 @@ const PLANS = Object.freeze({
     name: 'Pro',
     amountPaise: 39900,
     currency: 'INR',
-    interval: 'monthly'
+    interval: 'monthly',
+    razorpayPlanId: 'plan_TivJP4hWeedOTc'
   },
 
   premium: {
@@ -61,7 +62,8 @@ const PLANS = Object.freeze({
     name: 'Premium',
     amountPaise: 149900,
     currency: 'INR',
-    interval: 'monthly'
+    interval: 'monthly',
+    razorpayPlanId: 'plan_TivOtAX2W1DKV3'
   },
 
   power: {
@@ -69,7 +71,8 @@ const PLANS = Object.freeze({
     name: 'Power',
     amountPaise: 299900,
     currency: 'INR',
-    interval: 'monthly'
+    interval: 'monthly',
+    razorpayPlanId: 'plan_TivScGKHiQme7k'
   }
 });
 
