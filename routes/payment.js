@@ -1687,6 +1687,225 @@ if (invoiceEvents.has(eventType)) {
   }
 });
 // =====================================================
+// GET CURRENT PAYMENT / SUBSCRIPTION STATUS
+// =====================================================
+
+router.get('/status', authenticate, async (req, res) => {
+  try {
+
+    const {
+      data: subscriptions,
+      error
+    } = await supabase
+      .from('subscriptions')
+      .select(`
+        id,
+        provider_subscription_id,
+        provider_plan_id,
+        plan_id,
+        currency,
+        status,
+        current_start,
+        current_end,
+        started_at,
+        ended_at,
+        total_count,
+        paid_count,
+        remaining_count,
+        cancel_at_cycle_end,
+        created_at,
+        updated_at
+      `)
+      .eq(
+        'user_id',
+        req.user.id
+      )
+      .in('status', [
+        'active',
+        'authenticated',
+        'paused'
+      ])
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      )
+      .limit(10);
+
+    if (error) {
+
+      console.error(
+        '❌ Payment status lookup error:',
+        error
+      );
+
+      return res.status(500).json({
+        error: 'Unable to load payment status'
+      });
+    }
+
+    const now = Date.now();
+
+    // -------------------------------------------------
+    // Find the currently usable subscription.
+    // Active/authenticated subscription with a future
+    // current_end is considered usable.
+    // -------------------------------------------------
+
+    const currentSubscription =
+      (subscriptions || []).find(subscription => {
+
+        if (
+          !subscription?.current_end
+        ) {
+          return (
+            subscription.status ===
+            'active'
+          );
+        }
+
+        const endTime =
+          new Date(
+            subscription.current_end
+          ).getTime();
+
+        return (
+          endTime > now &&
+          [
+            'active',
+            'authenticated'
+          ].includes(
+            subscription.status
+          )
+        );
+      }) || null;
+
+    // -------------------------------------------------
+    // FREE USER
+    // -------------------------------------------------
+
+    if (!currentSubscription) {
+
+      return res.json({
+        success: true,
+
+        plan: {
+          id: 'free',
+          name: 'Free',
+          currency: 'INR',
+          amount: 0,
+          interval: null
+        },
+
+        subscription: null,
+
+        isPaid: false
+      });
+    }
+
+    const plan =
+      PLANS[
+        currentSubscription.plan_id
+      ];
+
+    // -------------------------------------------------
+    // PAID USER
+    // -------------------------------------------------
+
+    return res.json({
+
+      success: true,
+
+      plan: {
+
+        id:
+          currentSubscription.plan_id,
+
+        name:
+          plan?.name ||
+          currentSubscription.plan_id,
+
+        amount:
+          plan
+            ? plan.amountPaise / 100
+            : null,
+
+        currency:
+          currentSubscription.currency ||
+          plan?.currency ||
+          'INR',
+
+        interval:
+          plan?.interval ||
+          'monthly'
+      },
+
+      subscription: {
+
+        id:
+          currentSubscription.id,
+
+        providerSubscriptionId:
+          currentSubscription
+            .provider_subscription_id,
+
+        providerPlanId:
+          currentSubscription
+            .provider_plan_id,
+
+        status:
+          currentSubscription.status,
+
+        currentStart:
+          currentSubscription
+            .current_start,
+
+        currentEnd:
+          currentSubscription
+            .current_end,
+
+        startedAt:
+          currentSubscription
+            .started_at,
+
+        endedAt:
+          currentSubscription
+            .ended_at,
+
+        totalCount:
+          currentSubscription
+            .total_count,
+
+        paidCount:
+          currentSubscription
+            .paid_count,
+
+        remainingCount:
+          currentSubscription
+            .remaining_count,
+
+        cancelAtCycleEnd:
+          currentSubscription
+            .cancel_at_cycle_end
+      },
+
+      isPaid: true
+    });
+
+  } catch (error) {
+
+    console.error(
+      '❌ Payment status error:',
+      error
+    );
+
+    return res.status(500).json({
+      error: 'Unable to load payment status'
+    });
+  }
+});
+// =====================================================
 // EXPORT
 // =====================================================
 
