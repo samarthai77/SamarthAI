@@ -1021,7 +1021,328 @@ router.post('/webhook', async (req, res) => {
         }
       }
     }
+// -------------------------------------------------
+// INVOICE WEBHOOKS
+// -------------------------------------------------
 
+const invoice =
+  payload?.payload?.invoice?.entity;
+
+const invoiceEvents = new Set([
+  'invoice.paid',
+  'invoice.partially_paid',
+  'invoice.expired'
+]);
+
+if (invoiceEvents.has(eventType)) {
+
+  const invoiceId =
+    invoice?.id;
+
+  const providerSubscriptionId =
+    invoice?.subscription_id;
+
+  if (
+    typeof invoiceId !== 'string' ||
+    !invoiceId
+  ) {
+    console.warn(
+      '⚠️ Invoice ID missing in webhook',
+      {
+        eventType,
+        eventId
+      }
+    );
+
+    await supabase
+      .from('payment_webhook_events')
+      .update({
+        processed: true,
+        processed_at:
+          new Date().toISOString()
+      })
+      .eq(
+        'event_id',
+        eventId
+      );
+
+    return res.status(200).json({
+      success: true
+    });
+  }
+
+  // -------------------------------------------------
+  // Find local subscription
+  // -------------------------------------------------
+
+  let localSubscription = null;
+
+  if (
+    typeof providerSubscriptionId === 'string' &&
+    providerSubscriptionId
+  ) {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from('subscriptions')
+      .select(
+        'id, user_id, plan_id, provider_subscription_id, status'
+      )
+      .eq(
+        'provider_subscription_id',
+        providerSubscriptionId
+      )
+      .maybeSingle();
+
+    if (error) {
+
+      console.error(
+        '❌ Invoice subscription lookup error:',
+        error
+      );
+
+      return res.status(500).json({
+        error: 'Invoice processing failed'
+      });
+    }
+
+    localSubscription = data;
+  }
+
+  if (!localSubscription) {
+
+    console.error(
+      '❌ Invoice could not be linked to subscription',
+      {
+        invoiceId,
+        providerSubscriptionId,
+        eventType
+      }
+    );
+
+    return res.status(500).json({
+      error: 'Invoice could not be linked'
+    });
+  }
+
+  // -------------------------------------------------
+  // Determine invoice status
+  // -------------------------------------------------
+
+  let invoiceStatus = 'issued';
+
+  if (
+    eventType === 'invoice.paid'
+  ) {
+    invoiceStatus = 'paid';
+  }
+
+  if (
+    eventType === 'invoice.partially_paid'
+  ) {
+    invoiceStatus = 'partially_paid';
+  }
+
+  if (
+    eventType === 'invoice.expired'
+  ) {
+    invoiceStatus = 'expired';
+  }
+
+  // -------------------------------------------------
+  // Convert Unix timestamp
+  // -------------------------------------------------
+
+  const invoiceUnixToDate = (value) =>
+    Number.isFinite(Number(value))
+      ? new Date(
+          Number(value) * 1000
+        ).toISOString()
+      : null;
+
+  // -------------------------------------------------
+  // Save / update invoice
+  // -------------------------------------------------
+
+  const invoiceRecord = {
+
+    user_id:
+      localSubscription.user_id,
+
+    subscription_id:
+      localSubscription.id,
+
+    provider:
+      'razorpay',
+
+    provider_invoice_id:
+      invoiceId,
+
+    provider_subscription_id:
+      providerSubscriptionId || null,
+
+    invoice_number:
+      invoice?.invoice_number ||
+      invoice?.receipt ||
+      null,
+
+    status:
+      invoiceStatus,
+
+    currency:
+      invoice?.currency ||
+      'INR',
+
+    amount_paise:
+      Number.isFinite(
+        Number(invoice?.amount)
+      )
+        ? Number(invoice.amount)
+        : null,
+
+    amount_paid_paise:
+      Number.isFinite(
+        Number(invoice?.amount_paid)
+      )
+        ? Number(invoice.amount_paid)
+        : null,
+
+    amount_due_paise:
+      Number.isFinite(
+        Number(invoice?.amount_due)
+      )
+        ? Number(invoice.amount_due)
+        : null,
+
+    short_url:
+      invoice?.short_url ||
+      null,
+
+    pdf_url:
+      invoice?.pdf_url ||
+      null,
+
+    issued_at:
+      invoiceUnixToDate(
+        invoice?.issued_at
+      ),
+
+    paid_at:
+      invoiceStatus === 'paid'
+        ? (
+            invoiceUnixToDate(
+              invoice?.paid_at
+            ) ||
+            new Date().toISOString()
+          )
+        : null,
+
+    payload:
+      payload,
+
+    updated_at:
+      new Date().toISOString()
+  };
+
+  const {
+    error: invoiceUpsertError
+  } = await supabase
+    .from('payment_invoices')
+    .upsert(
+      invoiceRecord,
+      {
+        onConflict:
+          'provider_invoice_id'
+      }
+    );
+
+  if (invoiceUpsertError) {
+
+    console.error(
+      '❌ Invoice database error:',
+      invoiceUpsertError
+    );
+
+    return res.status(500).json({
+      error: 'Invoice processing failed'
+    });
+  }
+
+  // -------------------------------------------------
+  // Activate subscription only after successful
+  // invoice payment.
+  // -------------------------------------------------
+
+  if (
+    eventType === 'invoice.paid'
+  ) {
+
+    const {
+      error: activateError
+    } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        updated_at:
+          new Date().toISOString()
+      })
+      .eq(
+        'id',
+        localSubscription.id
+      );
+
+    if (activateError) {
+
+      console.error(
+        '❌ Subscription activation error:',
+        activateError
+      );
+
+      return res.status(500).json({
+        error:
+          'Invoice paid but subscription activation failed'
+      });
+    }
+  }
+
+  // -------------------------------------------------
+  // Mark webhook processed
+  // -------------------------------------------------
+
+  const {
+    error: invoiceProcessedError
+  } = await supabase
+    .from('payment_webhook_events')
+    .update({
+      processed: true,
+      processed_at:
+        new Date().toISOString()
+    })
+    .eq(
+      'event_id',
+      eventId
+    );
+
+  if (invoiceProcessedError) {
+
+    console.error(
+      '❌ Invoice webhook processed-state error:',
+      invoiceProcessedError
+    );
+
+    return res.status(500).json({
+      error: 'Invoice processing failed'
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    invoiceId,
+    status: invoiceStatus
+  });
+}
     // -------------------------------------------------
     // 8. Extract subscription entity
     // -------------------------------------------------
