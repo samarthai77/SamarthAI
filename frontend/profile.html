@@ -232,6 +232,97 @@
             </button>
 
             <p id="profileMessage"></p>
+       <!-- =========================
+     PAYMENT / SUBSCRIPTION
+========================= -->
+
+<div
+    id="paymentSection"
+    style="
+        margin-top:2rem;
+        padding-top:1.5rem;
+        border-top:1px solid #ddd;
+    "
+>
+
+    <h3 style="color:#003366;">
+        💳 My SamarthAI Plan
+    </h3>
+
+    <div
+        id="currentPlanCard"
+        style="
+            background:#f5f7fb;
+            border:1px solid #ddd;
+            border-radius:12px;
+            padding:1rem;
+            margin-top:1rem;
+        "
+    >
+
+        <div
+            id="currentPlanName"
+            style="
+                font-size:20px;
+                font-weight:bold;
+                color:#003366;
+            "
+        >
+            Loading plan...
+        </div>
+
+        <div
+            id="currentPlanStatus"
+            style="
+                margin-top:8px;
+                color:#555;
+            "
+        >
+            Checking subscription...
+        </div>
+
+        <div
+            id="currentPlanEnd"
+            style="
+                margin-top:6px;
+                color:#666;
+            "
+        ></div>
+
+    </div>
+
+    <button
+        type="button"
+        onclick="openPaymentPage()"
+        style="
+            width:100%;
+            margin-top:1rem;
+            background:#003366;
+        "
+    >
+        💳 Upgrade / Manage Plan
+    </button>
+
+
+    <h3
+        style="
+            color:#003366;
+            margin-top:2rem;
+        "
+    >
+        🧾 My Invoices
+    </h3>
+
+    <div
+        id="invoiceList"
+        style="
+            margin-top:1rem;
+        "
+    >
+        Loading invoices...
+    </div>
+
+</div>     
 <!-- DELETE ACCOUNT -->
 <div
     style="
@@ -639,7 +730,340 @@ document.addEventListener('DOMContentLoaded', function () {
                     '❌ ' + error.message;
             }
         }
+// =========================
+// PAYMENT / PLAN STATUS
+// =========================
 
+async function loadPaymentStatus() {
+
+    const token =
+        localStorage.getItem('token');
+
+    if (!token) {
+        return;
+    }
+
+    try {
+
+        const res =
+            await fetch(
+                `${API_BASE}/payment/status`,
+                {
+                    headers: {
+                        'Authorization':
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+            throw new Error(
+                data.error ||
+                'Unable to load payment status'
+            );
+        }
+
+        const planName =
+            document.getElementById(
+                'currentPlanName'
+            );
+
+        const planStatus =
+            document.getElementById(
+                'currentPlanStatus'
+            );
+
+        const planEnd =
+            document.getElementById(
+                'currentPlanEnd'
+            );
+
+        if (!data.isPaid) {
+
+            planName.textContent =
+                'Free Plan';
+
+            planStatus.textContent =
+                'Status: Active';
+
+            planStatus.style.color =
+                '#555';
+
+            planEnd.textContent =
+                '';
+
+            return;
+        }
+
+        planName.textContent =
+            `${data.plan.name} Plan — ₹${data.plan.amount}/month`;
+
+        planStatus.textContent =
+            `Status: ${data.subscription.status}`;
+
+        planStatus.style.color =
+            data.subscription.status === 'active'
+                ? 'green'
+                : '#b36b00';
+
+        if (
+            data.subscription.currentEnd
+        ) {
+
+            const endDate =
+                new Date(
+                    data.subscription.currentEnd
+                );
+
+            planEnd.textContent =
+                `Current billing period ends: ${endDate.toLocaleDateString(
+                    'en-IN',
+                    {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }
+                )}`;
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Payment status error:',
+            error
+        );
+
+        const planName =
+            document.getElementById(
+                'currentPlanName'
+            );
+
+        if (planName) {
+            planName.textContent =
+                'Unable to load plan';
+        }
+    }
+}
+
+
+// =========================
+// LOAD INVOICES
+// =========================
+
+async function loadInvoices() {
+
+    const token =
+        localStorage.getItem('token');
+
+    if (!token) {
+        return;
+    }
+
+    const invoiceList =
+        document.getElementById(
+            'invoiceList'
+        );
+
+    try {
+
+        const res =
+            await fetch(
+                `${API_BASE}/payment/invoices`,
+                {
+                    headers: {
+                        'Authorization':
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+            throw new Error(
+                data.error ||
+                'Unable to load invoices'
+            );
+        }
+
+        const invoices =
+            data.invoices || [];
+
+        if (!invoices.length) {
+
+            invoiceList.innerHTML = `
+                <div
+                    style="
+                        background:#f5f7fb;
+                        border:1px solid #ddd;
+                        border-radius:10px;
+                        padding:1rem;
+                        color:#666;
+                    "
+                >
+                    No invoices available yet.
+                </div>
+            `;
+
+            return;
+        }
+
+        invoiceList.innerHTML =
+            invoices.map(invoice => {
+
+                const amount =
+                    Number(
+                        invoice.amountPaid ||
+                        invoice.amount ||
+                        0
+                    ).toLocaleString(
+                        'en-IN',
+                        {
+                            minimumFractionDigits:2,
+                            maximumFractionDigits:2
+                        }
+                    );
+
+                const paidDate =
+                    invoice.paidAt
+                        ? new Date(
+                            invoice.paidAt
+                          ).toLocaleDateString(
+                            'en-IN',
+                            {
+                                day:'2-digit',
+                                month:'short',
+                                year:'numeric'
+                            }
+                          )
+                        : '—';
+
+                const invoiceNumber =
+                    invoice.invoiceNumber ||
+                    invoice.id;
+
+                const invoiceLink =
+                    invoice.pdfUrl ||
+                    invoice.shortUrl;
+
+                return `
+                    <div
+                        style="
+                            background:#fff;
+                            border:1px solid #ddd;
+                            border-radius:12px;
+                            padding:1rem;
+                            margin-bottom:12px;
+                        "
+                    >
+
+                        <div
+                            style="
+                                font-weight:bold;
+                                color:#003366;
+                            "
+                        >
+                            Invoice:
+                            ${invoiceNumber}
+                        </div>
+
+                        <div
+                            style="
+                                margin-top:6px;
+                                color:#444;
+                            "
+                        >
+                            Amount:
+                            ₹${amount}
+                        </div>
+
+                        <div
+                            style="
+                                margin-top:4px;
+                                color:#666;
+                            "
+                        >
+                            Status:
+                            ${invoice.status}
+                        </div>
+
+                        <div
+                            style="
+                                margin-top:4px;
+                                color:#666;
+                            "
+                        >
+                            Paid:
+                            ${paidDate}
+                        </div>
+
+                        ${
+                            invoiceLink
+                                ? `
+                                    <a
+                                        href="${invoiceLink}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style="
+                                            display:inline-block;
+                                            margin-top:10px;
+                                            background:#ff6b00;
+                                            color:white;
+                                            padding:8px 14px;
+                                            border-radius:8px;
+                                            text-decoration:none;
+                                            font-weight:bold;
+                                        "
+                                    >
+                                        🧾 View Invoice
+                                    </a>
+                                  `
+                                : ''
+                        }
+
+                    </div>
+                `;
+
+            }).join('');
+
+    } catch (error) {
+
+        console.error(
+            'Invoice loading error:',
+            error
+        );
+
+        invoiceList.innerHTML = `
+            <div
+                style="
+                    color:#b00020;
+                    background:#fff5f5;
+                    border:1px solid #f0cccc;
+                    border-radius:10px;
+                    padding:1rem;
+                "
+            >
+                Unable to load invoices.
+            </div>
+        `;
+    }
+}
+
+
+// =========================
+// OPEN PAYMENT PAGE
+// =========================
+
+function openPaymentPage() {
+
+    window.location.href =
+        'payment.html';
+
+}
 // =========================
 // DELETE ACCOUNT
 // =========================
@@ -760,10 +1184,18 @@ if (!currentPassword.trim()) {
         // LOAD ON START
         // =========================
 
-        document.addEventListener(
-            'DOMContentLoaded',
-            loadProfileData
-        );
+       document.addEventListener(
+    'DOMContentLoaded',
+    async function () {
+
+        await loadProfileData();
+
+        await loadPaymentStatus();
+
+        await loadInvoices();
+
+    }
+);
     </script>
 
 </body>
