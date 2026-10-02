@@ -1906,6 +1906,117 @@ router.get('/status', authenticate, async (req, res) => {
   }
 });
 // =====================================================
+// GET MY PAYMENT INVOICES
+// =====================================================
+
+router.get(
+  '/invoices',
+  authenticate,
+  async (req, res) => {
+    try {
+
+      const {
+        data: invoices,
+        error
+      } = await supabase
+        .from('payment_invoices')
+        .select(`
+          id,
+          provider_invoice_id,
+          provider_subscription_id,
+          invoice_number,
+          status,
+          currency,
+          amount_paise,
+          amount_paid_paise,
+          amount_due_paise,
+          short_url,
+          pdf_url,
+          issued_at,
+          paid_at,
+          created_at
+        `)
+        .eq(
+          'user_id',
+          req.user.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        )
+        .limit(50);
+
+      if (error) {
+
+        console.error(
+          '❌ Invoice lookup error:',
+          error
+        );
+
+        return res.status(500).json({
+          error: 'Unable to load invoices'
+        });
+      }
+
+      const safeInvoices =
+        (invoices || []).map(invoice => ({
+          id: invoice.id,
+
+          invoiceNumber:
+            invoice.invoice_number,
+
+          status:
+            invoice.status,
+
+          currency:
+            invoice.currency,
+
+          amount:
+            Number(invoice.amount_paise || 0) /
+            100,
+
+          amountPaid:
+            Number(invoice.amount_paid_paise || 0) /
+            100,
+
+          amountDue:
+            Number(invoice.amount_due_paise || 0) /
+            100,
+
+          issuedAt:
+            invoice.issued_at,
+
+          paidAt:
+            invoice.paid_at,
+
+          shortUrl:
+            invoice.short_url,
+
+          pdfUrl:
+            invoice.pdf_url
+        }));
+
+      return res.json({
+        success: true,
+        invoices: safeInvoices
+      });
+
+    } catch (error) {
+
+      console.error(
+        '❌ Invoice API error:',
+        error
+      );
+
+      return res.status(500).json({
+        error: 'Unable to load invoices'
+      });
+    }
+  }
+);
+// =====================================================
 // EXPORT
 // =====================================================
 
