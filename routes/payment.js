@@ -137,7 +137,255 @@ router.get('/plans', (req, res) => {
     plans
   });
 });
+// =====================================================
+// CREATE RAZORPAY RECURRING SUBSCRIPTION
+// =====================================================
 
+router.post('/create-subscription', authenticate, async (req, res) => {
+  try {
+    const planId =
+      typeof req.body?.planId === 'string'
+        ? req.body.planId.trim().toLowerCase()
+        : '';
+
+    const plan = PLANS[planId];
+
+    if (!plan) {
+      return res.status(400).json({
+        error: 'Invalid plan'
+      });
+    }
+
+    if (!plan.razorpayPlanId) {
+      return res.status(500).json({
+        error: 'Razorpay plan is not configured'
+      });
+    }
+
+    // -------------------------------------------------
+    // Prevent duplicate pending/active subscriptions
+    // for the same user and plan.
+    // -------------------------------------------------
+
+    const { data: existingSubscriptions, error: existingError } =
+      await supabase
+        .from('subscriptions')
+        .select(
+          'id, provider_subscription_id, provider_plan_id, plan_id, status'
+        )
+        .eq('user_id', req.user.id)
+        .eq('plan_id', plan.id)
+        .in('status', [
+          'created',
+          'authenticated',
+          'active'
+        ])
+        .order('created_at', {
+          ascending: false
+        })
+        .limit(1);
+
+    if (existingError) {
+      console.error(
+        '❌ Existing subscription lookup error:',
+        existingError
+      );
+
+      return res.status(500).json({
+        error: 'Unable to create subscription'
+      });
+    }
+
+    const existingSubscription =
+      existingSubscriptions?.[0];
+
+    if (existingSubscription) {
+      return res.json({
+        message: 'Existing subscription available',
+
+        subscription: {
+          id:
+            existingSubscription.provider_subscription_id,
+          planId: existingSubscription.plan_id,
+          status: existingSubscription.status
+        },
+
+        plan: {
+          id: plan.id,
+          name: plan.name,
+          amount: plan.amountPaise / 100,
+          currency: plan.currency,
+          interval: plan.interval
+        },
+
+        razorpayKeyId:
+          process.env.RAZORPAY_KEY_ID
+      });
+    }
+
+    // -------------------------------------------------
+    // Create Razorpay recurring subscription.
+    //
+    // 120 monthly cycles = 10 years.
+    // This avoids using a one-time payment order.
+    // -------------------------------------------------
+
+    const razorpaySubscription =
+      await razorpay.subscriptions.create({
+        plan_id: plan.razorpayPlanId,
+        total_count: 120,
+        quantity: 1,
+        customer_notify: true,
+
+        notes: {
+          user_id: String(req.user.id),
+          plan_id: plan.id,
+          plan_name: plan.name
+        }
+      });
+
+    if (!razorpaySubscription?.id) {
+      throw new Error(
+        'Razorpay did not return a subscription ID'
+      );
+    }
+
+    // -------------------------------------------------
+    // Save subscription in Supabase
+    // -------------------------------------------------
+
+    const unixToDate = (value) =>
+      Number.isFinite(Number(value))
+        ? new Date(Number(value) * 1000).toISOString()
+        : null;
+
+    const {
+      data: savedSubscription,
+      error: saveError
+    } = await supabase
+      .from('subscriptions')
+      .insert([
+        {
+          user_id: req.user.id,
+          provider: 'razorpay',
+
+          provider_subscription_id:
+            razorpaySubscription.id,
+
+          provider_plan_id:
+            plan.razorpayPlanId,
+
+          plan_id:
+            plan.id,
+
+          currency:
+            plan.currency,
+
+          status:
+            razorpaySubscription.status || 'created',
+
+          current_start:
+            unixToDate(
+              razorpaySubscription.current_start
+            ),
+
+          current_end:
+            unixToDate(
+              razorpaySubscription.current_end
+            ),
+
+          started_at:
+            unixToDate(
+              razorpaySubscription.start_at
+            ),
+
+          ended_at:
+            unixToDate(
+              razorpaySubscription.ended_at
+            ),
+
+          total_count:
+            razorpaySubscription.total_count ?? 120,
+
+          paid_count:
+            razorpaySubscription.paid_count ?? 0,
+
+          remaining_count:
+            razorpaySubscription.remaining_count ?? 120,
+
+          created_at:
+            new Date().toISOString(),
+
+          updated_at:
+            new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+    if (saveError) {
+      console.error(
+        '❌ Subscription database error:',
+        saveError
+      );
+
+      // If Razorpay created it but local DB failed,
+      // do not silently pretend that creation failed.
+      return res.status(500).json({
+        error:
+          'Subscription created but could not be saved'
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message:
+        'Recurring subscription created',
+
+      subscription: {
+        id:
+          razorpaySubscription.id,
+
+        status:
+          razorpaySubscription.status,
+
+        shortUrl:
+          razorpaySubscription.short_url,
+
+        totalCount:
+          razorpaySubscription.total_count,
+
+        remainingCount:
+          razorpaySubscription.remaining_count
+      },
+
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        amount: plan.amountPaise / 100,
+        currency: plan.currency,
+        interval: plan.interval
+      },
+
+      paymentRecordId:
+        savedSubscription.id,
+
+      razorpayKeyId:
+        process.env.RAZORPAY_KEY_ID
+    });
+
+  } catch (error) {
+    console.error(
+      '❌ Razorpay create subscription error:',
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        'Unable to create subscription'
+    });
+  }
+});
 // =====================================================
 // CREATE RAZORPAY ORDER
 // =====================================================
