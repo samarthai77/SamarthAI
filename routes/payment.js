@@ -806,7 +806,565 @@ router.post('/verify', authenticate, async (req, res) => {
     });
   }
 });
+// =====================================================
+// RAZORPAY SUBSCRIPTION WEBHOOK
+// =====================================================
 
+router.post('/webhook', async (req, res) => {
+  try {
+    // -------------------------------------------------
+    // 1. Webhook secret must exist
+    // -------------------------------------------------
+
+    const webhookSecret =
+      process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error(
+        '❌ RAZORPAY_WEBHOOK_SECRET is not configured'
+      );
+
+      return res.status(500).json({
+        error: 'Webhook is not configured'
+      });
+    }
+
+    // -------------------------------------------------
+    // 2. Raw request body is required for HMAC
+    // -------------------------------------------------
+
+    if (!Buffer.isBuffer(req.body)) {
+      console.error(
+        '❌ Razorpay webhook raw body is missing'
+      );
+
+      return res.status(400).json({
+        error: 'Invalid webhook body'
+      });
+    }
+
+    const rawBody = req.body;
+
+    // -------------------------------------------------
+    // 3. Verify Razorpay webhook signature
+    // -------------------------------------------------
+
+    const receivedSignature =
+      req.headers['x-razorpay-signature'];
+
+    if (
+      typeof receivedSignature !== 'string' ||
+      !receivedSignature
+    ) {
+      return res.status(400).json({
+        error: 'Webhook signature missing'
+      });
+    }
+
+    const generatedSignature =
+      crypto
+        .createHmac(
+          'sha256',
+          webhookSecret
+        )
+        .update(rawBody)
+        .digest('hex');
+
+    const receivedBuffer =
+      Buffer.from(
+        receivedSignature,
+        'utf8'
+      );
+
+    const generatedBuffer =
+      Buffer.from(
+        generatedSignature,
+        'utf8'
+      );
+
+    if (
+      receivedBuffer.length !==
+        generatedBuffer.length ||
+      !crypto.timingSafeEqual(
+        receivedBuffer,
+        generatedBuffer
+      )
+    ) {
+      console.warn(
+        '⚠️ Invalid Razorpay webhook signature'
+      );
+
+      return res.status(400).json({
+        error: 'Invalid webhook signature'
+      });
+    }
+
+    // -------------------------------------------------
+    // 4. Parse verified payload
+    // -------------------------------------------------
+
+    let payload;
+
+    try {
+      payload = JSON.parse(
+        rawBody.toString('utf8')
+      );
+    } catch (parseError) {
+      console.error(
+        '❌ Invalid Razorpay webhook JSON:',
+        parseError
+      );
+
+      return res.status(400).json({
+        error: 'Invalid webhook payload'
+      });
+    }
+
+    const eventType = payload?.event;
+
+    if (
+      typeof eventType !== 'string' ||
+      !eventType
+    ) {
+      return res.status(400).json({
+        error: 'Webhook event missing'
+      });
+    }
+
+    // -------------------------------------------------
+    // 5. Get Razorpay event ID
+    // -------------------------------------------------
+
+    const eventIdHeader =
+      req.headers['x-razorpay-event-id'];
+
+    const eventId =
+      typeof eventIdHeader === 'string' &&
+      eventIdHeader.trim()
+        ? eventIdHeader.trim()
+        : crypto
+            .createHash('sha256')
+            .update(rawBody)
+            .digest('hex');
+
+    // -------------------------------------------------
+    // 6. Idempotency
+    // -------------------------------------------------
+
+    const {
+      data: existingEvent,
+      error: existingEventError
+    } = await supabase
+      .from('payment_webhook_events')
+      .select(
+        'id, processed'
+      )
+      .eq(
+        'event_id',
+        eventId
+      )
+      .maybeSingle();
+
+    if (existingEventError) {
+      console.error(
+        '❌ Webhook event lookup error:',
+        existingEventError
+      );
+
+      return res.status(500).json({
+        error: 'Webhook processing failed'
+      });
+    }
+
+    if (
+      existingEvent?.processed === true
+    ) {
+      return res.status(200).json({
+        success: true,
+        message: 'Webhook already processed'
+      });
+    }
+
+    // -------------------------------------------------
+    // 7. Save webhook event
+    // -------------------------------------------------
+
+    if (!existingEvent) {
+      const {
+        error: webhookInsertError
+      } = await supabase
+        .from('payment_webhook_events')
+        .insert([
+          {
+            provider: 'razorpay',
+            event_id: eventId,
+            event_type: eventType,
+            payload,
+            processed: false
+          }
+        ]);
+
+      if (webhookInsertError) {
+        // Another simultaneous request may have
+        // inserted the same event first.
+        if (
+          webhookInsertError.code !== '23505'
+        ) {
+          console.error(
+            '❌ Webhook event insert error:',
+            webhookInsertError
+          );
+
+          return res.status(500).json({
+            error: 'Webhook processing failed'
+          });
+        }
+      }
+    }
+
+    // -------------------------------------------------
+    // 8. Extract subscription entity
+    // -------------------------------------------------
+
+    const subscription =
+      payload?.payload?.subscription?.entity;
+
+    const subscriptionId =
+      subscription?.id;
+
+    if (
+      typeof subscriptionId !== 'string' ||
+      !subscriptionId
+    ) {
+      // This should not happen for the subscription
+      // events configured in Razorpay Dashboard.
+      console.warn(
+        '⚠️ Subscription entity missing in webhook',
+        {
+          eventType,
+          eventId
+        }
+      );
+
+      await supabase
+        .from('payment_webhook_events')
+        .update({
+          processed: true,
+          processed_at:
+            new Date().toISOString()
+        })
+        .eq(
+          'event_id',
+          eventId
+        );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Webhook received'
+      });
+    }
+
+    // -------------------------------------------------
+    // 9. Find local subscription
+    // -------------------------------------------------
+
+    const {
+      data: localSubscription,
+      error: subscriptionLookupError
+    } = await supabase
+      .from('subscriptions')
+      .select(
+        'id, user_id, plan_id, provider_plan_id, status'
+      )
+      .eq(
+        'provider_subscription_id',
+        subscriptionId
+      )
+      .maybeSingle();
+
+    if (subscriptionLookupError) {
+      console.error(
+        '❌ Subscription lookup error:',
+        subscriptionLookupError
+      );
+
+      return res.status(500).json({
+        error: 'Webhook processing failed'
+      });
+    }
+
+    // -------------------------------------------------
+    // 10. Determine subscription status
+    // -------------------------------------------------
+
+    const statusFromEntity =
+      typeof subscription?.status === 'string'
+        ? subscription.status.toLowerCase()
+        : '';
+
+    const eventStatusMap = {
+      'subscription.authenticated':
+        'authenticated',
+
+      'subscription.activated':
+        'active',
+
+      'subscription.charged':
+        'active',
+
+      'subscription.pending':
+        'pending',
+
+      'subscription.halted':
+        'halted',
+
+      'subscription.cancelled':
+        'cancelled',
+
+      'subscription.completed':
+        'completed',
+
+      'subscription.paused':
+        'paused',
+
+      'subscription.resumed':
+        'active'
+    };
+
+    const allowedStatuses = new Set([
+      'created',
+      'pending',
+      'authenticated',
+      'active',
+      'paused',
+      'cancelled',
+      'completed',
+      'expired',
+      'halted'
+    ]);
+
+    let nextStatus =
+      eventStatusMap[eventType] ||
+      statusFromEntity;
+
+    if (
+      !allowedStatuses.has(nextStatus)
+    ) {
+      nextStatus =
+        localSubscription?.status ||
+        'created';
+    }
+
+    // -------------------------------------------------
+    // 11. Convert Razorpay Unix timestamp to ISO
+    // -------------------------------------------------
+
+    const unixToDate = (value) =>
+      Number.isFinite(Number(value))
+        ? new Date(
+            Number(value) * 1000
+          ).toISOString()
+        : null;
+
+    const subscriptionUpdate = {
+      status: nextStatus,
+
+      current_start:
+        unixToDate(
+          subscription?.current_start
+        ),
+
+      current_end:
+        unixToDate(
+          subscription?.current_end
+        ),
+
+      started_at:
+        unixToDate(
+          subscription?.start_at
+        ),
+
+      ended_at:
+        unixToDate(
+          subscription?.ended_at
+        ),
+
+      total_count:
+        subscription?.total_count ??
+        null,
+
+      paid_count:
+        subscription?.paid_count ??
+        null,
+
+      remaining_count:
+        subscription?.remaining_count ??
+        null,
+
+      cancel_at_cycle_end:
+        subscription?.cancel_at_cycle_end ??
+        false,
+
+      updated_at:
+        new Date().toISOString()
+    };
+
+    // -------------------------------------------------
+    // 12. Update local subscription
+    // -------------------------------------------------
+
+    if (localSubscription) {
+      const {
+        error: updateSubscriptionError
+      } = await supabase
+        .from('subscriptions')
+        .update(subscriptionUpdate)
+        .eq(
+          'id',
+          localSubscription.id
+        );
+
+      if (updateSubscriptionError) {
+        console.error(
+          '❌ Subscription update error:',
+          updateSubscriptionError
+        );
+
+        return res.status(500).json({
+          error: 'Webhook processing failed'
+        });
+      }
+    } else {
+      // -------------------------------------------------
+      // Safety fallback:
+      // If Razorpay has a subscription that is not yet
+      // present locally, create the local record when
+      // enough trusted information is available.
+      // -------------------------------------------------
+
+      const notes =
+        subscription?.notes || {};
+
+      const userId =
+        typeof notes.user_id === 'string'
+          ? notes.user_id
+          : null;
+
+      const planIdFromNotes =
+        typeof notes.plan_id === 'string'
+          ? notes.plan_id
+          : null;
+
+      if (
+        !userId ||
+        !planIdFromNotes ||
+        !PLANS[planIdFromNotes]
+      ) {
+        console.error(
+          '❌ Cannot link Razorpay subscription to user',
+          {
+            subscriptionId,
+            eventType
+          }
+        );
+
+        return res.status(500).json({
+          error: 'Subscription could not be linked'
+        });
+      }
+
+      const {
+        error: insertSubscriptionError
+      } = await supabase
+        .from('subscriptions')
+        .insert([
+          {
+            user_id: userId,
+            provider: 'razorpay',
+
+            provider_subscription_id:
+              subscriptionId,
+
+            provider_plan_id:
+              subscription?.plan_id ||
+              PLANS[planIdFromNotes]
+                .razorpayPlanId,
+
+            plan_id:
+              planIdFromNotes,
+
+            currency:
+              subscription?.currency ||
+              PLANS[planIdFromNotes]
+                .currency,
+
+            ...subscriptionUpdate,
+
+            created_at:
+              new Date().toISOString()
+          }
+        ]);
+
+      if (insertSubscriptionError) {
+        console.error(
+          '❌ Subscription fallback insert error:',
+          insertSubscriptionError
+        );
+
+        return res.status(500).json({
+          error: 'Webhook processing failed'
+        });
+      }
+    }
+
+    // -------------------------------------------------
+    // 13. Mark webhook as processed
+    // -------------------------------------------------
+
+    const {
+      error: processedError
+    } = await supabase
+      .from('payment_webhook_events')
+      .update({
+        processed: true,
+        processed_at:
+          new Date().toISOString()
+      })
+      .eq(
+        'event_id',
+        eventId
+      );
+
+    if (processedError) {
+      console.error(
+        '❌ Webhook processed-state error:',
+        processedError
+      );
+
+      return res.status(500).json({
+        error: 'Webhook processing failed'
+      });
+    }
+
+    // -------------------------------------------------
+    // 14. Fast success response
+    // -------------------------------------------------
+
+    return res.status(200).json({
+      success: true
+    });
+
+  } catch (error) {
+    console.error(
+      '❌ Razorpay webhook error:',
+      error
+    );
+
+    return res.status(500).json({
+      error: 'Webhook processing failed'
+    });
+  }
+});
 // =====================================================
 // EXPORT
 // =====================================================
