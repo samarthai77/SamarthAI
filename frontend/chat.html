@@ -2704,8 +2704,47 @@ function addMessage(
             : 'ai-msg'
         );
 
-    msg.textContent =
-        text;
+  const content =
+    document.createElement('div');
+
+content.className =
+    'msg-content';
+
+const normalizedText =
+    String(text ?? '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .trim();
+
+const paragraphs =
+    normalizedText.split(/\n{2,}/);
+
+paragraphs.forEach((paragraphText) => {
+
+    const p =
+        document.createElement('p');
+
+    const lines =
+        paragraphText.split('\n');
+
+    lines.forEach((line, lineIndex) => {
+
+        p.appendChild(
+            document.createTextNode(line)
+        );
+
+        if(lineIndex < lines.length - 1){
+            p.appendChild(
+                document.createElement('br')
+            );
+        }
+
+    });
+
+    content.appendChild(p);
+});
+
+msg.appendChild(content);
 
     const time =
         document.createElement('div');
