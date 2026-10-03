@@ -878,7 +878,7 @@ grid-template-columns:repeat(4,1fr);
     position:fixed !important;
     left:0 !important;
     right:0 !important;
-    bottom:0 !important;
+    bottom:8px !important;
     width:100% !important;
 
     height:auto !important;
@@ -901,8 +901,8 @@ grid-template-columns:repeat(4,1fr);
 }
  .chat-input-box textarea{
     font-size:14px;
-    padding:9px 8px;
-    line-height:1.45;
+    padding:10px 10px;
+    line-height:1.5;
     min-height:36px;
     max-height:140px;
 }
@@ -3747,28 +3747,7 @@ if(chatInput){
 
     resizeChatInput();
 }
-/* ===== ENTER SEND ===== */
 
-document
-    .getElementById('chatInput')
-    .addEventListener(
-        'keydown',
-        e => {
-
-            if(
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                !e.repeat
-            ){
-
-                e.preventDefault();
-
-                sendMessage();
-
-            }
-
-        }
-    );
 
 
 /* ===== FILE SELECT ===== */
