@@ -2790,9 +2790,13 @@ const normalizedText =
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         .trim();
-
+const formattedText =
+    normalizedText
+        .replace(/\s+(#{1,6})\s+/g, '\n$1 ')
+        .replace(/\s+(\d+\.)\s+/g, '\n$1 ')
+        .replace(/\s+([-*•])\s+/g, '\n$1 ');
 const lines =
-    normalizedText.split('\n');
+    formattedText.split('\n');
 
 let currentList = null;
 let currentListType = null;
