@@ -874,25 +874,24 @@ grid-template-columns:repeat(4,1fr);
 
 
     /* CHAT INPUT */
-    .input-area{
-        position:fixed !important;
+   .input-area{
+    position:fixed !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    width:100% !important;
 
-        left:0 !important;
-        right:0 !important;
-        bottom:0 !important;
+    height:auto !important;
+    min-height:72px !important;
+    max-height:156px !important;
+    align-items:flex-end !important;
 
-        width:100% !important;
-        height:72px !important;
+    padding:8px 8px !important;
 
-        padding:8px 8px !important;
-
-        background:rgba(255,255,255,.98);
-
-        border-top:1px solid #e5ebf1;
-
-        z-index:9999;
-    }
-
+    background:rgba(255,255,255,.98);
+    border-top:1px solid #e5ebf1;
+    z-index:9999;
+}
   .chat-input-box{
     width:100%;
     height:auto !important;
@@ -1287,14 +1286,13 @@ body{
     border:1px solid rgba(160,200,255,.16) !important;
 }
 
-.chat-input-box input{
+.chat-input-box textarea{
     color:#edf5ff !important;
 }
 
-.chat-input-box input::placeholder{
+.chat-input-box textarea::placeholder{
     color:rgba(220,235,255,.48) !important;
 }
-
 .attach-btn{
     color:#a9c4e5 !important;
 }
@@ -3702,7 +3700,35 @@ function speakAIResponse(text){
 
 }
 
+/* ===== AUTO RESIZE CHAT INPUT ===== */
 
+const chatInput =
+    document.getElementById('chatInput');
+
+function resizeChatInput(){
+
+    if(!chatInput) return;
+
+    chatInput.style.height = 'auto';
+
+    const maxHeight = 140;
+
+    chatInput.style.height =
+        Math.min(
+            chatInput.scrollHeight,
+            maxHeight
+        ) + 'px';
+}
+
+if(chatInput){
+
+    chatInput.addEventListener(
+        'input',
+        resizeChatInput
+    );
+
+    resizeChatInput();
+}
 /* ===== ENTER SEND ===== */
 
 document
