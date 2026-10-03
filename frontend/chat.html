@@ -1765,7 +1765,7 @@ body{
         <button
             class="menu-btn"
             type="button"
-            onclick="history.back()"
+          onclick="openConversationPanel()"
             aria-label="Back">
             ☰
         </button>
@@ -3808,8 +3808,7 @@ loadChatProfile();
  loadChatHistory();   
 /* ===== MOBILE KEYBOARD FIX ===== */
 
-chatInput =
-    document.getElementById('chatInput');
+
 if(chatInput && window.visualViewport){
 
     const keepInputVisible = () => {
