@@ -219,13 +219,31 @@ body{overflow:hidden}
 }
 
 .msg{
-    padding:9px 12px;
+    padding:11px 13px;
     border-radius:16px;
-    max-width:min(78%,620px);
-    line-height:1.45;
+    max-width:min(82%,680px);
+    line-height:1.55;
     font-size:14px;
-    white-space:pre-wrap;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
     box-shadow:0 2px 8px rgba(0,0,0,.05)
+}
+
+.msg-content{
+    display:block;
+}
+
+.msg-content p{
+    margin:0 0 10px;
+}
+
+.msg-content p:last-child{
+    margin-bottom:0;
+}
+
+.msg-content br{
+    line-height:1.55;
 }
 
 .user-msg{
