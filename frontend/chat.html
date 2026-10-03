@@ -1310,7 +1310,25 @@ body{
     background:rgba(7,18,38,.96) !important;
     border:1px solid rgba(150,200,255,.15) !important;
 }
+#featureMenu{
+    display:none !important;
+    position:fixed !important;
+    left:10px !important;
+    right:10px !important;
+    bottom:80px !important;
+    width:auto !important;
+    max-height:calc(100dvh - 150px) !important;
+    overflow-y:auto !important;
+    grid-template-columns:repeat(4,1fr) !important;
+    gap:6px !important;
+    padding:10px !important;
+    border-radius:18px !important;
+    z-index:100000 !important;
+}
 
+#featureMenu.open{
+    display:grid !important;
+}
 .menu-feature{
     background:rgba(255,255,255,.07) !important;
     color:#eaf3ff !important;
