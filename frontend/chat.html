@@ -4204,31 +4204,96 @@ loadChatProfile();
  loadChatHistory();   
 /* ===== MOBILE KEYBOARD FIX ===== */
 
-
 if(chatInput && window.visualViewport){
 
-    const keepInputVisible = () => {
+    const viewport = window.visualViewport;
 
-        requestAnimationFrame(() => {
+    const messages =
+        document.querySelector('.messages');
 
-            chatInput.scrollIntoView({
-                block:'nearest',
-                behavior:'instant'
+    const inputArea =
+        document.querySelector('.input-area');
+
+
+    function syncChatViewport(){
+
+        if(!messages) return;
+
+
+        const viewportHeight =
+            viewport.height;
+
+
+        /*
+         * Header ~58px
+         * Input area ~72px
+         * Remaining space = chat messages
+         */
+
+        const availableHeight =
+            Math.max(
+                180,
+                viewportHeight - 130
+            );
+
+
+        messages.style.maxHeight =
+            availableHeight + 'px';
+
+
+        /*
+         * Keyboard open hone par
+         * latest message visible rahe.
+         */
+
+        if(
+            document.activeElement ===
+            chatInput
+        ){
+
+            requestAnimationFrame(() => {
+
+                messages.scrollTop =
+                    messages.scrollHeight;
+
             });
 
-        });
+        }
 
-    };
+    }
+
+
+    viewport.addEventListener(
+        'resize',
+        syncChatViewport
+    );
+
+
+    viewport.addEventListener(
+        'scroll',
+        syncChatViewport
+    );
+
 
     chatInput.addEventListener(
         'focus',
         () => {
+
             setTimeout(
-                keepInputVisible,
-                300
+                syncChatViewport,
+                100
             );
+
+            setTimeout(
+                syncChatViewport,
+                350
+            );
+
         }
     );
+
+
+    syncChatViewport();
 
 }
  /* =====================================================
