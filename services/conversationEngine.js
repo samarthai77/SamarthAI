@@ -2455,7 +2455,52 @@ function deterministicToolFallback({
       })
       .join('\n');
   }
+if (tool === 'web') {
+    const results =
+      Array.isArray(data?.results)
+        ? data.results
+        : [];
 
+    if (!results.length) {
+      return 'Internet search se koi reliable result nahi mila.';
+    }
+
+    return results
+      .slice(0, 5)
+      .map((item, index) => {
+        const title =
+          safeString(
+            item?.title || 'Search Result',
+            300
+          );
+
+        const snippet =
+          safeString(
+            item?.content ||
+            item?.snippet ||
+            item?.description ||
+            '',
+            800
+          );
+
+        const url =
+          safeString(
+            item?.url || '',
+            1000
+          );
+
+        return [
+          `${index + 1}. ${title}`,
+          snippet,
+          url
+            ? `Source: ${url}`
+            : ''
+        ]
+          .filter(Boolean)
+          .join('\n');
+      })
+      .join('\n\n');
+  }
   if (tool === 'weather') {
     return 'Mausam ki jankari mil gayi hai.';
   }
