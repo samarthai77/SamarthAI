@@ -2456,21 +2456,35 @@ function deterministicToolFallback({
       .join('\n');
   }
 if (tool === 'web') {
-    const results =
-      Array.isArray(data?.results)
-        ? data.results
-        : [];
 
-    if (!results.length) {
+    let results = [];
+
+    try {
+      if (
+        typeof data?.text === 'string'
+      ) {
+        results =
+          JSON.parse(data.text);
+      }
+    } catch {
+      results = [];
+    }
+
+    if (
+      !Array.isArray(results) ||
+      !results.length
+    ) {
       return 'Internet search se koi reliable result nahi mila.';
     }
 
     return results
       .slice(0, 5)
       .map((item, index) => {
+
         const title =
           safeString(
-            item?.title || 'Search Result',
+            item?.title ||
+            'Search Result',
             300
           );
 
@@ -2485,7 +2499,8 @@ if (tool === 'web') {
 
         const url =
           safeString(
-            item?.url || '',
+            item?.url ||
+            '',
             1000
           );
 
@@ -2929,10 +2944,72 @@ if (
 context.timezone =
   normalizedLocation?.timezone ||
   'UTC';
-  /*
-   * Planner failure must not become a fabricated answer.
+/*
+   * Planner failure fallback:
+   * Explicit internet requests can bypass the AI planner
+   * and go directly to Tavily.
    */
   if (plan.planner_error) {
+
+    const lowerMessage =
+      cleanMessage.toLowerCase();
+
+    const explicitWebRequest =
+      /internet|web search|web par|internet par|online search|online check|google par|google pe|search karke|search karo|search kar ke|internet se|online se|latest news|taza khabar|taaza khabar|current price|current rate|live price|live rate/.test(
+        lowerMessage
+      );
+
+    if (explicitWebRequest) {
+
+      const webPlan = {
+        ...emptyPlan(),
+        mode: 'tool',
+        target: 'unknown',
+        tool: 'web',
+        tool_args: {
+          query: cleanMessage
+        },
+        needs_web: true,
+        needs_history: true,
+        response_language: 'hi',
+        reason:
+          'Explicit internet search requested; using direct web fallback.'
+      };
+
+      toolResult =
+        await executeTool({
+          userId,
+          plan: webPlan,
+          location: normalizedLocation,
+          context
+        });
+
+      response =
+        await finalToolAnswer({
+          message: cleanMessage,
+          plan: webPlan,
+          toolResult,
+          context
+        });
+
+      const memoryResult =
+        await saveMemory({
+          userId,
+          message: cleanMessage,
+          plan: webPlan
+        });
+
+      return {
+        response,
+        intent: 'web',
+        tool: 'web',
+        web_used:
+          toolResult?.ok === true,
+        memory_saved:
+          memoryResult?.saved === true
+      };
+    }
+
     return {
       response:
         'Abhi AI planning service busy hai. Thodi der baad dobara try kijiye.',
