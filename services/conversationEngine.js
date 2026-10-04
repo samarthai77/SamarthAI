@@ -1192,6 +1192,21 @@ Use when current external/public internet information is required
 and the request cannot be answered from conversation context,
 memory, or SamarthAI internal tools.
 
+Use the web tool whenever the user explicitly asks to:
+- search the internet
+- search online
+- browse the web
+- check online
+- check Google or public websites
+- find latest/current information
+- verify information from the internet
+- find current news, prices, products, companies, websites,
+  public facts, or other live external information
+
+If the user asks whether SamarthAI has internet access,
+or asks to test/check internet access, use the web tool.
+Do not answer this from general knowledge.
+
 IMPORTANT:
 - Current time must use the time tool.
 - User's current location must use user_location.
@@ -1200,8 +1215,9 @@ IMPORTANT:
 - Weather must use weather.
 - Do not fabricate current values.
 - Do not claim to have checked a tool unless the tool is actually used.
+- If current external information is requested, prefer web over normal conversation.
 - If the user's question refers to something from previous turns,
-use conversation history.
+  use conversation history.
 - If a person's name appears in the family directory, use that
 context instead of saying the person is unknown.
 - Do not expose internal IDs, database implementation details,
@@ -2143,19 +2159,46 @@ if(!place){
        * Web search is intentionally performed only here.
        * Planner decides whether external information is needed.
        */
-     const result =
-    await callOpenAI({
-        message:
-            query,
+   const tavilyResponse =
+        await fetch(
+          'https://api.tavily.com/search',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization':
+                `Bearer ${process.env.TAVILY_API_KEY}`,
+              'Content-Type':
+                'application/json'
+            },
+            body: JSON.stringify({
+              query,
+              search_depth: 'basic',
+              max_results: 5,
+              include_answer: false
+            })
+          }
+        );
 
-        history: [],
+      if (!tavilyResponse.ok) {
+        const errorText =
+          await tavilyResponse.text();
 
-        memoryText:
-            '',
+        throw new Error(
+          `Tavily search failed: ${tavilyResponse.status} ${errorText}`
+        );
+      }
 
-        useWeb:
-            true
-    });
+      const tavilyData =
+        await tavilyResponse.json();
+
+      const result = {
+        text: JSON.stringify(
+          tavilyData.results || []
+        ),
+        provider: 'tavily',
+        model: 'tavily-search',
+        web_used: true
+      };
 
       return {
         ok: true,
