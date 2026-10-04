@@ -1896,7 +1896,57 @@ body{
 .input-area{
     background:#FFFFFF !important;
     border-top:1px solid #E5E7EB !important;
-}   
+}  
+  /* ===== AI MESSAGE ACTIONS ===== */
+
+.msg-actions{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    margin-top:8px;
+    padding-top:4px;
+}
+
+.msg-action-btn{
+    width:34px;
+    height:32px;
+    border:0;
+    background:transparent;
+    color:#64748B;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:17px;
+    cursor:pointer;
+    transition:.18s ease;
+}
+
+.msg-action-btn:hover{
+    background:#F1F5F9;
+    color:#1F2937;
+}
+
+.msg-action-btn:active{
+    transform:scale(.92);
+}
+
+.msg-action-btn.active{
+    background:#FFF1E8;
+    color:#FF6B00;
+}
+
+@media(max-width:600px){
+    .msg-actions{
+        gap:2px;
+    }
+
+    .msg-action-btn{
+        width:34px;
+        height:32px;
+        font-size:16px;
+    }
+}  
 </style>
 </head>
 
@@ -3272,7 +3322,197 @@ msg.appendChild(content);
         getTime();
 
     msg.appendChild(time);
+/* ===== AI MESSAGE ACTIONS ===== */
 
+if(!isUser){
+
+    const actions =
+        document.createElement('div');
+
+    actions.className =
+        'msg-actions';
+
+    const copyBtn =
+        document.createElement('button');
+
+    copyBtn.className =
+        'msg-action-btn';
+
+    copyBtn.type = 'button';
+    copyBtn.title = 'Copy';
+    copyBtn.textContent = '⧉';
+
+    copyBtn.onclick = async () => {
+
+        try{
+
+            await navigator.clipboard.writeText(
+                content.innerText
+            );
+
+            copyBtn.textContent = '✓';
+
+            setTimeout(() => {
+                copyBtn.textContent = '⧉';
+            },1200);
+
+        }catch(error){
+
+            console.warn(
+                '[COPY]',
+                error
+            );
+
+        }
+
+    };
+
+
+    const likeBtn =
+        document.createElement('button');
+
+    likeBtn.className =
+        'msg-action-btn';
+
+    likeBtn.type = 'button';
+    likeBtn.title = 'Like';
+    likeBtn.textContent = '👍';
+
+    likeBtn.onclick = () => {
+
+        likeBtn.classList.toggle('active');
+
+        dislikeBtn.classList.remove(
+            'active'
+        );
+
+    };
+
+
+    const dislikeBtn =
+        document.createElement('button');
+
+    dislikeBtn.className =
+        'msg-action-btn';
+
+    dislikeBtn.type = 'button';
+    dislikeBtn.title = 'Dislike';
+    dislikeBtn.textContent = '👎';
+
+    dislikeBtn.onclick = () => {
+
+        dislikeBtn.classList.toggle('active');
+
+        likeBtn.classList.remove(
+            'active'
+        );
+
+    };
+
+
+    const listenBtn =
+        document.createElement('button');
+
+    listenBtn.className =
+        'msg-action-btn';
+
+    listenBtn.type = 'button';
+    listenBtn.title = 'Listen';
+    listenBtn.textContent = '🔊';
+
+    listenBtn.onclick = () => {
+
+        if(!('speechSynthesis' in window)){
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+
+        const utterance =
+            new SpeechSynthesisUtterance(
+                content.innerText
+            );
+
+        utterance.lang = 'hi-IN';
+
+        window.speechSynthesis.speak(
+            utterance
+        );
+
+    };
+
+
+    const shareBtn =
+        document.createElement('button');
+
+    shareBtn.className =
+        'msg-action-btn';
+
+    shareBtn.type = 'button';
+    shareBtn.title = 'Share';
+    shareBtn.textContent = '↗';
+
+    shareBtn.onclick = async () => {
+
+        const shareText =
+            content.innerText;
+
+        if(navigator.share){
+
+            try{
+
+                await navigator.share({
+                    title:'SamarthAI Kavach',
+                    text:shareText
+                });
+
+            }catch(error){
+
+                if(error.name !== 'AbortError'){
+                    console.warn(
+                        '[SHARE]',
+                        error
+                    );
+                }
+
+            }
+
+        }else{
+
+            try{
+
+                await navigator.clipboard.writeText(
+                    shareText
+                );
+
+                shareBtn.textContent = '✓';
+
+                setTimeout(() => {
+                    shareBtn.textContent = '↗';
+                },1200);
+
+            }catch(error){
+
+                console.warn(
+                    '[SHARE]',
+                    error
+                );
+
+            }
+
+        }
+
+    };
+
+
+    actions.appendChild(copyBtn);
+    actions.appendChild(likeBtn);
+    actions.appendChild(dislikeBtn);
+    actions.appendChild(listenBtn);
+    actions.appendChild(shareBtn);
+
+    msg.appendChild(actions);
+}
     wrap.appendChild(msg);
 
     box.appendChild(wrap);
