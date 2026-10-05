@@ -2530,7 +2530,8 @@ async function finalToolAnswer({
   message,
   plan,
   toolResult,
-  context
+  context,
+  responseLanguage = 'hi-IN'
 }) {
   const safeResult =
     sanitizeToolResult(toolResult);
@@ -2578,7 +2579,13 @@ ${safeResult.tool}
 
 ACTUAL TOOL RESULT:
 ${JSON.stringify(safeResult.data)}
+RESPONSE LANGUAGE:
+${responseLanguage}
 
+IMPORTANT:
+Respond in the selected response language.
+Use the selected language consistently unless the user explicitly asks
+for another language.
 RULES: 
 - Use only the actual tool result for current/factual values.
 - Do not invent missing information.
@@ -2722,8 +2729,15 @@ ${
         })
         .join('\n')
     : 'No family directory available.'
+  
 }
+RESPONSE LANGUAGE:
+${responseLanguage}
 
+IMPORTANT:
+Respond in the selected response language.
+Use the selected language consistently unless the user explicitly asks
+for another language.
 RULES:
 - Continue the conversation naturally.
 - Use previous conversation when the user refers to it.
@@ -2851,9 +2865,9 @@ async function runConversation({
   userId,
   message,
   location = null,
-  conversationId = null
+  conversationId = null,
+  responseLanguage = 'hi-IN'
 }) {
-
   const cleanMessage =
     safeString(message, 5000);
 
@@ -2903,12 +2917,15 @@ if (
   /*
    * AI decides what the user means and which tool is required.
    */
-  const plan =
+ const plan =
     await planConversation({
-      message: cleanMessage,
-      context,
-      location: normalizedLocation
+        message: cleanMessage,
+        context,
+        location: normalizedLocation,
+        responseLanguage
     });
+plan.response_language =
+  responseLanguage;  
 /*
  * -------------------------------------------------------
  * DATE-AWARE HISTORY RETRIEVAL
@@ -3037,13 +3054,14 @@ context.timezone =
         context
       });
 
-    response =
-      await finalToolAnswer({
+  response =
+    await finalToolAnswer({
         message: cleanMessage,
         plan,
         toolResult,
-        context
-      });
+        context,
+        responseLanguage
+    });
   }
 
   /*
@@ -3052,11 +3070,12 @@ context.timezone =
    * -------------------------------------------------------
    */
   else {
-    response =
-      await answerWithoutTool({
+  response =
+    await answerWithoutTool({
         message: cleanMessage,
-        context
-      });
+        context,
+        responseLanguage
+    }); 
   }
 
   /*
