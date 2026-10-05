@@ -869,8 +869,7 @@ const responseLanguage =
         ? metadata.language.trim()
         : 'hi-IN';
 
-    } =
-      req.body || {};
+
 
 
     const cleanMessage =
