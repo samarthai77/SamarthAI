@@ -1,65 +1,640 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register — SamarthAI</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Account — SamarthAI Kavach</title>
+
     <style>
-        .auth-container { max-width:400px; margin:4rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
-        .auth-container input { width:100%; padding:0.7rem; margin-bottom:1rem; border:1px solid #ccc; border-radius:8px; }
-        .auth-container button { width:100%; padding:0.7rem; background:#ff6b00; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
-        .auth-container a { display:block; text-align:center; margin-top:1rem; color:#003366; }
+        *{
+            box-sizing:border-box;
+            margin:0;
+            padding:0;
+        }
+
+        body{
+            min-height:100vh;
+            font-family:Arial,Helvetica,sans-serif;
+            background:
+                radial-gradient(circle at top left,rgba(255,107,0,.18),transparent 35%),
+                radial-gradient(circle at bottom right,rgba(0,51,102,.18),transparent 35%),
+                linear-gradient(135deg,#f7fbff,#eef4fa);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+            color:#17324d;
+        }
+
+        .auth-wrapper{
+            width:100%;
+            max-width:430px;
+        }
+
+        .auth-card{
+            background:rgba(255,255,255,.96);
+            border-radius:24px;
+            padding:30px 28px 25px;
+            box-shadow:0 20px 55px rgba(0,51,102,.14);
+        }
+
+        .brand{
+            text-align:center;
+            margin-bottom:20px;
+        }
+
+        .logo{
+            width:66px;
+            height:66px;
+            margin:0 auto 10px;
+            border-radius:19px;
+            background:linear-gradient(135deg,#ff6b00,#003366);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:white;
+            font-size:28px;
+            font-weight:800;
+        }
+
+        .brand h1{
+            font-size:27px;
+            color:#003366;
+        }
+
+        .brand h1 span{
+            color:#ff6b00;
+        }
+
+        .brand p{
+            font-size:12px;
+            color:#718096;
+            margin-top:3px;
+        }
+
+        .title{
+            text-align:center;
+            margin-bottom:19px;
+        }
+
+        .title h2{
+            font-size:21px;
+            margin-bottom:4px;
+        }
+
+        .title p{
+            font-size:13px;
+            color:#718096;
+        }
+
+        .language-row,
+        .field{
+            margin-bottom:13px;
+        }
+
+        label{
+            display:block;
+            font-size:12px;
+            font-weight:700;
+            color:#536579;
+            margin-bottom:6px;
+        }
+
+        input,
+        select{
+            width:100%;
+            height:48px;
+            border:1px solid #d7e1eb;
+            border-radius:12px;
+            padding:0 13px;
+            font-size:14px;
+            outline:none;
+            background:white;
+        }
+
+        input:focus,
+        select:focus{
+            border-color:#0077cc;
+            box-shadow:0 0 0 3px rgba(0,119,204,.10);
+        }
+
+        .password-box{
+            position:relative;
+        }
+
+        .password-box input{
+            padding-right:50px;
+        }
+
+        .show-password{
+            position:absolute;
+            right:7px;
+            top:6px;
+            width:36px;
+            height:36px;
+            border:0;
+            border-radius:9px;
+            background:#f1f6fa;
+            cursor:pointer;
+        }
+
+        .register-btn{
+            width:100%;
+            height:51px;
+            margin-top:4px;
+            border:0;
+            border-radius:14px;
+            background:linear-gradient(135deg,#ff6b00,#ff8a00);
+            color:white;
+            font-weight:800;
+            font-size:15px;
+            cursor:pointer;
+        }
+
+        .register-btn:disabled{
+            opacity:.65;
+            cursor:not-allowed;
+        }
+
+        .message{
+            min-height:20px;
+            margin-top:11px;
+            text-align:center;
+            color:#d93025;
+            font-size:13px;
+        }
+
+        .login{
+            text-align:center;
+            margin-top:15px;
+            font-size:13px;
+            color:#718096;
+        }
+
+        .login a{
+            color:#0066aa;
+            font-weight:700;
+            text-decoration:none;
+        }
+
+        .legal{
+            text-align:center;
+            margin-top:15px;
+            font-size:11px;
+            color:#8a98a8;
+            line-height:1.5;
+        }
+
+        .legal a{
+            color:#66798c;
+        }
+
+        @media(max-width:480px){
+
+            body{
+                padding:12px;
+            }
+
+            .auth-card{
+                padding:25px 20px 21px;
+                border-radius:20px;
+            }
+
+        }
     </style>
 </head>
+
 <body>
-    <div class="auth-container">
-        <h2>Register</h2>
-        <input type="text" id="regName" placeholder="Full Name" />
-        <input type="email" id="regEmail" placeholder="Email" />
-        <input type="password" id="regPassword" placeholder="Password" />
-        <input type="text" id="regPhone" placeholder="Phone" />
-      <button onclick="register()">Register</button>
 
-<a href="login.html">Already have an account? Login</a>
+<div class="auth-wrapper">
 
-<a href="privacy-policy.html">Privacy Policy</a>
+    <div class="auth-card">
 
-<p id="regMessage" style="color:red; margin-top:0.5rem;"></p> 
+        <div class="brand">
+
+            <div class="logo">
+                SA
+            </div>
+
+            <h1>
+                Samarth<span>AI</span>
+            </h1>
+
+            <p>
+                Har Zaroorat Ka Sathi
+            </p>
+
+        </div>
+
+
+        <div class="title">
+
+            <h2>
+                Create Account
+            </h2>
+
+            <p>
+                SamarthAI ke saath apni journey shuru karein
+            </p>
+
+        </div>
+
+
+        <!-- LANGUAGE -->
+
+        <div class="language-row">
+
+            <label for="language">
+                Language / भाषा
+            </label>
+
+            <select
+                id="language"
+                onchange="saveLanguage()"
+            >
+
+                <option value="hi-IN">
+                    हिन्दी — Hindi
+                </option>
+
+                <option value="en-US">
+                    English
+                </option>
+
+                <option value="bn-IN">
+                    বাংলা — Bengali
+                </option>
+
+                <option value="mr-IN">
+                    मराठी — Marathi
+                </option>
+
+                <option value="gu-IN">
+                    ગુજરાતી — Gujarati
+                </option>
+
+                <option value="ta-IN">
+                    தமிழ் — Tamil
+                </option>
+
+                <option value="te-IN">
+                    తెలుగు — Telugu
+                </option>
+
+                <option value="kn-IN">
+                    ಕನ್ನಡ — Kannada
+                </option>
+
+                <option value="ml-IN">
+                    മലയാളം — Malayalam
+                </option>
+
+                <option value="pa-IN">
+                    ਪੰਜਾਬੀ — Punjabi
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- NAME -->
+
+        <div class="field">
+
+            <label for="regName">
+                Full Name
+            </label>
+
+            <input
+                type="text"
+                id="regName"
+                placeholder="Enter your full name"
+                autocomplete="name"
+            >
+
+        </div>
+
+
+        <!-- EMAIL -->
+
+        <div class="field">
+
+            <label for="regEmail">
+                Email
+            </label>
+
+            <input
+                type="email"
+                id="regEmail"
+                placeholder="Enter your email"
+                autocomplete="email"
+            >
+
+        </div>
+
+
+        <!-- PHONE -->
+
+        <div class="field">
+
+            <label for="regPhone">
+                Phone
+            </label>
+
+            <input
+                type="tel"
+                id="regPhone"
+                placeholder="Enter your phone number"
+                autocomplete="tel"
+            >
+
+        </div>
+
+
+        <!-- PASSWORD -->
+
+        <div class="field">
+
+            <label for="regPassword">
+                Password
+            </label>
+
+            <div class="password-box">
+
+                <input
+                    type="password"
+                    id="regPassword"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                >
+
+                <button
+                    type="button"
+                    class="show-password"
+                    onclick="togglePassword()"
+                >
+                    👁
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="register-btn"
+            id="registerBtn"
+            onclick="register()"
+        >
+            Create Account
+        </button>
+
+
+        <p
+            id="regMessage"
+            class="message"
+        ></p>
+
+
+        <div class="login">
+
+            Already have an account?
+
+            <a href="login.html">
+                Login
+            </a>
+
+        </div>
+
+
+        <div class="legal">
+
+            By creating an account, you agree to our
+
+            <a href="privacy-policy.html">
+                Privacy Policy
+            </a>
+
+            and applicable terms.
+
+        </div>
+
     </div>
-    <script>
-        const API_BASE = 'https://samarthai-backend.onrender.com/api';
 
-        async function register() {
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const phone = document.getElementById('regPhone').value;
+</div>
 
-            if (!name || !email || !password) {
-                document.getElementById('regMessage').textContent = 'Please fill all fields';
-                return;
-            }
 
-            try {
-                const res = await fetch(`${API_BASE}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password, phone })
-                });
-                const data = await res.json();
+<script>
 
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    window.location.href = 'dashboard.html';
-                } else {
-                    document.getElementById('regMessage').textContent = data.error || 'Registration failed';
+const API_BASE =
+    'https://samarthai-backend.onrender.com/api';
+
+
+/* ===== LANGUAGE ===== */
+
+function saveLanguage(){
+
+    const language =
+        document.getElementById(
+            'language'
+        ).value;
+
+    localStorage.setItem(
+        'samarthai_language',
+        language
+    );
+
+}
+
+
+const savedLanguage =
+    localStorage.getItem(
+        'samarthai_language'
+    );
+
+if(savedLanguage){
+
+    document.getElementById(
+        'language'
+    ).value =
+        savedLanguage;
+
+}
+
+
+/* ===== PASSWORD ===== */
+
+function togglePassword(){
+
+    const input =
+        document.getElementById(
+            'regPassword'
+        );
+
+    const button =
+        document.querySelector(
+            '.show-password'
+        );
+
+    if(input.type === 'password'){
+
+        input.type = 'text';
+
+        button.textContent =
+            '🙈';
+
+    }else{
+
+        input.type = 'password';
+
+        button.textContent =
+            '👁';
+
+    }
+
+}
+
+
+/* ===== REGISTER ===== */
+
+async function register(){
+
+    const name =
+        document.getElementById(
+            'regName'
+        ).value.trim();
+
+    const email =
+        document.getElementById(
+            'regEmail'
+        ).value.trim();
+
+    const password =
+        document.getElementById(
+            'regPassword'
+        ).value;
+
+    const phone =
+        document.getElementById(
+            'regPhone'
+        ).value.trim();
+
+    const message =
+        document.getElementById(
+            'regMessage'
+        );
+
+    const button =
+        document.getElementById(
+            'registerBtn'
+        );
+
+
+    message.textContent = '';
+
+
+    if(!name || !email || !password){
+
+        message.textContent =
+            'Name, email and password are required.';
+
+        return;
+
+    }
+
+
+    saveLanguage();
+
+
+    button.disabled = true;
+
+    button.textContent =
+        'Creating account...';
+
+
+    try{
+
+        const res =
+            await fetch(
+                `${API_BASE}/auth/register`,
+                {
+                    method:'POST',
+
+                    headers:{
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body:JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        phone
+                    })
                 }
-            } catch (error) {
-                document.getElementById('regMessage').textContent = 'Error: ' + error.message;
-            }
+            );
+
+
+        const data =
+            await res.json();
+
+
+        if(data.token){
+
+            localStorage.setItem(
+                'token',
+                data.token
+            );
+
+            localStorage.setItem(
+                'user',
+                JSON.stringify(
+                    data.user
+                )
+            );
+
+
+            /*
+             * SamarthAI ka Home = Chat
+             */
+
+            window.location.href =
+                'chat.html';
+
+            return;
+
         }
-    </script>
+
+
+        message.textContent =
+            data.error ||
+            'Registration failed.';
+
+
+    }catch(error){
+
+        console.error(
+            '[REGISTER]',
+            error
+        );
+
+        message.textContent =
+            'Network error. Please try again.';
+
+    }finally{
+
+        button.disabled = false;
+
+        button.textContent =
+            'Create Account';
+
+    }
+
+}
+
+</script>
+
 </body>
 </html>
