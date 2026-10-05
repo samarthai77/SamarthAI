@@ -3002,11 +3002,14 @@ context.timezone =
           context
         });
 
-   async function answerWithoutTool({
-  message,
-  context,
-  responseLanguage = 'hi-IN'
-}) { 
+ response =
+  await finalToolAnswer({
+    message: cleanMessage,
+    plan: webPlan,
+    toolResult,
+    context,
+    responseLanguage
+  });l
 
       const memoryResult =
         await saveMemory({
