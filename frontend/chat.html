@@ -3844,8 +3844,13 @@ function setupVoiceRecognition(){
     recognition =
         new SR();
 
-    recognition.lang =
-        'hi-IN';
+  const selectedLanguage =
+    localStorage.getItem(
+        'samarthai_language'
+    ) || 'hi-IN';
+
+recognition.lang =
+    selectedLanguage;
 
     recognition.continuous =
         false;
