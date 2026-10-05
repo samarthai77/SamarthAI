@@ -2689,7 +2689,8 @@ Return only the final answer text.
 
 async function answerWithoutTool({
   message,
-  context
+  context,
+  responseLanguage = 'hi-IN'
 }) {
   const prompt = `
 You are SamarthAI, a personal AI assistant.
@@ -3001,13 +3002,11 @@ context.timezone =
           context
         });
 
-      response =
-        await finalToolAnswer({
-          message: cleanMessage,
-          plan: webPlan,
-          toolResult,
-          context
-        });
+   async function answerWithoutTool({
+  message,
+  context,
+  responseLanguage = 'hi-IN'
+}) { 
 
       const memoryResult =
         await saveMemory({
