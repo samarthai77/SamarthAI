@@ -3757,10 +3757,15 @@ async function sendMessage(){
     mode:
         'conversation',
 
-    metadata: {
-        location:
-            clientLocation
-    }
+ metadata: {
+    location:
+        clientLocation,
+
+    language:
+        localStorage.getItem(
+            'samarthai_language'
+        ) || 'hi-IN'
+} 
 
 })
                 }
