@@ -3467,8 +3467,13 @@ if(!isUser){
                 content.innerText
             );
 
-        utterance.lang = 'hi-IN';
+       const selectedLanguage =
+    localStorage.getItem(
+        'samarthai_language'
+    ) || 'hi-IN';
 
+utterance.lang =
+    selectedLanguage;
         window.speechSynthesis.speak(
             utterance
         );
@@ -4082,8 +4087,13 @@ function speakAIResponse(text){
             clean
         );
 
-    u.lang =
-        'hi-IN';
+  const selectedLanguage =
+    localStorage.getItem(
+        'samarthai_language'
+    ) || 'hi-IN';
+
+u.lang =
+    selectedLanguage;
 
     u.rate =
         .92;
