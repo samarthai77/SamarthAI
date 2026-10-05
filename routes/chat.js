@@ -854,15 +854,20 @@ router.post(
     }
 
 
-    const {
+ const {
+    message = '',
+    image = null,
+    location = null,
+    conversation_id = null,
+    metadata = {}
+} =
+    req.body || {};
 
-      message = '',
-
-      image = null,
-
-      location = null,
-
-      conversation_id = null
+const responseLanguage =
+    typeof metadata.language === 'string' &&
+    metadata.language.trim()
+        ? metadata.language.trim()
+        : 'hi-IN';
 
     } =
       req.body || {};
@@ -976,19 +981,21 @@ router.post(
          AI CONVERSATION ENGINE
       =============================================== */
 
-      const result =
-        await runConversation({
+const result =
+    await runConversation({
 
-          userId,
+        userId,
 
-          message:
+        message:
             cleanMessage,
 
-          location,
+        location,
 
-          conversationId
+        conversationId,
 
-        });
+        responseLanguage
+
+    });
 
 
       /* ===============================================
