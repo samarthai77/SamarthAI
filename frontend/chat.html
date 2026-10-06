@@ -1007,7 +1007,72 @@ grid-template-columns:repeat(4,1fr);
     font-weight:600;
     margin:8px 0 18px;
 }
+    
+/* =====================================================
+   PROFESSIONAL CHAT MENU
+===================================================== */
 
+.conversation-menu-section{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin:4px 0 14px;
+}
+
+.menu-action-button{
+    width:100%;
+    min-height:44px;
+    padding:10px 13px;
+    border:1px solid #e7edf4;
+    border-radius:12px;
+    background:#fff;
+    color:#183247;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:left;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:
+        background .18s ease,
+        transform .18s ease,
+        border-color .18s ease;
+}
+
+.menu-action-button:hover{
+    background:#f6f9fc;
+    border-color:#d7e2ee;
+}
+
+.menu-action-button:active{
+    transform:scale(.98);
+}
+
+.conversation-menu-section
+.menu-action-button:first-child{
+    background:#003366;
+    color:#fff;
+    border-color:#003366;
+}
+
+.conversation-footer{
+    margin-top:auto;
+    padding-top:12px;
+    border-top:1px solid #e6edf5;
+}
+
+.conversation-footer button{
+    width:100%;
+    min-height:44px;
+    border:1px solid #e7edf4;
+    border-radius:12px;
+    background:#fff;
+    color:#b42318;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+}
 .conversation-title{
     font-size:12px;
     color:#7b8b9b;
@@ -4361,14 +4426,51 @@ function createConversationPanel(){
             </div>
 
 
-            <button
-                type="button"
-                class="new-chat-button"
-                onclick="createNewConversation()">
+   <div class="conversation-menu-section">
 
-                ＋ New Chat
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="createNewConversation(); closeConversationPanel();">
+        ＋ New Chat
+    </button>
 
-            </button>
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="location.href='profile.html'">
+        👤 Profile / My Photo
+    </button>
+
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="openLanguageSettings()">
+        🌐 Language
+    </button>
+
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="openSettingsFromMenu()">
+        ⚙️ Settings
+    </button>
+
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="openMemoryFromMenu()">
+        🧠 Memory
+    </button>
+
+    <button
+        type="button"
+        class="menu-action-button"
+        onclick="openPrivacyFromMenu()">
+        🔐 Privacy & Security
+    </button>
+
+</div>      
 
 
             <div class="conversation-title">
@@ -4407,7 +4509,111 @@ function createConversationPanel(){
 
 }
 
+/* =====================================================
+   CHAT MENU ACTIONS
+===================================================== */
 
+function openLanguageSettings(){
+
+    const language =
+        localStorage.getItem(
+            'samarthai_language'
+        ) || 'hi-IN';
+
+    const languages = {
+        'hi-IN': 'हिन्दी — Hindi',
+        'en-US': 'English',
+        'bn-IN': 'বাংলা — Bengali',
+        'mr-IN': 'मराठी — Marathi',
+        'gu-IN': 'ગુજરાતી — Gujarati',
+        'ta-IN': 'தமிழ் — Tamil',
+        'te-IN': 'తెలుగు — Telugu',
+        'kn-IN': 'ಕನ್ನಡ — Kannada',
+        'ml-IN': 'മലയാളം — Malayalam',
+        'pa-IN': 'ਪੰਜਾਬੀ — Punjabi'
+    };
+
+    const selected =
+        prompt(
+            'Current language: ' +
+            (languages[language] || language) +
+            '\n\nEnter language code:\n' +
+            'hi-IN = Hindi\n' +
+            'en-US = English\n' +
+            'bn-IN = Bengali\n' +
+            'mr-IN = Marathi\n' +
+            'gu-IN = Gujarati\n' +
+            'ta-IN = Tamil\n' +
+            'te-IN = Telugu\n' +
+            'kn-IN = Kannada\n' +
+            'ml-IN = Malayalam\n' +
+            'pa-IN = Punjabi'
+        );
+
+    if(!selected){
+        return;
+    }
+
+    if(languages[selected]){
+        localStorage.setItem(
+            'samarthai_language',
+            selected
+        );
+
+        alert(
+            'Language changed to ' +
+            languages[selected]
+        );
+
+        closeConversationPanel();
+    }
+}
+
+
+function openSettingsFromMenu(){
+
+    alert(
+        'Settings panel will be connected here.'
+    );
+
+}
+
+
+function openMemoryFromMenu(){
+
+    alert(
+        'SamarthAI Memory is managed automatically.'
+    );
+
+}
+
+
+function openPrivacyFromMenu(){
+
+    alert(
+        'Privacy & Security panel will be connected here.'
+    );
+
+}
+
+
+function logoutFromChatMenu(){
+
+    const confirmed =
+        confirm(
+            'Kya aap SamarthAI se logout karna chahte hain?'
+        );
+
+    if(!confirmed){
+        return;
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    location.href = 'index.html';
+
+}
 /* ===== OPEN PANEL ===== */
 
 function openConversationPanel(){
