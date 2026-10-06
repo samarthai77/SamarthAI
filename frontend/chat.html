@@ -2025,18 +2025,24 @@ body{
 }
 
 .msg-action-btn{
-    width:27px;
-    height:24px;
+    width:30px;
+    height:26px;
     padding:0;
+
     border:0;
-    background:transparent;
-    color:#64748B;
-    border-radius:6px;
+    background:#F8FAFC;
+
+    color:#94A3B8;
+
+    border-radius:7px;
+
     display:flex;
     align-items:center;
     justify-content:center;
+
     font-size:13px;
     cursor:pointer;
+
     transition:.15s ease;
 }
 
@@ -2050,10 +2056,46 @@ body{
 }
 
 .msg-action-btn.active{
-    background:#FFF1E8;
-    color:#FF6B00;
+    background:#FFF7ED;
+    color:#F59E0B;
+    border:1px solid #FED7AA;
+}
+.feedback-toast{
+    position:fixed;
+
+    left:50%;
+    bottom:82px;
+
+    transform:translateX(-50%);
+
+    background:#FFF7ED;
+    color:#9A5A00;
+
+    border:1px solid #FED7AA;
+
+    padding:9px 15px;
+
+    border-radius:20px;
+
+    font-size:13px;
+    font-weight:600;
+
+    box-shadow:0 5px 18px rgba(0,0,0,.10);
+
+    z-index:999999;
+
+    transition:
+        opacity .25s ease,
+        transform .25s ease;
 }
 
+.feedback-toast.hide{
+    opacity:0;
+
+    transform:
+        translateX(-50%)
+        translateY(6px);
+}
 .msg-wrapper{
     margin-bottom:4px !important;
 }
@@ -3095,6 +3137,37 @@ async function initializeConversation(){
 async function loadChatHistory(){
 
     await initializeConversation();
+
+}
+function showFeedbackMessage(message){
+
+    const old =
+        document.querySelector('.feedback-toast');
+
+    if(old){
+        old.remove();
+    }
+
+    const toast =
+        document.createElement('div');
+
+    toast.className =
+        'feedback-toast';
+
+    toast.textContent =
+        message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+
+        toast.classList.add('hide');
+
+        setTimeout(() => {
+            toast.remove();
+        },250);
+
+    },2200);
 
 }
 /* ===== ADD MESSAGE ===== */
@@ -4363,15 +4436,11 @@ const header =
 const chatContainer =
     document.querySelector('.chat-container');
 
-const viewportTop =
-    viewport.offsetTop || 0;
-
 if(header){
 
     header.style.position = 'fixed';
 
-    header.style.top =
-        viewportTop + 'px';
+    header.style.top = '0px';
 
     header.style.left = '0px';
 
@@ -4382,17 +4451,20 @@ if(header){
     header.style.transform =
         'translate3d(0,0,0)';
 
-    header.style.zIndex = '20000';
+    header.style.webkitTransform =
+        'translate3d(0,0,0)';
+
+    header.style.zIndex =
+        '999999';
 
 }
 
 if(chatContainer){
 
     chatContainer.style.top =
-        (58 + viewportTop) + 'px';
+        '58px';
 
 }
-
 window.scrollTo(0, 0);
 
 document.documentElement.scrollTop = 0;
