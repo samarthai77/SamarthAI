@@ -129,32 +129,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const currentPage =
         window.location.pathname.split('/').pop();
 
-    if (protectedPages.includes(currentPage)) {
-// Logged-in users open Chat directly from Home
-    if (currentPage === 'index.html' && isLoggedIn()) {
+  // Logged-in users open Chat directly from Home
+if (currentPage === 'index.html' && isLoggedIn()) {
 
-        const sessionValid =
-            await validateSession();
+    const sessionValid =
+        await validateSession();
 
-        if (sessionValid) {
-            navigateTo('chat.html');
-            return;
-        }
+    if (sessionValid) {
+        navigateTo('chat.html');
+        return;
     }
-        if (!isLoggedIn()) {
-            navigateTo('index.html');
-            return;
-        }
+}
 
-        const sessionValid =
-            await validateSession();
-
-        if (!sessionValid) {
-            navigateTo('index.html');
-            return;
-        }
-    }
-
+if (protectedPages.includes(currentPage)) {
     // Load profile if on profile page
     if (currentPage === 'profile.html') {
         loadProfile();
