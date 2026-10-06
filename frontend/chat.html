@@ -64,9 +64,23 @@ body{overflow:hidden}
 .brand-name span{color:#ff6b00}
 
 .brand-tagline{
-    margin-top:3px;
-    font-size:11px;
-    color:#6b7d90
+    margin-top:4px;
+    display:inline-block;
+
+    font-size:10px;
+    line-height:1;
+
+    font-weight:800;
+    letter-spacing:1.2px;
+
+    color:#ff6b00;
+
+    background:rgba(255,107,0,.10);
+
+    padding:3px 7px;
+    border-radius:6px;
+
+    border:1px solid rgba(255,107,0,.20);
 }
 
 .top-actions{
@@ -4314,7 +4328,19 @@ if(chatInput && window.visualViewport){
 
         const viewportHeight =
             viewport.height;
+const header =
+    document.querySelector('.samarth-topbar');
 
+if(header){
+
+    header.style.position = 'fixed';
+    header.style.top = '0px';
+    header.style.left = '0px';
+    header.style.right = '0px';
+    header.style.transform = 'translate3d(0,0,0)';
+    header.style.zIndex = '20000';
+
+}
 
         /*
          * Header ~58px
