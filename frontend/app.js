@@ -142,10 +142,25 @@ if (currentPage === 'index.html' && isLoggedIn()) {
 }
 
 if (protectedPages.includes(currentPage)) {
+
+    if (!isLoggedIn()) {
+        navigateTo('index.html');
+        return;
+    }
+
+    const sessionValid =
+        await validateSession();
+
+    if (!sessionValid) {
+        navigateTo('index.html');
+        return;
+    }
+
     // Load profile if on profile page
     if (currentPage === 'profile.html') {
         loadProfile();
     }
+}
 });
 async function triggerAutonomousGeneration() {
     const projectName =
