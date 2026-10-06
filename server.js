@@ -155,15 +155,24 @@ app.use(globalLimiter);
 const activityTracker = require('./middleware/activityTracker');
 app.use(activityTracker);
 app.get('/css/style.css', (req, res) => {
-  res.sendFile(__dirname + '/frontend/style.css');
+  res.sendFile(__dirname + '/css/style.css');
 });
 
 app.get('/js/app.js', (req, res) => {
   res.sendFile(__dirname + '/frontend/app.js');
 });
+
 app.use(express.static('frontend'));
-app.use('/css', express.static(__dirname + '/frontend'));
-app.use('/js', express.static(__dirname + '/frontend'));
+
+app.use(
+  '/css',
+  express.static(__dirname + '/css')
+);
+
+app.use(
+  '/js',
+  express.static(__dirname + '/frontend')
+);
 // ======= Routes =========
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
