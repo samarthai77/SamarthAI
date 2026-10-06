@@ -384,13 +384,69 @@
 
 
 <script>
+<script src="languages.js"></script>
 
+<script>
 const API_BASE =
     'https://samarthai-backend.onrender.com/api';
 
+function populateLanguageSelector(){
+
+    const selector =
+        document.getElementById('language');
+
+    if(!selector){
+        return;
+    }
+
+    const languages =
+        typeof getSamarthAILanguages === 'function'
+            ? getSamarthAILanguages()
+            : [];
+
+    selector.innerHTML = '';
+
+    languages.forEach(
+        language => {
+
+            const option =
+                document.createElement('option');
+
+            option.value =
+                language.code;
+
+            option.textContent =
+                language.nativeName +
+                ' — ' +
+                language.name;
+
+            selector.appendChild(option);
+
+        }
+    );
+
+    const savedLanguage =
+        localStorage.getItem(
+            'samarthai_language'
+        ) || 'hi-IN';
+
+    if(
+        languages.some(
+            language =>
+                language.code === savedLanguage
+        )
+    ){
+        selector.value =
+            savedLanguage;
+    }
+}
+
+populateLanguageSelector();
 
 /* ===== LANGUAGE ===== */
 
+
+                                                                                                                                                                                                                                               
 function saveLanguage(){
 
     const language =
@@ -406,19 +462,6 @@ function saveLanguage(){
 }
 
 
-const savedLanguage =
-    localStorage.getItem(
-        'samarthai_language'
-    );
-
-if(savedLanguage){
-
-    document.getElementById(
-        'language'
-    ).value =
-        savedLanguage;
-
-}
 
 
 /* ===== PASSWORD ===== */
