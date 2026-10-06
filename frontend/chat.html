@@ -3507,15 +3507,19 @@ if(!isUser){
     likeBtn.title = 'Like';
     likeBtn.textContent = '👍';
 
-    likeBtn.onclick = () => {
+ likeBtn.onclick = () => {
 
-        likeBtn.classList.toggle('active');
+    likeBtn.classList.add('active');
 
-        dislikeBtn.classList.remove(
-            'active'
-        );
+    dislikeBtn.classList.remove(
+        'active'
+    );
 
-    };
+    showFeedbackMessage(
+        '👍 धन्यवाद! आपका feedback मिल गया।'
+    );
+
+}; 
 
 
     const dislikeBtn =
@@ -3528,15 +3532,19 @@ if(!isUser){
     dislikeBtn.title = 'Dislike';
     dislikeBtn.textContent = '👎';
 
-    dislikeBtn.onclick = () => {
+dislikeBtn.onclick = () => {
 
-        dislikeBtn.classList.toggle('active');
+    dislikeBtn.classList.add('active');
 
-        likeBtn.classList.remove(
-            'active'
-        );
+    likeBtn.classList.remove(
+        'active'
+    );
 
-    };
+    showFeedbackMessage(
+        '👎 धन्यवाद! हम इस response को बेहतर बनाने की कोशिश करेंगे।'
+    );
+
+};  
 
 
     const listenBtn =
