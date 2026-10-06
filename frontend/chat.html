@@ -4509,61 +4509,98 @@ function createConversationPanel(){
 /* =====================================================
    CHAT MENU ACTIONS
 ===================================================== */
-
 function openLanguageSettings(){
 
-    const language =
+    const languages =
+        typeof getSamarthAILanguages === 'function'
+            ? getSamarthAILanguages()
+            : [];
+
+    if(!languages.length){
+
+        alert(
+            'Language service is currently unavailable.'
+        );
+
+        return;
+    }
+
+
+    const currentLanguage =
         localStorage.getItem(
             'samarthai_language'
         ) || 'hi-IN';
 
-    const languages = {
-        'hi-IN': 'हिन्दी — Hindi',
-        'en-US': 'English',
-        'bn-IN': 'বাংলা — Bengali',
-        'mr-IN': 'मराठी — Marathi',
-        'gu-IN': 'ગુજરાતી — Gujarati',
-        'ta-IN': 'தமிழ் — Tamil',
-        'te-IN': 'తెలుగు — Telugu',
-        'kn-IN': 'ಕನ್ನಡ — Kannada',
-        'ml-IN': 'മലയാളം — Malayalam',
-        'pa-IN': 'ਪੰਜਾਬੀ — Punjabi'
-    };
+
+    const languageList =
+        languages
+            .map(
+                language =>
+                    language.code +
+                    ' = ' +
+                    language.nativeName +
+                    ' — ' +
+                    language.name
+            )
+            .join('\n');
+
 
     const selected =
         prompt(
             'Current language: ' +
-            (languages[language] || language) +
-            '\n\nEnter language code:\n' +
-            'hi-IN = Hindi\n' +
-            'en-US = English\n' +
-            'bn-IN = Bengali\n' +
-            'mr-IN = Marathi\n' +
-            'gu-IN = Gujarati\n' +
-            'ta-IN = Tamil\n' +
-            'te-IN = Telugu\n' +
-            'kn-IN = Kannada\n' +
-            'ml-IN = Malayalam\n' +
-            'pa-IN = Punjabi'
+            getSamarthAILanguageName(
+                currentLanguage
+            ) +
+            '\n\nAvailable languages:\n' +
+            languageList +
+            '\n\nEnter language code:'
         );
+
 
     if(!selected){
+
         return;
+
     }
 
-    if(languages[selected]){
-        localStorage.setItem(
-            'samarthai_language',
-            selected
+
+    const normalized =
+        selected.trim();
+
+
+    const selectedLanguage =
+        getSamarthAILanguage(
+            normalized
         );
+
+
+    if(!selectedLanguage){
 
         alert(
-            'Language changed to ' +
-            languages[selected]
+            'This language is not currently available.'
         );
 
-        closeConversationPanel();
+        return;
+
     }
+
+
+    localStorage.setItem(
+        'samarthai_language',
+        selectedLanguage.code
+    );
+
+
+    alert(
+        'Language changed to ' +
+        getSamarthAILanguageName(
+            selectedLanguage.code
+        )
+    );
+
+
+    closeConversationPanel();
+
 }
 
 
