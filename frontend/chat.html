@@ -698,9 +698,30 @@ footer{
         font-size:22px;
     }
 
-    .brand-tagline{
-        font-size:9px;
-    }
+  .brand-tagline{
+    display:inline-block !important;
+
+    width:max-content !important;
+    max-width:max-content !important;
+
+    margin-top:4px !important;
+
+    font-size:9px !important;
+    line-height:1 !important;
+
+    font-weight:800 !important;
+    letter-spacing:1px !important;
+
+    color:#ff6b00 !important;
+
+    background:rgba(255,107,0,.10) !important;
+
+    padding:3px 7px !important;
+
+    border-radius:6px !important;
+
+    border:1px solid rgba(255,107,0,.20) !important;
+} 
 
     .top-actions{
         gap:5px;
@@ -4331,17 +4352,43 @@ if(chatInput && window.visualViewport){
 const header =
     document.querySelector('.samarth-topbar');
 
+const chatContainer =
+    document.querySelector('.chat-container');
+
+const viewportTop =
+    viewport.offsetTop || 0;
+
 if(header){
 
     header.style.position = 'fixed';
-    header.style.top = '0px';
+
+    header.style.top =
+        viewportTop + 'px';
+
     header.style.left = '0px';
+
     header.style.right = '0px';
-    header.style.transform = 'translate3d(0,0,0)';
+
+    header.style.width = '100%';
+
+    header.style.transform =
+        'translate3d(0,0,0)';
+
     header.style.zIndex = '20000';
 
 }
 
+if(chatContainer){
+
+    chatContainer.style.top =
+        (58 + viewportTop) + 'px';
+
+}
+
+window.scrollTo(0, 0);
+
+document.documentElement.scrollTop = 0;
+document.body.scrollTop = 0;
         /*
          * Header ~58px
          * Input area ~72px
