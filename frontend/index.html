@@ -199,5 +199,37 @@
     </footer>
 
  <script src="app.js"></script> 
+  <script>
+function toggleCapabilities() {
+
+    const panel =
+        document.getElementById("moreCapabilities");
+
+    const button =
+        document.querySelector(".more-capabilities-btn");
+
+    if (!panel || !button) {
+        return;
+    }
+
+    const isHidden =
+        panel.hasAttribute("hidden");
+
+    if (isHidden) {
+
+        panel.removeAttribute("hidden");
+
+        button.textContent =
+            "− Hide Capabilities";
+
+    } else {
+
+        panel.setAttribute("hidden", "");
+
+        button.textContent =
+            "＋ More Capabilities";
+    }
+}
+</script>  
 </body>
 </html>
