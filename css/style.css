@@ -1,1 +1,435 @@
+/* =====================================================
+   SAMARTHAI LANDING PAGE
+===================================================== */
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+}
+
+body {
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            #173d70 0%,
+            #071426 42%,
+            #020711 100%
+        );
+
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+
+/* ================= HEADER ================= */
+
+header {
+    width: 100%;
+    min-height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 6%;
+
+    background: rgba(3, 12, 25, 0.82);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter: blur(14px);
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ff8a00,
+            #ffd166
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+nav {
+    display: flex;
+    gap: 12px;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        0.25s ease;
+}
+
+nav a:hover {
+    background: rgba(255,255,255,0.09);
+}
+
+
+/* ================= HERO ================= */
+
+.hero {
+    min-height: calc(100vh - 72px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 70px 6%;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 420px;
+    height: 420px;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(255,122,0,0.20),
+            transparent 70%
+        );
+
+    top: -140px;
+    right: -120px;
+
+    pointer-events: none;
+}
+
+.hero-content {
+    width: 100%;
+    max-width: 1050px;
+
+    text-align: center;
+
+    position: relative;
+    z-index: 2;
+}
+
+
+/* ================= BADGE ================= */
+
+.hero-badge {
+    display: inline-block;
+
+    padding: 8px 16px;
+
+    margin-bottom: 22px;
+
+    border: 1px solid rgba(255,174,0,0.35);
+
+    border-radius: 999px;
+
+    background: rgba(255,145,0,0.08);
+
+    color: #ffd166;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* ================= TITLE ================= */
+
+.hero h1 {
+    font-size: clamp(48px, 8vw, 92px);
+
+    line-height: 1;
+
+    margin-bottom: 14px;
+
+    font-weight: 900;
+
+    letter-spacing: -2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #ffd166,
+            #ff8a00
+        );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero h2 {
+    font-size: clamp(22px, 4vw, 38px);
+
+    margin-bottom: 20px;
+
+    color: #ffffff;
+}
+
+
+/* ================= DESCRIPTION ================= */
+
+.hero-description {
+    max-width: 680px;
+
+    margin: 0 auto 30px;
+
+    color: rgba(255,255,255,0.72);
+
+    font-size: 17px;
+
+    line-height: 1.7;
+}
+
+
+/* ================= BUTTONS ================= */
+
+.hero-actions {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 14px;
+
+    flex-wrap: wrap;
+
+    margin-bottom: 48px;
+}
+
+.btn {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 155px;
+
+    padding: 13px 24px;
+
+    border-radius: 12px;
+
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 800;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ff8a00,
+            #ff5e00
+        );
+
+    box-shadow:
+        0 10px 30px rgba(255,100,0,0.20);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 15px 35px rgba(255,100,0,0.30);
+}
+
+.btn.secondary {
+    background: rgba(255,255,255,0.07);
+
+    border: 1px solid rgba(255,255,255,0.16);
+
+    box-shadow: none;
+}
+
+
+/* ================= FEATURES ================= */
+
+.feature-preview {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr));
+
+    gap: 14px;
+
+    width: 100%;
+}
+
+.feature-card {
+    padding: 22px 12px;
+
+    min-height: 135px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    border-radius: 18px;
+
+    background:
+        rgba(255,255,255,0.055);
+
+    border:
+        1px solid rgba(255,255,255,0.10);
+
+    backdrop-filter: blur(12px);
+
+    transition:
+        transform 0.25s ease,
+        background 0.25s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+
+    background:
+        rgba(255,255,255,0.09);
+}
+
+.feature-card span {
+    font-size: 28px;
+}
+
+.feature-card strong {
+    font-size: 15px;
+}
+
+.feature-card small {
+    color: rgba(255,255,255,0.58);
+
+    font-size: 12px;
+
+    text-align: center;
+}
+
+
+/* ================= FOOTER ================= */
+
+footer {
+    text-align: center;
+
+    padding: 20px;
+
+    color: rgba(255,255,255,0.45);
+
+    font-size: 12px;
+
+    border-top:
+        1px solid rgba(255,255,255,0.06);
+}
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 800px) {
+
+    header {
+        padding: 0 20px;
+    }
+
+    nav {
+        gap: 4px;
+    }
+
+    nav a {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .hero {
+        padding:
+            55px 20px;
+    }
+
+    .feature-preview {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .feature-card:last-child {
+        grid-column:
+            1 / -1;
+
+        max-width: 50%;
+
+        margin: 0 auto;
+    }
+}
+
+
+/* ================= SMALL PHONES ================= */
+
+@media (max-width: 420px) {
+
+    header {
+        min-height: 64px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    nav a {
+        padding: 7px 8px;
+        font-size: 11px;
+    }
+
+    .hero {
+        padding-top: 45px;
+    }
+
+    .hero-description {
+        font-size: 15px;
+    }
+
+    .feature-preview {
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 10px;
+    }
+
+    .feature-card {
+        min-height: 120px;
+    }
+
+    .feature-card:last-child {
+        max-width: 100%;
+    }
+}
