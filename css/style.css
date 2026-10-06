@@ -527,3 +527,90 @@ footer {
         max-width: 100% !important;
     }
 }
+/* =====================================================
+   SAMARTHAI KAVACH MOBILE LAYOUT
+===================================================== */
+
+@media (max-width: 600px) {
+
+    header {
+        min-height: 68px;
+        padding: 0 18px;
+    }
+
+    .logo {
+        font-size: 20px;
+        white-space: nowrap;
+    }
+
+    nav {
+        gap: 2px;
+    }
+
+    nav a {
+        padding: 8px 7px;
+        font-size: 12px;
+    }
+
+    .hero {
+        min-height: auto;
+        padding: 55px 18px 45px;
+    }
+
+    .hero-badge {
+        margin-bottom: 18px;
+        padding: 7px 13px;
+        font-size: 12px;
+    }
+
+    .hero h1 {
+        font-size: clamp(42px, 12vw, 62px);
+        letter-spacing: -1.5px;
+        line-height: 1.05;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .hero-description {
+        font-size: 15px;
+        line-height: 1.55;
+        margin-bottom: 24px;
+    }
+
+    .hero-actions {
+        gap: 10px;
+        margin-bottom: 32px;
+    }
+
+    .btn {
+        min-width: 0;
+        flex: 1;
+        padding: 13px 12px;
+        font-size: 15px;
+    }
+
+    .feature-preview {
+        gap: 10px !important;
+    }
+
+    .feature-card {
+        min-height: 125px !important;
+        padding: 16px 8px !important;
+        border-radius: 16px !important;
+    }
+
+    .feature-card span {
+        font-size: 26px !important;
+    }
+
+    .feature-card strong {
+        font-size: 14px !important;
+    }
+
+    .feature-card small {
+        font-size: 11px !important;
+    }
+}
