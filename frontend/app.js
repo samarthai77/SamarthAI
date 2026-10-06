@@ -130,7 +130,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.pathname.split('/').pop();
 
     if (protectedPages.includes(currentPage)) {
+// Logged-in users open Chat directly from Home
+    if (currentPage === 'index.html' && isLoggedIn()) {
 
+        const sessionValid =
+            await validateSession();
+
+        if (sessionValid) {
+            navigateTo('chat.html');
+            return;
+        }
+    }
         if (!isLoggedIn()) {
             navigateTo('index.html');
             return;
