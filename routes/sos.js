@@ -874,6 +874,236 @@ router.get(
 );
 /*
 =========================================================
+RESOLVE / MARK SOS SAFE
+POST /api/sos/:sosId/resolve
+=========================================================
+Only an authenticated member of the same family
+can mark an active SOS as resolved.
+=========================================================
+*/
+
+router.post(
+    "/:sosId/resolve",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const sosId =
+                String(
+                    req.params.sosId || ""
+                ).trim();
+
+
+            if (!sosId) {
+
+                return res.status(400).json({
+                    error:
+                        "SOS ID is required"
+                });
+            }
+
+
+            /*
+            Get the current user's
+            active family membership.
+            */
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Active family membership not found"
+                });
+            }
+
+
+            /*
+            Get the SOS record.
+            */
+
+            const {
+                data: sos,
+                error: sosError
+            } = await supabase
+                .from("sos_alerts")
+                .select(`
+                    id,
+                    user_id,
+                    status
+                `)
+                .eq(
+                    "id",
+                    sosId
+                )
+                .maybeSingle();
+
+
+            if (sosError) {
+                throw sosError;
+            }
+
+
+            if (!sos) {
+
+                return res.status(404).json({
+                    error:
+                        "SOS alert not found"
+                });
+            }
+
+
+            /*
+            Only an active SOS can be resolved.
+            */
+
+            if (
+                sos.status !== "active"
+            ) {
+
+                return res.status(409).json({
+                    error:
+                        "This SOS is already resolved"
+                });
+            }
+
+
+            /*
+            Verify that the SOS sender
+            belongs to the same family.
+            */
+
+            const {
+                data: sosMember,
+                error: memberError
+            } = await supabase
+                .from("family_members")
+                .select(`
+                    id,
+                    user_id,
+                    family_id,
+                    is_active
+                `)
+                .eq(
+                    "user_id",
+                    sos.user_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                )
+                .maybeSingle();
+
+
+            if (memberError) {
+                throw memberError;
+            }
+
+
+            if (
+                !sosMember ||
+                sosMember.family_id !==
+                    currentMember.family_id
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "You are not authorized to resolve this SOS"
+                });
+            }
+
+
+            /*
+            Resolve the SOS.
+            */
+
+            const {
+                data: updatedSOS,
+                error: updateError
+            } = await supabase
+                .from("sos_alerts")
+                .update({
+                    status: "resolved"
+                })
+                .eq(
+                    "id",
+                    sosId
+                )
+                .eq(
+                    "status",
+                    "active"
+                )
+                .select(`
+                    id,
+                    user_id,
+                    location,
+                    status,
+                    created_at
+                `)
+                .maybeSingle();
+
+
+            if (updateError) {
+                throw updateError;
+            }
+
+
+            if (!updatedSOS) {
+
+                return res.status(409).json({
+                    error:
+                        "SOS could not be resolved because its status changed"
+                });
+            }
+
+
+            return res.json({
+
+                message:
+                    "SOS marked as safe",
+
+                sos: updatedSOS
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Resolve SOS error:",
+                error
+            );
+
+
+            if (
+                isAuthError(error)
+            ) {
+
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+
+            return res.status(500).json({
+                error:
+                    "Could not resolve SOS"
+            });
+        }
+    }
+);
+/*      
+=========================================================
 GET SOS ALERTS
 GET /api/sos
 =========================================================
