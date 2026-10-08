@@ -856,25 +856,41 @@ maxlength="13"
 
 </div>
         <div class="family-list" id="familyList"></div>
-     <div
+   <div
     id="joinRequestsSection"
-    style="
-        display:none;
-        margin-top:1.5rem;
-        padding:1rem;
-        background:#fff8f0;
-        border:1px solid #ffd7b3;
-        border-radius:12px;
-    "
+    class="family-join-requests-card"
+    style="display:none;"
 >
-    <h2>📥 Pending Join Requests</h2>
+
+    <div class="family-join-requests-header">
+
+        <div class="family-join-requests-icon">
+            📥
+        </div>
+
+        <div>
+
+            <div class="family-join-requests-title">
+                Pending Join Requests
+            </div>
+
+            <div class="family-join-requests-subtitle">
+                Review and approve secure family connection requests.
+            </div>
+
+        </div>
+
+    </div>
 
     <div id="joinRequestsList">
+
         <div style="color:#666;">
             Loading requests...
         </div>
+
     </div>
-</div>   
+
+</div>
     </div>
 
     <footer><p>&copy; 2026 SamarthAI</p></footer>
@@ -1246,8 +1262,16 @@ async function loadJoinRequests() {
         if (requests.length === 0) {
 
             list.innerHTML = `
-                <div style="color:#666;">
-                    No pending join requests.
+                <div
+                    style="
+                        padding:1rem;
+                        text-align:center;
+                        color:#687386;
+                        background:#f7f9fc;
+                        border-radius:12px;
+                    "
+                >
+                    🛡️ No pending join requests.
                 </div>
             `;
 
@@ -1261,76 +1285,160 @@ async function loadJoinRequests() {
             const item =
                 document.createElement('div');
 
-            item.style.cssText = `
-                background:#ffffff;
-                border:1px solid #ddd;
-                border-radius:10px;
-                padding:1rem;
-                margin-top:0.7rem;
-            `;
+            item.className =
+                'family-join-request-item';
+
+            const requestName =
+                escapeFamilyHTML(
+                    request.name ||
+                    'Unknown User'
+                );
+
+            const requestPhone =
+                escapeFamilyHTML(
+                    request.phone ||
+                    'N/A'
+                );
+
+            const requestRelation =
+                request.relation
+                    ? escapeFamilyHTML(
+                        request.relation
+                    )
+                    : '';
+
+            const profilePhoto =
+                request.profile_photo_url
+                    ? escapeFamilyHTML(
+                        request.profile_photo_url
+                    )
+                    : '';
 
             item.innerHTML = `
-                <div>
-                    <strong>
-                        👤 ${
-                            escapeFamilyHTML(
-                                request.name ||
-                                'Unknown User'
-                            )
+
+                <div class="family-join-request-profile">
+
+                    ${
+                        profilePhoto
+                            ? `
+                                <img
+                                    class="family-join-request-avatar"
+                                    src="${profilePhoto}"
+                                    alt="${requestName}"
+                                    onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                    "
+                                />
+
+                                <div
+                                    class="
+                                        family-join-request-avatar
+                                        default
+                                    "
+                                    style="display:none;"
+                                >
+                                    👤
+                                </div>
+                            `
+                            : `
+                                <div
+                                    class="
+                                        family-join-request-avatar
+                                        default
+                                    "
+                                >
+                                    👤
+                                </div>
+                            `
+                    }
+
+                    <div class="family-join-request-info">
+
+                        <div class="family-join-request-name">
+                            ${requestName}
+                        </div>
+
+                        <div class="family-join-request-meta">
+                            📞 ${requestPhone}
+                        </div>
+
+                        ${
+                            requestRelation
+                                ? `
+                                    <div class="family-join-request-meta">
+                                        👤 Relation: ${requestRelation}
+                                    </div>
+                                `
+                                : ''
                         }
-                    </strong>
-                    <br />
 
-                    📞 ${
-                        escapeFamilyHTML(
-                            request.phone ||
-                            'N/A'
-                        )
-                    }
-                    <br />
+                        <div
+                            class="
+                                family-join-request-connected
+                            "
+                        >
+                            <span
+                                class="
+                                    family-join-request-connected-dot
+                                "
+                            ></span>
 
-                    ${
-                        request.relation
-                            ? `🔗 Relation: ${
-                                escapeFamilyHTML(
-                                    request.relation
-                                )
-                            }<br />`
-                            : ''
-                    }
+                            Account Connected
+                        </div>
 
-                    🕐 Request:
-                    ${
-                        request.createdAt
-                            ? new Date(
+                        <span
+                            class="
+                                family-join-request-security
+                            "
+                        >
+                            🛡️ Secure Request
+                        </span>
+
+                        <div class="family-join-request-meta">
+                            🕐 ${
                                 request.createdAt
-                              ).toLocaleString()
-                            : 'N/A'
-                    }
+                                    ? new Date(
+                                        request.createdAt
+                                      ).toLocaleString()
+                                    : 'N/A'
+                            }
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <div style="margin-top:0.8rem;">
+                <div class="family-join-request-actions">
 
                     <button
-                        onclick="approveJoinRequest('${escapeFamilyJS(request.id)}')"
-                        style="
-                            background:#198754;
-                            margin-right:0.5rem;
+                        class="
+                            family-join-request-approve
+                        "
+                        onclick="
+                            approveJoinRequest(
+                                '${escapeFamilyJS(request.id)}'
+                            )
                         "
                     >
                         ✅ Approve
                     </button>
 
                     <button
-                        onclick="rejectJoinRequest('${escapeFamilyJS(request.id)}')"
-                        style="
-                            background:#dc3545;
+                        class="
+                            family-join-request-reject
+                        "
+                        onclick="
+                            rejectJoinRequest(
+                                '${escapeFamilyJS(request.id)}'
+                            )
                         "
                     >
                         ❌ Reject
                     </button>
 
                 </div>
+
             `;
 
             list.appendChild(item);
@@ -1349,6 +1457,7 @@ async function loadJoinRequests() {
             );
 
         if (list) {
+
             list.innerHTML = `
                 <div style="color:#b00020;">
                     ❌ Could not load join requests
