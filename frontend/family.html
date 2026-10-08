@@ -30,12 +30,91 @@
 
     <div class="family-container">
         <h1>👨‍👩‍👦 Family</h1>
-        <div>
-            <input type="text" id="familyName" placeholder="Member Name" />
-            <input type="text" id="familyPhone" placeholder="Phone" />
-            <input type="text" id="familyLocation" placeholder="Location" />
-            <button onclick="addFamilyMember()">Add Family Member</button>
-        </div>
+       <hr style="margin:1.5rem 0;" />
+
+<div class="family-link-box">
+
+    <h2>🔗 Join Family</h2>
+
+    <p>
+        Family admin se mila hua code enter karke
+        apna SamarthAI account family se connect karein.
+    </p>
+
+    <input
+        type="text"
+        id="familyJoinCode"
+        placeholder="Example: SAM-7K4P-X9"
+        maxlength="11"
+        autocomplete="off"
+    />
+
+    <input
+        type="text"
+        id="familyJoinRelation"
+        placeholder="Relation e.g. Brother, Sister, Father"
+    />
+
+    <button onclick="joinFamilyWithCode()">
+        🔗 Join Family
+    </button>
+
+</div>
+
+<hr style="margin:1.5rem 0;" />
+
+<div class="family-admin-code-box">
+
+    <h2>🔐 Family Admin</h2>
+
+    <p>
+        Family ke kisi member ko join karane ke liye
+        temporary code generate karein.
+    </p>
+
+    <button onclick="generateFamilyCode()">
+        🎟️ Generate Family Code
+    </button>
+
+    <div
+        id="generatedFamilyCode"
+        style="
+            display:none;
+            margin-top:1rem;
+            padding:1rem;
+            background:#f5f5f5;
+            border-radius:12px;
+            text-align:center;
+        "
+    >
+
+        <div
+            id="familyCodeValue"
+            style="
+                font-size:1.5rem;
+                font-weight:bold;
+                letter-spacing:2px;
+            "
+        ></div>
+
+        <div
+            id="familyCodeExpiry"
+            style="
+                margin-top:0.5rem;
+                color:#666;
+            "
+        ></div>
+
+        <button
+            onclick="copyFamilyCode()"
+            style="margin-top:0.8rem;"
+        >
+            📋 Copy Code
+        </button>
+
+    </div>
+
+</div>
         <div class="family-list" id="familyList"></div>
     </div>
 
@@ -258,7 +337,197 @@ async function trackFamilyMember(memberId) {
                 console.error('Error deleting member:', error);
             }
         }
+async function generateFamilyCode() {
 
+    try {
+
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+
+        const res = await fetch(
+            `${API_BASE}/family/link-code`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+            alert(
+                data.error ||
+                'Could not generate family code'
+            );
+            return;
+        }
+
+        document.getElementById(
+            'generatedFamilyCode'
+        ).style.display = 'block';
+
+        document.getElementById(
+            'familyCodeValue'
+        ).textContent = data.code;
+
+        document.getElementById(
+            'familyCodeExpiry'
+        ).textContent =
+            `⏱️ Code valid for ${data.expiresInMinutes} minutes`;
+
+        window.currentFamilyCode =
+            data.code;
+
+    } catch (error) {
+
+        console.error(
+            'Family code error:',
+            error
+        );
+
+        alert(
+            '❌ Could not generate family code'
+        );
+    }
+}
+
+
+async function joinFamilyWithCode() {
+
+    const code =
+        document.getElementById(
+            'familyJoinCode'
+        ).value.trim();
+
+    const relation =
+        document.getElementById(
+            'familyJoinRelation'
+        ).value.trim();
+
+    if (!code) {
+        alert(
+            'Family code enter karein'
+        );
+        return;
+    }
+
+
+    const confirmed =
+        confirm(
+            'Kya aap is family mein join hona chahte hain?'
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+
+        const res = await fetch(
+            `${API_BASE}/family/join`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json',
+
+                    'Authorization':
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    code,
+                    relation:
+                        relation || null
+                })
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+            alert(
+                data.error ||
+                'Could not join family'
+            );
+            return;
+        }
+
+        alert(
+            '✅ Successfully joined the family'
+        );
+
+        document.getElementById(
+            'familyJoinCode'
+        ).value = '';
+
+        document.getElementById(
+            'familyJoinRelation'
+        ).value = '';
+
+        loadFamily();
+
+    } catch (error) {
+
+        console.error(
+            'Family join error:',
+            error
+        );
+
+        alert(
+            '❌ Could not join family'
+        );
+    }
+}
+
+
+async function copyFamilyCode() {
+
+    const code =
+        window.currentFamilyCode;
+
+    if (!code) {
+        return;
+    }
+
+    try {
+
+        await navigator.clipboard.writeText(
+            code
+        );
+
+        alert(
+            '✅ Family code copied'
+        );
+
+    } catch (error) {
+
+        alert(
+            'Code: ' + code
+        );
+    }
+}
         // Load family on page load
         document.addEventListener('DOMContentLoaded', loadFamily);
     </script>
