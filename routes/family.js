@@ -252,16 +252,39 @@ router.get("/", async (req, res) => {
             await getCurrentMembership(userId);
 
 
-        /*
-        First-time user:
-        automatically create their family.
-        */
-        if (!membership?.family_id) {
+      /*
+First-time user:
 
-            membership =
-                await createFamilyForUser(userId);
-        }
+For normal Family page requests,
+automatically create their family.
 
+For the account-linking flow,
+?noCreate=true prevents automatic
+family creation so the user can
+join another family's account.
+*/
+
+const preventAutoCreate =
+    String(req.query.noCreate || "")
+        .toLowerCase() === "true";
+
+if (
+    !membership?.family_id &&
+    preventAutoCreate
+) {
+
+    return res.json({
+        family: null,
+        members: [],
+        currentUserRole: null
+    });
+}
+
+if (!membership?.family_id) {
+
+    membership =
+        await createFamilyForUser(userId);
+} 
 
         /*
         Get family.
@@ -552,24 +575,29 @@ router.post(
             const userId =
                 getUserId(req);
 
-            const currentMember =
-                await getCurrentMembership(
-                    userId
-                );
+      let currentMember =
+    await getCurrentMembership(
+        userId
+    );
 
-            if (
-                !currentMember?.family_id
-            ) {
-                return res.status(403).json({
-                    error:
-                        "Family access denied"
-                });
-            }
+/*
+First-time account can create
+its own family when generating
+a family link code.
+*/
 
-            if (
-                currentMember.role !==
-                "admin"
-            ) {
+if (!currentMember?.family_id) {
+
+    currentMember =
+        await createFamilyForUser(
+            userId
+        );
+}
+
+if (
+    currentMember.role !==
+    "admin"
+) {
                 return res.status(403).json({
                     error:
                         "Only family admin can generate a family code"
