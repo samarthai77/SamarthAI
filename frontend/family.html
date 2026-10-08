@@ -116,6 +116,25 @@ maxlength="13"
 
 </div>
         <div class="family-list" id="familyList"></div>
+     <div
+    id="joinRequestsSection"
+    style="
+        display:none;
+        margin-top:1.5rem;
+        padding:1rem;
+        background:#fff8f0;
+        border:1px solid #ffd7b3;
+        border-radius:12px;
+    "
+>
+    <h2>📥 Pending Join Requests</h2>
+
+    <div id="joinRequestsList">
+        <div style="color:#666;">
+            Loading requests...
+        </div>
+    </div>
+</div>   
     </div>
 
     <footer><p>&copy; 2026 SamarthAI</p></footer>
@@ -158,7 +177,7 @@ maxlength="13"
             }
         }
 
-    async function loadFamily() {
+  async function loadFamily() {
     try {
         const token = localStorage.getItem('token');
 
@@ -167,19 +186,20 @@ maxlength="13"
             return;
         }
 
-      const res = await fetch(
-    `${API_BASE}/family?noCreate=true`,
-    {
-        headers: {
-            'Authorization':
-                `Bearer ${token}`
-        }
-    }
-);
+        const res = await fetch(
+            `${API_BASE}/family?noCreate=true`,
+            {
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
 
         const data = await res.json();
 
-        const list = document.getElementById('familyList');
+        const list =
+            document.getElementById('familyList');
 
         list.innerHTML = '';
 
@@ -187,18 +207,24 @@ maxlength="13"
             list.innerHTML = `
                 <div class="family-item">
                     <div>
-                        ❌ ${data.error || data.message || 'Could not load family'}
+                        ❌ ${
+                            escapeFamilyHTML(
+                                data.error ||
+                                data.message ||
+                                'Could not load family'
+                            )
+                        }
                     </div>
                 </div>
             `;
+
             return;
         }
 
-        // New backend response:
-        // data.members = [...]
-        const members = Array.isArray(data.members)
-            ? data.members
-            : [];
+        const members =
+            Array.isArray(data.members)
+                ? data.members
+                : [];
 
         if (members.length === 0) {
             list.innerHTML = `
@@ -208,56 +234,111 @@ maxlength="13"
                     </div>
                 </div>
             `;
-            return;
+        } else {
+
+            members.forEach(member => {
+
+                const item =
+                    document.createElement('div');
+
+                item.className =
+                    'family-item';
+
+                item.innerHTML = `
+                    <div>
+                        <strong>
+                            ${escapeFamilyHTML(
+                                member.name ||
+                                'Unknown'
+                            )}
+                        </strong><br />
+
+                        📞 ${
+                            escapeFamilyHTML(
+                                member.phone ||
+                                'N/A'
+                            )
+                        }<br />
+
+                        📍 ${
+                            escapeFamilyHTML(
+                                member.location ||
+                                'N/A'
+                            )
+                        }<br />
+
+                        ${
+                            member.relation
+                                ? `👤 ${
+                                    escapeFamilyHTML(
+                                        member.relation
+                                    )
+                                }<br />`
+                                : ''
+                        }
+
+                        🛡️ ${
+                            escapeFamilyHTML(
+                                member.role ||
+                                'member'
+                            )
+                        }
+                    </div>
+
+                    <div>
+                        <button
+                            onclick="trackFamilyMember('${escapeFamilyJS(member.id)}')"
+                        >
+                            📍 Track Location
+                        </button>
+
+                        ${
+                            member.role !== 'admin'
+                                ? `
+                                    <button
+                                        onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
+                                    >
+                                        Delete
+                                    </button>
+                                `
+                                : ''
+                        }
+                    </div>
+                `;
+
+                list.appendChild(item);
+            });
         }
 
-        members.forEach(member => {
+        /*
+        Only active family admin can see
+        and manage pending join requests.
+        */
+        if (
+            data.currentUserRole === 'admin'
+        ) {
+            await loadJoinRequests();
+        } else {
+            const section =
+                document.getElementById(
+                    'joinRequestsSection'
+                );
 
-            const item = document.createElement('div');
-
-            item.className = 'family-item';
-
-            item.innerHTML = `
-                <div>
-                    <strong>
-                        ${escapeFamilyHTML(member.name || 'Unknown')}
-                    </strong><br />
-
-                    📞 ${escapeFamilyHTML(member.phone || 'N/A')}<br />
-
-                    📍 ${escapeFamilyHTML(member.location || 'N/A')}<br />
-
-                    ${
-                        member.relation
-                            ? `👤 ${escapeFamilyHTML(member.relation)}<br />`
-                            : ''
-                    }
-
-                    🛡️ ${escapeFamilyHTML(member.role || 'member')}
-                </div>
-
-                <div>
-                <button
-    onclick="trackFamilyMember('${escapeFamilyJS(member.id)}')"
->
-    📍 Track Location
-</button>
-                    <button
-                        onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
-                    >
-                        Delete
-                    </button>
-                </div>
-            `;
-
-            list.appendChild(item);
-        });
+            if (section) {
+                section.style.display = 'none';
+            }
+        }
 
     } catch (error) {
 
-        console.error('Error loading family:', error);
+        console.error(
+            'Error loading family:',
+            error
+        );
 
-        document.getElementById('familyList').innerHTML = `
+        document.getElementById(
+            'familyList'
+        ).innerHTML = `
             <div class="family-item">
                 <div>
                     ❌ Family load failed
@@ -266,8 +347,317 @@ maxlength="13"
         `;
     }
 }
+async function loadJoinRequests() {
 
+    try {
 
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            return;
+        }
+
+        const section =
+            document.getElementById(
+                'joinRequestsSection'
+            );
+
+        const list =
+            document.getElementById(
+                'joinRequestsList'
+            );
+
+        if (!section || !list) {
+            return;
+        }
+
+        section.style.display = 'block';
+
+        list.innerHTML = `
+            <div style="color:#666;">
+                Loading requests...
+            </div>
+        `;
+
+        const res = await fetch(
+            `${API_BASE}/family/join-requests`,
+            {
+                method: 'GET',
+
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+
+            list.innerHTML = `
+                <div style="color:#b00020;">
+                    ❌ ${
+                        escapeFamilyHTML(
+                            data.error ||
+                            'Could not load join requests'
+                        )
+                    }
+                </div>
+            `;
+
+            return;
+        }
+
+        const requests =
+            Array.isArray(data.requests)
+                ? data.requests
+                : [];
+
+        if (requests.length === 0) {
+
+            list.innerHTML = `
+                <div style="color:#666;">
+                    No pending join requests.
+                </div>
+            `;
+
+            return;
+        }
+
+        list.innerHTML = '';
+
+        requests.forEach(request => {
+
+            const item =
+                document.createElement('div');
+
+            item.style.cssText = `
+                background:#ffffff;
+                border:1px solid #ddd;
+                border-radius:10px;
+                padding:1rem;
+                margin-top:0.7rem;
+            `;
+
+            item.innerHTML = `
+                <div>
+                    <strong>
+                        👤 ${
+                            escapeFamilyHTML(
+                                request.name ||
+                                'Unknown User'
+                            )
+                        }
+                    </strong>
+                    <br />
+
+                    📞 ${
+                        escapeFamilyHTML(
+                            request.phone ||
+                            'N/A'
+                        )
+                    }
+                    <br />
+
+                    ${
+                        request.relation
+                            ? `🔗 Relation: ${
+                                escapeFamilyHTML(
+                                    request.relation
+                                )
+                            }<br />`
+                            : ''
+                    }
+
+                    🕐 Request:
+                    ${
+                        request.createdAt
+                            ? new Date(
+                                request.createdAt
+                              ).toLocaleString()
+                            : 'N/A'
+                    }
+                </div>
+
+                <div style="margin-top:0.8rem;">
+
+                    <button
+                        onclick="approveJoinRequest('${escapeFamilyJS(request.id)}')"
+                        style="
+                            background:#198754;
+                            margin-right:0.5rem;
+                        "
+                    >
+                        ✅ Approve
+                    </button>
+
+                    <button
+                        onclick="rejectJoinRequest('${escapeFamilyJS(request.id)}')"
+                        style="
+                            background:#dc3545;
+                        "
+                    >
+                        ❌ Reject
+                    </button>
+
+                </div>
+            `;
+
+            list.appendChild(item);
+        });
+
+    } catch (error) {
+
+        console.error(
+            'Join requests error:',
+            error
+        );
+
+        const list =
+            document.getElementById(
+                'joinRequestsList'
+            );
+
+        if (list) {
+            list.innerHTML = `
+                <div style="color:#b00020;">
+                    ❌ Could not load join requests
+                </div>
+            `;
+        }
+    }
+}
+ async function approveJoinRequest(requestId) {
+
+    const confirmed =
+        confirm(
+            'Kya aap is user ko family mein approve karna chahte hain?'
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+
+        const res = await fetch(
+            `${API_BASE}/family/join-requests/${encodeURIComponent(requestId)}/approve`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+
+            alert(
+                data.error ||
+                'Could not approve request'
+            );
+
+            return;
+        }
+
+        alert(
+            '✅ Family member approved successfully'
+        );
+
+        await loadFamily();
+
+    } catch (error) {
+
+        console.error(
+            'Approve request error:',
+            error
+        );
+
+        alert(
+            '❌ Could not approve join request'
+        );
+    }
+}
+ async function rejectJoinRequest(requestId) {
+
+    const confirmed =
+        confirm(
+            'Kya aap is join request ko reject karna chahte hain?'
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const token =
+            localStorage.getItem('token');
+
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+
+        const res = await fetch(
+            `${API_BASE}/family/join-requests/${encodeURIComponent(requestId)}/reject`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Authorization':
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data =
+            await res.json();
+
+        if (!res.ok) {
+
+            alert(
+                data.error ||
+                'Could not reject request'
+            );
+
+            return;
+        }
+
+        alert(
+            '✅ Join request rejected'
+        );
+
+        await loadJoinRequests();
+
+    } catch (error) {
+
+        console.error(
+            'Reject request error:',
+            error
+        );
+
+        alert(
+            '❌ Could not reject join request'
+        );
+    }
+}       
 function escapeFamilyHTML(value) {
 
     return String(value ?? '')
@@ -387,8 +777,8 @@ async function generateFamilyCode() {
         document.getElementById(
             'familyCodeExpiry'
         ).textContent =
-            `⏱️ Code valid for ${data.expiresInMinutes} minutes`;
-
+           
+`⏱️ Code valid for ${data.expiresInHours} hours`;
         window.currentFamilyCode =
             data.code;
 
@@ -478,9 +868,9 @@ async function joinFamilyWithCode() {
             return;
         }
 
-        alert(
-            '✅ Successfully joined the family'
-        );
+     alert(
+    '✅ Join request submitted.\n\nFamily admin approval ke baad aap family member banenge.'
+);
 
         document.getElementById(
             'familyJoinCode'
@@ -490,8 +880,7 @@ async function joinFamilyWithCode() {
             'familyJoinRelation'
         ).value = '';
 
-        loadFamily();
-
+    await loadFamily();  
     } catch (error) {
 
         console.error(
