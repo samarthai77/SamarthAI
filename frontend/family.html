@@ -647,7 +647,7 @@ maxlength="13"
             `;
         } else {
 
-            members.forEach(member => {
+        members.forEach(member => {
 
                 const item =
                     document.createElement('div');
@@ -655,56 +655,132 @@ maxlength="13"
                 item.className =
                     'family-item';
 
+                const memberName =
+                    escapeFamilyHTML(
+                        member.name ||
+                        'Family Member'
+                    );
+
+                const memberPhone =
+                    escapeFamilyHTML(
+                        member.phone ||
+                        'N/A'
+                    );
+
+                const memberLocation =
+                    escapeFamilyHTML(
+                        member.location ||
+                        'N/A'
+                    );
+
+                const memberRelation =
+                    member.relation
+                        ? escapeFamilyHTML(
+                            member.relation
+                        )
+                        : '';
+
+                const memberRole =
+                    escapeFamilyHTML(
+                        member.role ||
+                        'member'
+                    );
+
+                const profilePhoto =
+                    member.profile_photo_url
+                        ? escapeFamilyHTML(
+                            member.profile_photo_url
+                        )
+                        : '';
+
+                const isAdmin =
+                    member.role === 'admin';
+
                 item.innerHTML = `
-                    <div>
-                        <strong>
-                            ${escapeFamilyHTML(
-                                member.name ||
-                                'Unknown'
-                            )}
-                        </strong><br />
-
-                        📞 ${
-                            escapeFamilyHTML(
-                                member.phone ||
-                                'N/A'
-                            )
-                        }<br />
-
-                        📍 ${
-                            escapeFamilyHTML(
-                                member.location ||
-                                'N/A'
-                            )
-                        }<br />
+                    <div class="family-member-profile">
 
                         ${
-                            member.relation
-                                ? `👤 ${
-                                    escapeFamilyHTML(
-                                        member.relation
-                                    )
-                                }<br />`
-                                : ''
+                            profilePhoto
+                                ? `
+                                    <img
+                                        class="family-member-avatar"
+                                        src="${profilePhoto}"
+                                        alt="${memberName}"
+                                        onerror="
+                                            this.style.display='none';
+                                            this.nextElementSibling.style.display='flex';
+                                        "
+                                    />
+
+                                    <div
+                                        class="family-member-avatar default"
+                                        style="display:none;"
+                                    >
+                                        👤
+                                    </div>
+                                `
+                                : `
+                                    <div class="family-member-avatar default">
+                                        👤
+                                    </div>
+                                `
                         }
 
-                        🛡️ ${
-                            escapeFamilyHTML(
-                                member.role ||
-                                'member'
-                            )
-                        }
+                        <div>
+
+                            <div class="family-member-name">
+                                ${memberName}
+                            </div>
+
+                            <div class="family-member-meta">
+                                📞 ${memberPhone}
+                            </div>
+
+                            <div class="family-member-meta">
+                                📍 ${memberLocation}
+                            </div>
+
+                            ${
+                                memberRelation
+                                    ? `
+                                        <div class="family-member-meta">
+                                            👤 ${memberRelation}
+                                        </div>
+                                    `
+                                    : ''
+                            }
+
+                            <span
+                                class="
+                                    family-role-badge
+                                    ${
+                                        isAdmin
+                                            ? 'family-admin-badge'
+                                            : ''
+                                    }
+                                "
+                            >
+                                ${
+                                    isAdmin
+                                        ? '👑 Family Admin'
+                                        : '🛡️ Family Member'
+                                }
+                            </span>
+
+                        </div>
+
                     </div>
 
-                    <div>
+                    <div class="family-member-actions">
+
                         <button
                             onclick="trackFamilyMember('${escapeFamilyJS(member.id)}')"
                         >
-                            📍 Track Location
+                            📍 Track
                         </button>
 
                         ${
-                            member.role !== 'admin'
+                            !isAdmin
                                 ? `
                                     <button
                                         onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
@@ -714,13 +790,12 @@ maxlength="13"
                                 `
                                 : ''
                         }
+
                     </div>
                 `;
 
                 list.appendChild(item);
             });
-        }
-
         /*
         Only active family admin can see
         and manage pending join requests.
