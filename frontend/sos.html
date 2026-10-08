@@ -55,7 +55,107 @@
         <button class="sos-btn" onclick="sendSOS()">🚨 SOS</button>
         <div class="status" id="sosStatus">Ready</div>
     </div>
+<div
+        id="activeSOSCard"
+        style="
+            display:none;
+            max-width:600px;
+            margin:1rem auto 2rem;
+            background:#fff;
+            border:2px solid #dc3545;
+            border-radius:16px;
+            padding:1.5rem;
+            box-shadow:0 4px 20px rgba(220,53,69,0.18);
+        "
+    >
 
+        <h2
+            style="
+                color:#dc3545;
+                margin-top:0;
+            "
+        >
+            🚨 ACTIVE FAMILY SOS
+        </h2>
+
+        <p
+            id="activeSOSMessage"
+            style="
+                font-weight:600;
+                font-size:1.1rem;
+            "
+        >
+            A family member needs help.
+        </p>
+
+        <div
+            style="
+                background:#f8f9fa;
+                padding:1rem;
+                border-radius:10px;
+                margin:1rem 0;
+            "
+        >
+
+            <p>
+                <strong>👤 Member:</strong>
+                <span id="activeSOSMember">
+                    —
+                </span>
+            </p>
+
+            <p>
+                <strong>📍 Location:</strong>
+                <span id="activeSOSLocation">
+                    —
+                </span>
+            </p>
+
+            <p>
+                <strong>🕐 Last reported:</strong>
+                <span id="activeSOSUpdated">
+                    —
+                </span>
+            </p>
+
+        </div>
+
+        <button
+            type="button"
+            onclick="navigateToSOSMember()"
+            style="
+                width:100%;
+                padding:1rem;
+                border:none;
+                border-radius:12px;
+                background:#dc3545;
+                color:white;
+                font-size:1.05rem;
+                font-weight:700;
+                cursor:pointer;
+            "
+        >
+            🧭 NAVIGATE TO MEMBER
+        </button>
+
+        <button
+            type="button"
+            onclick="loadActiveFamilySOS()"
+            style="
+                width:100%;
+                padding:.8rem;
+                margin-top:.7rem;
+                border:1px solid #ccc;
+                border-radius:10px;
+                background:#fff;
+                font-size:.95rem;
+                cursor:pointer;
+            "
+        >
+            🔄 Refresh Location
+        </button>
+
+    </div>
     <footer><p>&copy; 2026 SamarthAI</p></footer>
     <script src="js/app.js"></script>
     <script>
@@ -229,7 +329,350 @@
             "#f8d7da";
     }
 }
-          
+   let activeSOSLocationData = null;
+
+
+/*
+=========================================================
+LOAD ACTIVE FAMILY SOS
+=========================================================
+*/
+
+async function loadActiveFamilySOS() {
+
+    const card =
+        document.getElementById(
+            "activeSOSCard"
+        );
+
+    const memberElement =
+        document.getElementById(
+            "activeSOSMember"
+        );
+
+    const locationElement =
+        document.getElementById(
+            "activeSOSLocation"
+        );
+
+    const updatedElement =
+        document.getElementById(
+            "activeSOSUpdated"
+        );
+
+    const messageElement =
+        document.getElementById(
+            "activeSOSMessage"
+        );
+
+
+    if (!card) {
+        return;
+    }
+
+
+    const token =
+        localStorage.getItem("token");
+
+
+    if (!token) {
+        card.style.display = "none";
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE}/sos/family-active`,
+                {
+                    method: "GET",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+
+        if (
+            response.status === 401
+        ) {
+
+            card.style.display = "none";
+            return;
+        }
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not load active family SOS"
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        /*
+        No active family SOS.
+        */
+
+        if (
+            !data.active ||
+            !data.sos
+        ) {
+
+            card.style.display = "none";
+
+            activeSOSLocationData =
+                null;
+
+            return;
+        }
+
+
+        const sos =
+            data.sos;
+
+
+        /*
+        Parse server-provided location.
+        Expected format:
+        "25.435800, 81.846300"
+        */
+
+        const locationString =
+            String(
+                sos.location ||
+                sos.memberLocation ||
+                ""
+            ).trim();
+
+
+        const parts =
+            locationString
+                .split(",")
+                .map(
+                    value =>
+                        Number(
+                            value.trim()
+                        )
+                );
+
+
+        const latitude =
+            parts[0];
+
+        const longitude =
+            parts[1];
+
+
+        /*
+        Never allow navigation to an
+        invalid location.
+        */
+
+        if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180
+        ) {
+
+            activeSOSLocationData =
+                null;
+
+            card.style.display =
+                "block";
+
+            memberElement.textContent =
+                sos.memberName ||
+                "Family Member";
+
+            locationElement.textContent =
+                "Location unavailable";
+
+            updatedElement.textContent =
+                "Unavailable";
+
+            messageElement.textContent =
+                "🚨 SOS is active, but a valid location is currently unavailable.";
+
+            return;
+        }
+
+
+        /*
+        Store only validated coordinates
+        for the navigation button.
+        */
+
+        activeSOSLocationData = {
+            latitude,
+            longitude
+        };
+
+
+        memberElement.textContent =
+            sos.memberName ||
+            "Family Member";
+
+
+        locationElement.textContent =
+            `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+
+        /*
+        Format last reported time.
+        */
+
+        if (sos.lastUpdated) {
+
+            const date =
+                new Date(
+                    sos.lastUpdated
+                );
+
+            if (
+                !Number.isNaN(
+                    date.getTime()
+                )
+            ) {
+
+                updatedElement.textContent =
+                    date.toLocaleString();
+            }
+
+            else {
+
+                updatedElement.textContent =
+                    sos.lastUpdated;
+            }
+
+        }
+
+        else {
+
+            updatedElement.textContent =
+                "Just now";
+        }
+
+
+        messageElement.textContent =
+            `🚨 ${sos.memberName || "A family member"} needs help. Please respond immediately.`;
+
+
+        card.style.display =
+            "block";
+
+
+    } catch (error) {
+
+        console.error(
+            "Active family SOS error:",
+            error
+        );
+
+        /*
+        Do not show a false emergency
+        state when the API cannot be reached.
+        */
+
+        card.style.display =
+            "none";
+
+        activeSOSLocationData =
+            null;
+    }
+}
+
+
+/*
+=========================================================
+NAVIGATE TO SOS MEMBER
+=========================================================
+*/
+
+function navigateToSOSMember() {
+
+    if (
+        !activeSOSLocationData
+    ) {
+
+        alert(
+            "Valid SOS location is not available yet."
+        );
+
+        return;
+    }
+
+
+    const latitude =
+        activeSOSLocationData.latitude;
+
+    const longitude =
+        activeSOSLocationData.longitude;
+
+
+    /*
+    Google Maps directions URL.
+    Destination is taken only from
+    the authorized SOS API response.
+    */
+
+    const mapsUrl =
+        "https://www.google.com/maps/dir/?api=1" +
+        `&destination=${encodeURIComponent(
+            `${latitude},${longitude}`
+        )}`;
+
+
+    /*
+    Open turn-by-turn destination.
+    */
+
+    const opened =
+        window.open(
+            mapsUrl,
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+
+    /*
+    Some mobile browsers/webviews block
+    window.open. Fall back to same tab.
+    */
+
+    if (!opened) {
+
+        window.location.href =
+            mapsUrl;
+    }
+}
+
+
+/*
+=========================================================
+INITIAL ACTIVE SOS CHECK
+=========================================================
+*/
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        loadActiveFamilySOS();
+
+    }
+);       
     </script>
 </body>
 </html>
