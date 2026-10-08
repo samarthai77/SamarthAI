@@ -1,5 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 
 const router = express.Router();
@@ -97,7 +98,45 @@ async function getCurrentMembership(userId) {
     return data || null;
 }
 
+/*
+=========================================================
+FAMILY LINK CODE HELPERS
+=========================================================
+*/
 
+const FAMILY_CODE_TTL_MINUTES = 10;
+
+function generateFamilyLinkCode() {
+    const alphabet =
+        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    let raw = "";
+
+    const randomBytes =
+        crypto.randomBytes(8);
+
+    for (let i = 0; i < 8; i++) {
+        raw +=
+            alphabet[
+                randomBytes[i] %
+                alphabet.length
+            ];
+    }
+
+    return `SAM-${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+}
+
+
+function hashFamilyLinkCode(code) {
+    return crypto
+        .createHash("sha256")
+        .update(
+            String(code)
+                .trim()
+                .toUpperCase()
+        )
+        .digest("hex");
+}
 /*
 =========================================================
 CREATE FAMILY FOR FIRST-TIME USER
@@ -497,7 +536,497 @@ router.post("/", async (req, res) => {
     }
 });
 
+/*
+=========================================================
+POST /api/family/link-code
+GENERATE FAMILY LINK CODE
+=========================================================
+*/
 
+router.post(
+    "/link-code",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+            if (
+                !currentMember?.family_id
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+            if (
+                currentMember.role !==
+                "admin"
+            ) {
+                return res.status(403).json({
+                    error:
+                        "Only family admin can generate a family code"
+                });
+            }
+
+
+            /*
+            Check family capacity.
+            */
+
+            const {
+                count,
+                error: countError
+            } = await supabase
+                .from("family_members")
+                .select(
+                    "id",
+                    {
+                        count: "exact",
+                        head: true
+                    }
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                );
+
+            if (countError) {
+                throw countError;
+            }
+
+            if (
+                Number(count || 0) >=
+                MAX_FAMILY_MEMBERS
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Family limit reached. Maximum 11 active members are allowed."
+                });
+            }
+
+
+            /*
+            Invalidate previous unused codes
+            for this family.
+            */
+
+            await supabase
+                .from("family_link_codes")
+                .update({
+                    used_at:
+                        new Date().toISOString()
+                })
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .is(
+                    "used_at",
+                    null
+                );
+
+
+            /*
+            Generate new code.
+            */
+
+            const code =
+                generateFamilyLinkCode();
+
+            const codeHash =
+                hashFamilyLinkCode(code);
+
+            const expiresAt =
+                new Date(
+                    Date.now() +
+                    FAMILY_CODE_TTL_MINUTES *
+                    60 *
+                    1000
+                ).toISOString();
+
+
+            const {
+                error: insertError
+            } = await supabase
+                .from("family_link_codes")
+                .insert([
+                    {
+                        family_id:
+                            currentMember.family_id,
+
+                        created_by:
+                            userId,
+
+                        code_hash:
+                            codeHash,
+
+                        expires_at:
+                            expiresAt
+                    }
+                ]);
+
+            if (insertError) {
+                throw insertError;
+            }
+
+
+            return res.status(201).json({
+                message:
+                    "Family link code generated successfully",
+
+                code,
+
+                expiresAt,
+
+                expiresInMinutes:
+                    FAMILY_CODE_TTL_MINUTES
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family link code generation error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not generate family link code"
+            });
+        }
+    }
+);
+/*
+=========================================================
+POST /api/family/join
+JOIN FAMILY USING CODE
+=========================================================
+*/
+
+router.post(
+    "/join",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const {
+                code,
+                relation = null
+            } = req.body || {};
+
+            if (
+                !code ||
+                !String(code).trim()
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Family code is required"
+                });
+            }
+
+            /*
+            Current user must not already
+            belong to an active family.
+            */
+
+            const existingMembership =
+                await getCurrentMembership(
+                    userId
+                );
+
+            if (
+                existingMembership?.family_id
+            ) {
+                return res.status(400).json({
+                    error:
+                        "You are already a member of a family"
+                });
+            }
+
+            /*
+            Normalize and hash code.
+            */
+
+            const normalizedCode =
+                String(code)
+                    .trim()
+                    .toUpperCase();
+
+            const codeHash =
+                hashFamilyLinkCode(
+                    normalizedCode
+                );
+
+            /*
+            Find valid unused code.
+            */
+
+            const {
+                data: linkCode,
+                error: codeError
+            } = await supabase
+                .from("family_link_codes")
+                .select(
+                    "id, family_id, created_by, expires_at, used_at"
+                )
+                .eq(
+                    "code_hash",
+                    codeHash
+                )
+                .is(
+                    "used_at",
+                    null
+                )
+                .gt(
+                    "expires_at",
+                    new Date().toISOString()
+                )
+                .maybeSingle();
+
+            if (codeError) {
+                throw codeError;
+            }
+
+            if (!linkCode) {
+                return res.status(400).json({
+                    error:
+                        "Invalid or expired family code"
+                });
+            }
+
+            /*
+            Check family capacity again.
+            */
+
+            const {
+                count,
+                error: countError
+            } = await supabase
+                .from("family_members")
+                .select(
+                    "id",
+                    {
+                        count: "exact",
+                        head: true
+                    }
+                )
+                .eq(
+                    "family_id",
+                    linkCode.family_id
+                )
+                .eq(
+                    "is_active",
+                    true
+                );
+
+            if (countError) {
+                throw countError;
+            }
+
+            if (
+                Number(count || 0) >=
+                MAX_FAMILY_MEMBERS
+            ) {
+                return res.status(400).json({
+                    error:
+                        "This family has reached its maximum member limit"
+                });
+            }
+
+            /*
+            Prevent admin from joining
+            their own family.
+            */
+
+            if (
+                linkCode.created_by ===
+                userId
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Family admin cannot join their own family using this code"
+                });
+            }
+
+            /*
+            Get joining user's profile.
+            */
+
+            const {
+                data: userData,
+                error: userError
+            } = await supabase
+                .from("users")
+                .select(
+                    "id, name, phone"
+                )
+                .eq(
+                    "id",
+                    userId
+                )
+                .maybeSingle();
+
+            if (userError) {
+                throw userError;
+            }
+
+            if (!userData) {
+                return res.status(404).json({
+                    error:
+                        "User account not found"
+                });
+            }
+
+            /*
+            Create linked family membership.
+            */
+
+            const memberData = {
+
+                user_id:
+                    userId,
+
+                family_id:
+                    linkCode.family_id,
+
+                name:
+                    userData.name ||
+                    "Family Member",
+
+                phone:
+                    userData.phone ||
+                    null,
+
+                location:
+                    null,
+
+                relation:
+                    relation
+                        ? String(relation).trim()
+                        : null,
+
+                role:
+                    "member",
+
+                is_active:
+                    true,
+
+                last_updated:
+                    new Date().toISOString()
+            };
+
+            const {
+                data: member,
+                error: memberError
+            } = await supabase
+                .from("family_members")
+                .insert([
+                    memberData
+                ])
+                .select()
+                .single();
+
+            if (memberError) {
+                throw memberError;
+            }
+
+            /*
+            Consume the code immediately.
+            */
+
+            const {
+                error: consumeError
+            } = await supabase
+                .from("family_link_codes")
+                .update({
+                    used_at:
+                        new Date().toISOString(),
+
+                    used_by:
+                        userId
+                })
+                .eq(
+                    "id",
+                    linkCode.id
+                )
+                .is(
+                    "used_at",
+                    null
+                );
+
+            if (consumeError) {
+
+                console.error(
+                    "Family code consume error:",
+                    consumeError
+                );
+            }
+
+            return res.status(201).json({
+                message:
+                    "Successfully joined family",
+
+                member: {
+                    id:
+                        member.id,
+
+                    family_id:
+                        member.family_id,
+
+                    name:
+                        member.name,
+
+                    role:
+                        member.role,
+
+                    relation:
+                        member.relation
+                }
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family join error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not join family"
+            });
+        }
+    }
+);
 /*
 =========================================================
 GET /api/family/:memberId/gps
