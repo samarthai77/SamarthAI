@@ -43,9 +43,9 @@
 
     <input
         type="text"
-        id="familyJoinCode"
-        placeholder="Example: SAM-7K4P-X9"
-        maxlength="11"
+    id="familyJoinCode"
+placeholder="Example: SAM-7K4P-8M2Q"
+maxlength="13"  
         autocomplete="off"
     />
 
@@ -167,11 +167,15 @@
             return;
         }
 
-        const res = await fetch(`${API_BASE}/family`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+      const res = await fetch(
+    `${API_BASE}/family?noCreate=true`,
+    {
+        headers: {
+            'Authorization':
+                `Bearer ${token}`
+        }
+    }
+);
 
         const data = await res.json();
 
