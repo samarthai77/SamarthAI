@@ -104,7 +104,7 @@ FAMILY LINK CODE HELPERS
 =========================================================
 */
 
-const FAMILY_CODE_TTL_MINUTES = 10;
+const FAMILY_CODE_TTL_HOURS = 24;
 
 function generateFamilyLinkCode() {
     const alphabet =
@@ -572,43 +572,41 @@ router.post(
 
         try {
 
-            const userId =
-                getUserId(req);
+            const userId = getUserId(req);
 
-      let currentMember =
-    await getCurrentMembership(
-        userId
-    );
+            let currentMember =
+                await getCurrentMembership(userId);
 
-/*
-First-time account can create
-its own family when generating
-a family link code.
-*/
 
-if (!currentMember?.family_id) {
+            /*
+            First-time account can create
+            its own family.
+            */
+            if (!currentMember?.family_id) {
 
-    currentMember =
-        await createFamilyForUser(
-            userId
-        );
-}
+                currentMember =
+                    await createFamilyForUser(userId);
+            }
 
-if (
-    currentMember.role !==
-    "admin"
-) {
+
+            /*
+            Only active family admin
+            can generate invite code.
+            */
+            if (currentMember.role !== "admin") {
+
                 return res.status(403).json({
                     error:
-                        "Only family admin can generate a family code"
+                        "Only family admin can generate a family invite code"
                 });
             }
 
 
             /*
-            Check family capacity.
+            Count ACTIVE members only.
+            Maximum:
+            1 admin + 10 members = 11
             */
-
             const {
                 count,
                 error: countError
@@ -634,26 +632,45 @@ if (
                 throw countError;
             }
 
-            if (
-                Number(count || 0) >=
-                MAX_FAMILY_MEMBERS
-            ) {
+
+            const activeMemberCount =
+                Number(count || 0);
+
+            const remainingSlots =
+                MAX_FAMILY_MEMBERS -
+                activeMemberCount;
+
+
+            if (remainingSlots <= 0) {
+
                 return res.status(400).json({
                     error:
-                        "Family limit reached. Maximum 11 active members are allowed."
+                        "Family limit reached. Maximum 10 members can be added besides the admin."
                 });
             }
 
 
             /*
-            Invalidate previous unused codes
+            Maximum 10 additional members.
+            Remaining family capacity may be lower.
+            */
+            const maxUses =
+                Math.min(
+                    10,
+                    remainingSlots
+                );
+
+
+            /*
+            Revoke all previous active invite codes
             for this family.
             */
-
-            await supabase
-                .from("family_link_codes")
+            const {
+                error: revokeError
+            } = await supabase
+                .from("family_invite_codes")
                 .update({
-                    used_at:
+                    revoked_at:
                         new Date().toISOString()
                 })
                 .eq(
@@ -661,34 +678,47 @@ if (
                     currentMember.family_id
                 )
                 .is(
-                    "used_at",
+                    "revoked_at",
                     null
                 );
 
+            if (revokeError) {
+                throw revokeError;
+            }
+
 
             /*
-            Generate new code.
+            Generate secure invite code.
             */
-
             const code =
                 generateFamilyLinkCode();
 
             const codeHash =
                 hashFamilyLinkCode(code);
 
+
+            /*
+            Invite remains valid for 24 hours.
+            */
             const expiresAt =
                 new Date(
                     Date.now() +
-                    FAMILY_CODE_TTL_MINUTES *
+                    FAMILY_CODE_TTL_HOURS *
+                    60 *
                     60 *
                     1000
                 ).toISOString();
 
 
+            /*
+            Store ONLY the hash.
+            Plain code is returned once
+            to the admin.
+            */
             const {
                 error: insertError
             } = await supabase
-                .from("family_link_codes")
+                .from("family_invite_codes")
                 .insert([
                     {
                         family_id:
@@ -701,7 +731,13 @@ if (
                             codeHash,
 
                         expires_at:
-                            expiresAt
+                            expiresAt,
+
+                        max_uses:
+                            maxUses,
+
+                        use_count:
+                            0
                     }
                 ]);
 
@@ -711,25 +747,32 @@ if (
 
 
             return res.status(201).json({
+
                 message:
-                    "Family link code generated successfully",
+                    "Family invite code generated successfully",
 
                 code,
 
                 expiresAt,
 
-                expiresInMinutes:
-                    FAMILY_CODE_TTL_MINUTES
+                expiresInHours:
+                    FAMILY_CODE_TTL_HOURS,
+
+                maxUses,
+
+                remainingSlots
+
             });
 
         } catch (err) {
 
             console.error(
-                "Family link code generation error:",
+                "Family invite code generation error:",
                 err
             );
 
             if (isAuthError(err)) {
+
                 return res.status(401).json({
                     error:
                         "Unauthorized"
@@ -738,7 +781,7 @@ if (
 
             return res.status(500).json({
                 error:
-                    "Could not generate family link code"
+                    "Could not generate family invite code"
             });
         }
     }
@@ -764,21 +807,26 @@ router.post(
                 relation = null
             } = req.body || {};
 
+
+            /*
+            Validate code.
+            */
             if (
                 !code ||
                 !String(code).trim()
             ) {
+
                 return res.status(400).json({
                     error:
-                        "Family code is required"
+                        "Family invite code is required"
                 });
             }
 
-            /*
-            Current user must not already
-            belong to an active family.
-            */
 
+            /*
+            User must not already have
+            an active family.
+            */
             const existingMembership =
                 await getCurrentMembership(
                     userId
@@ -787,16 +835,17 @@ router.post(
             if (
                 existingMembership?.family_id
             ) {
+
                 return res.status(400).json({
                     error:
                         "You are already a member of a family"
                 });
             }
 
+
             /*
             Normalize and hash code.
             */
-
             const normalizedCode =
                 String(code)
                     .trim()
@@ -807,24 +856,24 @@ router.post(
                     normalizedCode
                 );
 
-            /*
-            Find valid unused code.
-            */
 
+            /*
+            Find active invite code.
+            */
             const {
-                data: linkCode,
+                data: inviteCode,
                 error: codeError
             } = await supabase
-                .from("family_link_codes")
+                .from("family_invite_codes")
                 .select(
-                    "id, family_id, created_by, expires_at, used_at"
+                    "id, family_id, created_by, expires_at, max_uses, use_count, revoked_at"
                 )
                 .eq(
                     "code_hash",
                     codeHash
                 )
                 .is(
-                    "used_at",
+                    "revoked_at",
                     null
                 )
                 .gt(
@@ -837,17 +886,50 @@ router.post(
                 throw codeError;
             }
 
-            if (!linkCode) {
+
+            if (!inviteCode) {
+
                 return res.status(400).json({
                     error:
-                        "Invalid or expired family code"
+                        "Invalid, expired, or revoked family invite code"
                 });
             }
 
-            /*
-            Check family capacity again.
-            */
 
+            /*
+            Do not allow more requests than
+            the code's approved-use capacity.
+            */
+            if (
+                Number(inviteCode.use_count || 0) >=
+                Number(inviteCode.max_uses || 0)
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "This family invite code has reached its maximum member capacity"
+                });
+            }
+
+
+            /*
+            Admin cannot join own family.
+            */
+            if (
+                inviteCode.created_by ===
+                userId
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Family admin cannot join their own family using this code"
+                });
+            }
+
+
+            /*
+            Check current family capacity.
+            */
             const {
                 count,
                 error: countError
@@ -862,7 +944,7 @@ router.post(
                 )
                 .eq(
                     "family_id",
-                    linkCode.family_id
+                    inviteCode.family_id
                 )
                 .eq(
                     "is_active",
@@ -873,35 +955,22 @@ router.post(
                 throw countError;
             }
 
+
             if (
                 Number(count || 0) >=
                 MAX_FAMILY_MEMBERS
             ) {
+
                 return res.status(400).json({
                     error:
                         "This family has reached its maximum member limit"
                 });
             }
 
-            /*
-            Prevent admin from joining
-            their own family.
-            */
-
-            if (
-                linkCode.created_by ===
-                userId
-            ) {
-                return res.status(400).json({
-                    error:
-                        "Family admin cannot join their own family using this code"
-                });
-            }
 
             /*
-            Get joining user's profile.
+            Verify requesting account exists.
             */
-
             const {
                 data: userData,
                 error: userError
@@ -920,128 +989,106 @@ router.post(
                 throw userError;
             }
 
+
             if (!userData) {
+
                 return res.status(404).json({
                     error:
                         "User account not found"
                 });
             }
 
+
             /*
-            Create linked family membership.
+            IMPORTANT:
+            Do NOT create family_members here.
+
+            This creates ONLY a pending request.
+            Admin approval is required.
             */
-
-            const memberData = {
-
-                user_id:
-                    userId,
-
-                family_id:
-                    linkCode.family_id,
-
-                name:
-                    userData.name ||
-                    "Family Member",
-
-                phone:
-                    userData.phone ||
-                    null,
-
-                location:
-                    null,
-
-                relation:
-                    relation
-                        ? String(relation).trim()
-                        : null,
-
-                role:
-                    "member",
-
-                is_active:
-                    true,
-
-                last_updated:
-                    new Date().toISOString()
-            };
-
             const {
-                data: member,
-                error: memberError
+                data: request,
+                error: requestError
             } = await supabase
-                .from("family_members")
+                .from("family_join_requests")
                 .insert([
-                    memberData
+                    {
+                        family_id:
+                            inviteCode.family_id,
+
+                        invite_code_id:
+                            inviteCode.id,
+
+                        user_id:
+                            userId,
+
+                        relation:
+                            relation
+                                ? String(
+                                    relation
+                                ).trim()
+                                : null,
+
+                        status:
+                            "pending"
+                    }
                 ])
                 .select()
                 .single();
 
-            if (memberError) {
-                throw memberError;
+
+            if (requestError) {
+
+                /*
+                Partial unique index prevents
+                duplicate pending request for
+                same user + same family.
+                */
+                if (
+                    requestError.code ===
+                    "23505"
+                ) {
+
+                    return res.status(409).json({
+                        error:
+                            "You already have a pending request for this family"
+                    });
+                }
+
+                throw requestError;
             }
 
-            /*
-            Consume the code immediately.
-            */
 
-            const {
-                error: consumeError
-            } = await supabase
-                .from("family_link_codes")
-                .update({
-                    used_at:
-                        new Date().toISOString(),
+            return res.status(202).json({
 
-                    used_by:
-                        userId
-                })
-                .eq(
-                    "id",
-                    linkCode.id
-                )
-                .is(
-                    "used_at",
-                    null
-                );
-
-            if (consumeError) {
-
-                console.error(
-                    "Family code consume error:",
-                    consumeError
-                );
-            }
-
-            return res.status(201).json({
                 message:
-                    "Successfully joined family",
+                    "Family join request submitted. Admin approval is required.",
 
-                member: {
+                request: {
                     id:
-                        member.id,
+                        request.id,
 
                     family_id:
-                        member.family_id,
-
-                    name:
-                        member.name,
-
-                    role:
-                        member.role,
+                        request.family_id,
 
                     relation:
-                        member.relation
+                        request.relation,
+
+                    status:
+                        request.status
                 }
+
             });
 
         } catch (err) {
 
             console.error(
-                "Family join error:",
+                "Family join request error:",
                 err
             );
 
             if (isAuthError(err)) {
+
                 return res.status(401).json({
                     error:
                         "Unauthorized"
@@ -1050,7 +1097,468 @@ router.post(
 
             return res.status(500).json({
                 error:
-                    "Could not join family"
+                    "Could not submit family join request"
+            });
+        }
+    }
+);
+/*
+=========================================================
+GET /api/family/join-requests
+GET PENDING FAMILY JOIN REQUESTS
+=========================================================
+*/
+
+router.get(
+    "/join-requests",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            if (
+                currentMember.role !==
+                "admin"
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Only family admin can view join requests"
+                });
+            }
+
+
+            const {
+                data: requests,
+                error: requestError
+            } = await supabase
+                .from("family_join_requests")
+                .select(
+                    "id, family_id, invite_code_id, user_id, relation, status, reviewed_by, reviewed_at, created_at, updated_at"
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "status",
+                    "pending"
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+            if (requestError) {
+                throw requestError;
+            }
+
+
+            const userIds =
+                (requests || [])
+                    .map(
+                        request =>
+                            request.user_id
+                    )
+                    .filter(Boolean);
+
+
+            let users = [];
+
+
+            if (userIds.length > 0) {
+
+                const {
+                    data: userData,
+                    error: usersError
+                } = await supabase
+                    .from("users")
+                    .select(
+                        "id, name, phone"
+                    )
+                    .in(
+                        "id",
+                        userIds
+                    );
+
+                if (usersError) {
+                    throw usersError;
+                }
+
+                users =
+                    userData || [];
+            }
+
+
+            const userMap =
+                new Map(
+                    users.map(
+                        user => [
+                            user.id,
+                            user
+                        ]
+                    )
+                );
+
+
+            const result =
+                (requests || [])
+                    .map(request => {
+
+                        const user =
+                            userMap.get(
+                                request.user_id
+                            );
+
+                        return {
+                            id:
+                                request.id,
+
+                            userId:
+                                request.user_id,
+
+                            name:
+                                user?.name ||
+                                "Unknown User",
+
+                            phone:
+                                user?.phone ||
+                                null,
+
+                            relation:
+                                request.relation,
+
+                            status:
+                                request.status,
+
+                            createdAt:
+                                request.created_at
+                        };
+                    });
+
+
+            return res.json({
+                requests: result
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family join request fetch error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not fetch family join requests"
+            });
+        }
+    }
+);
+
+
+/*
+=========================================================
+POST /api/family/join-requests/:requestId/approve
+APPROVE FAMILY JOIN REQUEST
+=========================================================
+*/
+
+router.post(
+    "/join-requests/:requestId/approve",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const requestId =
+                req.params.requestId;
+
+
+            if (!requestId) {
+
+                return res.status(400).json({
+                    error:
+                        "Request ID is required"
+                });
+            }
+
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            if (
+                currentMember.role !==
+                "admin"
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Only family admin can approve join requests"
+                });
+            }
+
+
+            /*
+            Atomic database operation:
+            - verifies admin
+            - locks request/invite
+            - checks capacity
+            - checks requester
+            - creates active member
+            - marks request approved
+            - increments invite use_count
+            */
+            const {
+                data,
+                error
+            } = await supabase
+                .rpc(
+                    "approve_family_join_request",
+                    {
+                        p_request_id:
+                            requestId,
+
+                        p_reviewer_id:
+                            userId
+                    }
+                );
+
+
+            if (error) {
+
+                console.error(
+                    "Family join approval RPC error:",
+                    error
+                );
+
+                return res.status(400).json({
+                    error:
+                        error.message ||
+                        "Could not approve family join request"
+                });
+            }
+
+
+            return res.json({
+                message:
+                    "Family join request approved successfully",
+
+                result:
+                    data
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family join approval error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not approve family join request"
+            });
+        }
+    }
+);
+
+
+/*
+=========================================================
+POST /api/family/join-requests/:requestId/reject
+REJECT FAMILY JOIN REQUEST
+=========================================================
+*/
+
+router.post(
+    "/join-requests/:requestId/reject",
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                getUserId(req);
+
+            const requestId =
+                req.params.requestId;
+
+
+            if (!requestId) {
+
+                return res.status(400).json({
+                    error:
+                        "Request ID is required"
+                });
+            }
+
+
+            const currentMember =
+                await getCurrentMembership(
+                    userId
+                );
+
+
+            if (
+                !currentMember?.family_id
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Family access denied"
+                });
+            }
+
+
+            if (
+                currentMember.role !==
+                "admin"
+            ) {
+
+                return res.status(403).json({
+                    error:
+                        "Only family admin can reject join requests"
+                });
+            }
+
+
+            /*
+            Update ONLY a pending request
+            belonging to this admin's family.
+            */
+            const {
+                data: request,
+                error: updateError
+            } = await supabase
+                .from("family_join_requests")
+                .update({
+                    status:
+                        "rejected",
+
+                    reviewed_by:
+                        userId,
+
+                    reviewed_at:
+                        new Date().toISOString(),
+
+                    updated_at:
+                        new Date().toISOString()
+                })
+                .eq(
+                    "id",
+                    requestId
+                )
+                .eq(
+                    "family_id",
+                    currentMember.family_id
+                )
+                .eq(
+                    "status",
+                    "pending"
+                )
+                .select()
+                .maybeSingle();
+
+
+            if (updateError) {
+                throw updateError;
+            }
+
+
+            if (!request) {
+
+                return res.status(404).json({
+                    error:
+                        "Pending join request not found"
+                });
+            }
+
+
+            return res.json({
+                message:
+                    "Family join request rejected successfully",
+
+                request: {
+                    id:
+                        request.id,
+
+                    status:
+                        request.status
+                }
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Family join rejection error:",
+                err
+            );
+
+            if (isAuthError(err)) {
+
+                return res.status(401).json({
+                    error:
+                        "Unauthorized"
+                });
+            }
+
+            return res.status(500).json({
+                error:
+                    "Could not reject family join request"
             });
         }
     }
