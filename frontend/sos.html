@@ -154,7 +154,24 @@
         >
             🔄 Refresh Location
         </button>
-
+<button
+            type="button"
+            onclick="resolveActiveSOS()"
+            style="
+                width:100%;
+                padding:1rem;
+                margin-top:.7rem;
+                border:none;
+                border-radius:12px;
+                background:#198754;
+                color:white;
+                font-size:1.05rem;
+                font-weight:700;
+                cursor:pointer;
+            "
+        >
+            🛡️ MARK SAFE / I'M SAFE
+        </button>
     </div>
     <footer><p>&copy; 2026 SamarthAI</p></footer>
     <script src="js/app.js"></script>
@@ -593,7 +610,156 @@ async function loadActiveFamilySOS() {
     }
 }
 
+/*
+=========================================================
+RESOLVE ACTIVE SOS
+=========================================================
+*/
 
+async function resolveActiveSOS() {
+
+    const token =
+        localStorage.getItem("token");
+
+
+    if (!token) {
+
+        alert(
+            "Your session has expired. Please login again."
+        );
+
+        return;
+    }
+
+
+    if (
+        !activeSOSLocationData
+    ) {
+
+        alert(
+            "No active family SOS is available."
+        );
+
+        return;
+    }
+
+
+    const confirmed =
+        window.confirm(
+            "Are you sure the emergency has been handled and this SOS can be marked safe?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    /*
+    The SOS ID is stored when the
+    active SOS is loaded.
+    */
+
+    if (
+        !window.activeSOSId
+    ) {
+
+        alert(
+            "SOS information is unavailable. Please refresh."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE}/sos/${encodeURIComponent(window.activeSOSId)}/resolve`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+
+        let data = {};
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch (error) {
+
+            data = {};
+        }
+
+
+        if (
+            response.ok
+        ) {
+
+            const card =
+                document.getElementById(
+                    "activeSOSCard"
+                );
+
+
+            if (card) {
+                card.style.display =
+                    "none";
+            }
+
+
+            activeSOSLocationData =
+                null;
+
+            window.activeSOSId =
+                null;
+
+
+            alert(
+                "🛡️ SOS marked as safe."
+            );
+
+
+            /*
+            Refresh once after resolving
+            so the page reflects the
+            server state.
+            */
+
+            await loadActiveFamilySOS();
+
+            return;
+        }
+
+
+        alert(
+            data.error ||
+            "Could not mark SOS as safe."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Resolve SOS error:",
+            error
+        );
+
+
+        alert(
+            "Network error. SOS could not be marked safe."
+        );
+    }
+}
 /*
 =========================================================
 NAVIGATE TO SOS MEMBER
