@@ -77,8 +77,10 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ location, contacts })
-                });
+               body: JSON.stringify({
+    latitude,
+    longitude
+})   
                 const data = await res.json();
 
                 if (res.status === 201) {
