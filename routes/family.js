@@ -345,14 +345,83 @@ if (!membership?.family_id) {
             throw membersError;
         }
 
+/*
+        =====================================================
+        LOAD PROFILE PHOTOS FOR CONNECTED FAMILY ACCOUNTS
+        =====================================================
+        Profile photo source of truth:
+        users.profile_photo_url
 
-        return res.json({
+        family_members.user_id is used to connect the
+        family member with the real SamarthAI account.
+        =====================================================
+        */
+
+        const linkedUserIds =
+            (members || [])
+                .map(member => member.user_id)
+                .filter(Boolean);
+
+        let profilePhotoMap = {};
+
+        if (linkedUserIds.length > 0) {
+
+            const {
+                data: linkedUsers,
+                error: linkedUsersError
+            } = await supabase
+                .from("users")
+                .select(
+                    "id, profile_photo_url"
+                )
+                .in(
+                    "id",
+                    linkedUserIds
+                );
+
+            if (linkedUsersError) {
+                throw linkedUsersError;
+            }
+
+            profilePhotoMap =
+                Object.fromEntries(
+                    (linkedUsers || []).map(user => [
+                        user.id,
+                        user.profile_photo_url || null
+                    ])
+                );
+        }
+
+        /*
+        Attach the current account profile photo
+        to each connected family member.
+
+        IMPORTANT:
+        We do NOT store/copy the photo URL inside
+        family_members.
+
+        users.profile_photo_url remains the
+        single source of truth.
+        */
+
+        const familyMembers =
+            (members || []).map(member => ({
+                ...member,
+                profile_photo_url:
+                    member.user_id
+                        ? (
+                            profilePhotoMap[
+                                member.user_id
+                            ] || null
+                        )
+                        : null
+            }));
+       return res.json({
             family,
-            members: members || [],
+            members: familyMembers,
             currentUserRole:
                 membership.role || "member"
         });
-
     } catch (err) {
 
         console.error(
