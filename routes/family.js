@@ -1264,9 +1264,9 @@ router.get(
                     error: usersError
                 } = await supabase
                     .from("users")
-                    .select(
-                        "id, name, phone"
-                    )
+                  .select(
+    "id, name, phone, profile_photo_url"
+)
                     .in(
                         "id",
                         userIds
@@ -1315,7 +1315,9 @@ router.get(
                             phone:
                                 user?.phone ||
                                 null,
-
+profile_photo_url:
+    user?.profile_photo_url ||
+    null,
                             relation:
                                 request.relation,
 
