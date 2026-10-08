@@ -568,7 +568,60 @@
             border-radius: 10px !important;
             font-size: 0.78rem;
         }
+/* =====================================================
+           PREMIUM FAMILY MEMBER STATUS
+           ===================================================== */
 
+        .family-member-top {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .family-connected-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.4rem;
+            padding: 0.22rem 0.55rem;
+            border-radius: 999px;
+            background: #e9f9f1;
+            color: #16824d;
+            border: 1px solid #c9eedb;
+            font-size: 0.68rem;
+            font-weight: 800;
+        }
+
+        .family-connected-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #20b968;
+            box-shadow:
+                0 0 7px rgba(32,185,104,0.7);
+        }
+
+        .family-member-card-info {
+            min-width: 0;
+        }
+
+        .family-member-actions button:first-child {
+            background:
+                linear-gradient(
+                    135deg,
+                    #003366,
+                    #005aa8
+                ) !important;
+        }
+
+        .family-member-actions button:last-child {
+            background:
+                linear-gradient(
+                    135deg,
+                    #dc3545,
+                    #b42333
+                ) !important;
+        }
         /* =====================================================
            MOBILE
            ===================================================== */
@@ -923,7 +976,7 @@ maxlength="13"
             `;
         } else {
 
-        members.forEach(member => {
+    members.forEach(member => {
 
                 const item =
                     document.createElement('div');
@@ -956,12 +1009,6 @@ maxlength="13"
                         )
                         : '';
 
-                const memberRole =
-                    escapeFamilyHTML(
-                        member.role ||
-                        'member'
-                    );
-
                 const profilePhoto =
                     member.profile_photo_url
                         ? escapeFamilyHTML(
@@ -971,6 +1018,9 @@ maxlength="13"
 
                 const isAdmin =
                     member.role === 'admin';
+
+                const isConnected =
+                    Boolean(member.user_id);
 
                 item.innerHTML = `
                     <div class="family-member-profile">
@@ -1002,10 +1052,14 @@ maxlength="13"
                                 `
                         }
 
-                        <div>
+                        <div class="family-member-card-info">
 
-                            <div class="family-member-name">
-                                ${memberName}
+                            <div class="family-member-top">
+
+                                <div class="family-member-name">
+                                    ${memberName}
+                                </div>
+
                             </div>
 
                             <div class="family-member-meta">
@@ -1042,6 +1096,17 @@ maxlength="13"
                                         : '🛡️ Family Member'
                                 }
                             </span>
+
+                            ${
+                                isConnected
+                                    ? `
+                                        <span class="family-connected-badge">
+                                            <span class="family-connected-dot"></span>
+                                            Account Connected
+                                        </span>
+                                    `
+                                    : ''
+                            }
 
                         </div>
 
