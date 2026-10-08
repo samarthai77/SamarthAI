@@ -61,35 +61,174 @@
     <script>
     
 
-        async function sendSOS() {
-            const status = document.getElementById('sosStatus');
-            status.textContent = '⏳ Sending SOS...';
-            status.style.background = '#fff3cd';
+       async function sendSOS() {
 
-            try {
-                const token = localStorage.getItem('token');
-                const location = 'Delhi, India';
-                const contacts = ['9876543210', '9876543211'];
+    const status =
+        document.getElementById("sosStatus");
 
-                const res = await fetch(`${API_BASE}/sos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-               body: JSON.stringify({
-    latitude,
-    longitude
-})   
-                const data = await res.json();
+    try {
+
+        const confirmed = window.confirm(
+            "Are you sure you want to send an SOS emergency alert?"
+        );
+
+        if (!confirmed) {
+            status.textContent = "SOS cancelled.";
+            status.style.background = "#fff3cd";
+            return;
+        }
+
+        const token =
+            localStorage.getItem("token");
+
+        if (!token) {
+            status.textContent =
+                "❌ Please login again.";
+            status.style.background =
+                "#f8d7da";
+            return;
+        }
+
+        status.textContent =
+            "📍 Getting your current GPS location...";
+        status.style.background =
+            "#fff3cd";
+
+        if (!navigator.geolocation) {
+            throw new Error(
+                "GPS is not supported by this device."
+            );
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            async function(position) {
+
+                const latitude =
+                    position.coords.latitude;
+
+                const longitude =
+                    position.coords.longitude;
+
+                status.textContent =
+                    "🚨 Sending SOS...";
+
+                status.style.background =
+                    "#fff3cd";
+
+                const res =
+                    await fetch(
+                        `${API_BASE}/sos`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+                            },
+
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        }
+                    );
+
+                let data = {};
+
+                try {
+                    data =
+                        await res.json();
+                } catch (e) {
+                    data = {};
+                }
 
                 if (res.status === 201) {
-                    status.textContent = '✅ SOS Sent Successfully!';
-                    status.style.background = '#d4edda';
+
+                    status.textContent =
+                        "✅ SOS Sent Successfully!";
+
+                    status.style.background =
+                        "#d4edda";
+
                 } else {
-                    status.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
-                    status.style.background = '#f8d7da';
+
+                    status.textContent =
+                        "❌ Failed: " +
+                        (
+                            data.error ||
+                            "Unknown error"
+                        );
+
+                    status.style.background =
+                        "#f8d7da";
                 }
+            },
+
+            function(error) {
+
+                let message =
+                    "Unable to get GPS location.";
+
+                if (
+                    error.code ===
+                    error.PERMISSION_DENIED
+                ) {
+                    message =
+                        "Location permission denied. Please allow location access.";
+                }
+
+                else if (
+                    error.code ===
+                    error.POSITION_UNAVAILABLE
+                ) {
+                    message =
+                        "Current location is unavailable.";
+                }
+
+                else if (
+                    error.code ===
+                    error.TIMEOUT
+                ) {
+                    message =
+                        "GPS request timed out. Please try again.";
+                }
+
+                status.textContent =
+                    "❌ " + message;
+
+                status.style.background =
+                    "#f8d7da";
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "SOS Error:",
+            error
+        );
+
+        status.textContent =
+            "❌ " +
+            (
+                error.message ||
+                "SOS failed"
+            );
+
+        status.style.background =
+            "#f8d7da";
+    }
+}
             } catch (error) {
                 status.textContent = '❌ Error: ' + error.message;
                 status.style.background = '#f8d7da';
