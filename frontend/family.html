@@ -1323,6 +1323,67 @@ header nav a {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }    
+     /* FAMILY ADD MEMBER FORM */
+.family-add-member-form {
+    margin: 18px 0;
+    padding: 18px;
+    border: 1px solid #dce6f4;
+    border-radius: 16px;
+    background: #f7faff;
+}
+
+.family-add-member-form h3 {
+    margin: 0 0 8px;
+    color: #082653;
+    font-size: 1.08rem;
+}
+
+.family-form-description {
+    margin: 0 0 16px;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.family-add-member-form label {
+    display: block;
+    margin: 12px 0 6px;
+    color: #24344d;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.family-add-member-form input {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 11px 12px;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #172033;
+    font: inherit;
+}
+
+.family-add-member-form input:focus {
+    outline: 2px solid #93c5fd;
+    border-color: #174ea6;
+}
+
+.family-add-member-form button {
+    margin-top: 16px;
+    min-height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0752a5, #0b3470);
+}
+
+#familyAddMemberMessage {
+    margin: 10px 0 0;
+    color: #334155;
+    font-size: 0.88rem;
+}   
     </style>
 </head>
 <body>
@@ -1695,41 +1756,82 @@ maxlength="13"
     <script>
     
 
-        async function addFamilyMember() {
-            const name = document.getElementById('familyName').value;
-            const phone = document.getElementById('familyPhone').value;
-            const location = document.getElementById('familyLocation').value;
+    async function addFamilyMember() {
+    const nameInput = document.getElementById('familyName');
+    const phoneInput = document.getElementById('familyPhone');
+    const locationInput = document.getElementById('familyLocation');
+    const relationInput = document.getElementById('familyRelation');
+    const button = document.getElementById('addFamilyMemberButton');
+    const message = document.getElementById('familyAddMemberMessage');
 
-            if (!name || !phone) {
-                alert('Name and phone are required');
-                return;
-            }
+    if (!nameInput || !phoneInput || !locationInput || !button || !message) {
+        console.error('Family member form elements are missing.');
+        return;
+    }
 
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(`${API_BASE}/family`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ name, phone, location })
-                });
-                const data = await res.json();
-                if (res.status === 201) {
-                    alert('Family member added!');
-                    document.getElementById('familyName').value = '';
-                    document.getElementById('familyPhone').value = '';
-                    document.getElementById('familyLocation').value = '';
-                    loadFamily();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const location = locationInput.value.trim();
+    const relation = relationInput ? relationInput.value.trim() : '';
+
+    if (!name) {
+        message.textContent = 'Please enter the member name.';
+        nameInput.focus();
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        message.textContent = 'Please sign in again to continue.';
+        return;
+    }
+
+    button.disabled = true;
+    message.textContent = 'Saving family member...';
+
+    try {
+        const response = await fetch(`${API_BASE}/family`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name,
+                phone: phone || null,
+                location: location || null,
+                relation: relation || null
+            })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            message.textContent =
+                data.error || 'Could not save family member.';
+            return;
         }
 
+        nameInput.value = '';
+        phoneInput.value = '';
+        locationInput.value = '';
+
+        if (relationInput) {
+            relationInput.value = '';
+        }
+
+        message.textContent =
+            data.message || 'Family member saved successfully.';
+
+        await loadFamily();
+    } catch (error) {
+        console.error('Add family member error:', error);
+        message.textContent = 'Network error. Please try again.';
+    } finally {
+        button.disabled = false;
+    }
+}   
   async function loadFamily() {
     try {
         const token = localStorage.getItem('token');
