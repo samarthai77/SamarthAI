@@ -1180,21 +1180,171 @@ header nav a {
         min-height: 96px;
     }
 }      
+    /* SAMARTHAI FAMILY — FUNCTIONAL RESPONSIVE HEADER */
+.family-app-header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    padding: 14px clamp(16px, 4vw, 48px);
+    box-sizing: border-box;
+    color: #ffffff;
+    background: linear-gradient(110deg, #061638, #0b2d60);
+    border-bottom: 2px solid #ffb21c;
+    box-shadow: 0 5px 22px rgba(4, 19, 48, 0.18);
+}
+
+.family-app-header a {
+    text-decoration: none;
+}
+
+.family-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+
+.family-brand-mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(255, 215, 0, 0.65);
+    border-radius: 13px;
+    background: linear-gradient(145deg, #164b8b, #071a3d);
+    font-size: 23px;
+}
+
+.family-brand-name {
+    color: #ffffff;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.family-brand-name span {
+    color: #ffd447;
+}
+
+.family-header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.family-header-nav a,
+.family-header-profile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 9px 12px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #e7eefc;
+    font-size: 0.88rem;
+    font-weight: 650;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.family-header-nav a:hover,
+.family-header-nav a:focus-visible,
+.family-header-profile:hover,
+.family-header-profile:focus-visible {
+    outline: none;
+    border-color: rgba(255, 212, 71, 0.45);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.family-header-nav a[aria-current="page"] {
+    color: #ffffff;
+    border-color: rgba(255, 212, 71, 0.65);
+    background: rgba(255, 212, 71, 0.12);
+}
+
+.family-header-profile {
+    flex-shrink: 0;
+    gap: 8px;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 800px) {
+    .family-app-header {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+
+    .family-brand {
+        flex: 1;
+    }
+
+    .family-header-profile {
+        min-height: 36px;
+        padding: 7px 10px;
+    }
+
+    .family-header-nav {
+        order: 3;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        gap: 7px;
+    }
+
+    .family-header-nav a {
+        min-width: 0;
+        min-height: 40px;
+        padding: 8px 4px;
+        text-align: center;
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .family-brand-name {
+        font-size: 1.1rem;
+    }
+
+    .family-brand-mark {
+        width: 36px;
+        height: 36px;
+    }
+
+    .family-header-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}    
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">SamarthAI</div>
-        <nav>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="chat.html">Chat</a>
-            <a href="services.html">Services</a>
-            <a href="sos.html">SOS</a>
-            <a href="gps.html">GPS</a>
-            <a href="family.html">Family</a>
-            <a href="profile.html">Profile</a>
-        </nav>
-    </header>
+  <header class="family-app-header">
+    <a class="family-brand" href="chat.html" aria-label="SamarthAI Chat">
+        <span class="family-brand-mark" aria-hidden="true">🛡️</span>
+        <span class="family-brand-name">Samarth<span>AI</span></span>
+    </a>
+
+    <nav class="family-header-nav" aria-label="Main navigation">
+        <a href="chat.html">AI Chat</a>
+        <a href="family.html" aria-current="page">Family</a>
+        <a href="sos.html">SOS</a>
+        <a href="gps.html">GPS</a>
+        <a href="camera.html">Scanner</a>
+        <a href="services.html">Services</a>
+    </nav>
+
+    <a class="family-header-profile" href="profile.html">
+        My Profile <span aria-hidden="true">›</span>
+    </a>
+</header>
 <!-- =====================================================
          FAMILY MEDIA / PROMOTION HEADER
          ===================================================== -->
@@ -1226,21 +1376,19 @@ header nav a {
                             simply and intelligently.
                         </p>
 
-                        <div class="family-media-feature-row">
+  <div class="family-media-feature-row">
+    <span class="family-media-feature">
+        👨‍👩‍👧‍👦 Family Members
+    </span>
 
-                            <span class="family-media-feature">
-                                🔐 Secure
-                            </span>
+    <span class="family-media-feature">
+        🔑 Invite & Approval
+    </span>
 
-                            <span class="family-media-feature">
-                                📍 Connected
-                            </span>
-
-                            <span class="family-media-feature">
-                                🚨 Protected
-                            </span>
-
-                        </div>
+    <span class="family-media-feature">
+        📍 Location Permissions
+    </span>
+</div>                     
 
                     </div>
 
@@ -1252,11 +1400,10 @@ header nav a {
                             🛡️
                         </div>
 
-             <div class="family-media-status">
-    <span class="family-media-status-dot"></span>
-    Family status not verified
-</div>         
-
+           
+<div class="family-media-status" role="status">
+    Family security status: Not verified
+</div>
                     </div>
 
                 </div>
@@ -1385,7 +1532,63 @@ maxlength="13"
         Family ke kisi member ko join karane ke liye
         temporary code generate karein.
     </p>
+<div class="family-add-member-form" id="familyAddMemberForm">
+    <h3>Add Family Member</h3>
 
+    <p class="family-form-description">
+        Kisi family member ki details save karein.
+        Account linking ke liye invite code aur admin approval ka use karein.
+    </p>
+
+    <label for="familyName">Full name</label>
+    <input
+        id="familyName"
+        type="text"
+        maxlength="100"
+        autocomplete="name"
+        placeholder="Enter member name"
+        required
+    />
+
+    <label for="familyPhone">Mobile number</label>
+    <input
+        id="familyPhone"
+        type="tel"
+        maxlength="20"
+        autocomplete="tel"
+        placeholder="Enter mobile number"
+    />
+
+    <label for="familyLocation">Location (optional)</label>
+    <input
+        id="familyLocation"
+        type="text"
+        maxlength="200"
+        placeholder="Enter location only if appropriate"
+    />
+
+    <label for="familyRelation">Relationship (optional)</label>
+    <input
+        id="familyRelation"
+        type="text"
+        maxlength="50"
+        placeholder="Brother, Sister, Father..."
+    />
+
+    <button
+        type="button"
+        id="addFamilyMemberButton"
+        onclick="addFamilyMember()"
+    >
+        + Save Family Member
+    </button>
+
+    <p
+        id="familyAddMemberMessage"
+        role="status"
+        aria-live="polite"
+    ></p>
+</div>
     <button onclick="generateFamilyCode()">
         🎟️ Generate Family Code
     </button>
