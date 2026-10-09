@@ -667,5 +667,110 @@ router.post('/install', async (req, res) => {
   }
 });
 
+/* =========================================
+   SAMARTHAI KAVACH BANNER UPLOAD
+========================================= */
 
+router.post(
+  '/banners',
+  (req, res, next) => {
+    bannerUpload.single('file')(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          error: error.message || 'Invalid banner upload'
+        });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    const auth = await requireServiceAdmin(req, res);
+    if (!auth) return;
+
+    let uploadedPath = null;
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'Please select a photo or MP4 video'
+        });
+      }
+
+      const { count, error: countError } = await supabase
+        .from('kavach_banners')
+        .select('id', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+
+      if (count >= 12) {
+        return res.status(409).json({
+          error: 'Maximum 12 banners allowed. Delete one before uploading.'
+        });
+      }
+
+      const extensionByType = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'video/mp4': 'mp4'
+      };
+
+      const extension = extensionByType[req.file.mimetype];
+      const uniqueName =
+        `${Date.now()}-${require('crypto').randomUUID()}.${extension}`;
+
+      uploadedPath = uniqueName;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BANNER_BUCKET)
+        .upload(uploadedPath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const mediaType = req.file.mimetype.startsWith('video/')
+        ? 'video'
+        : 'image';
+
+      const { data, error: insertError } = await supabase
+        .from('kavach_banners')
+        .insert([{
+          media_type: mediaType,
+          storage_path: uploadedPath,
+          is_active: false,
+          duration_seconds: 5
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        await supabase.storage
+          .from(BANNER_BUCKET)
+          .remove([uploadedPath]);
+
+        throw insertError;
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Banner uploaded. Activate it from admin controls.',
+        banner: data
+      });
+    } catch (error) {
+      console.error('Kavach banner upload failed:', error);
+
+      if (uploadedPath) {
+        await supabase.storage
+          .from(BANNER_BUCKET)
+          .remove([uploadedPath])
+          .catch(() => {});
+      }
+
+      return res.status(500).json({
+        error: 'Banner upload failed. Check bucket and database schema.'
+      });
+    }
+  }
+);
 module.exports = router;
