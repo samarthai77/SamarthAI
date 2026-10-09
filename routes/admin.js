@@ -1,7 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
-
+const multer = require('multer');
+const path = require('path');
 const router = express.Router();
 
 const supabase = createClient(
@@ -15,7 +16,31 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
+const BANNER_BUCKET = 'samarthai - banners';
+const MAX_BANNER_SIZE = 50 * 1024 * 1024;
 
+const bannerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_BANNER_SIZE,
+    files: 1
+  },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'video/mp4'
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return callback(
+        new Error('Only JPEG, PNG and MP4 files are allowed')
+      );
+    }
+
+    callback(null, true);
+  }
+});
 // ======================================================
 // ADMIN AUTHENTICATION
 // ======================================================
