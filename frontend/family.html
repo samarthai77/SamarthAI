@@ -1565,6 +1565,58 @@ header nav a {
         margin: 0;
     }
 }  
+     /* Admin-managed promotional media slot */
+.kavach-promo-banner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 2px auto 12px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 196, 55, .65);
+    border-radius: 12px;
+    box-sizing: border-box;
+    background: #0b2855;
+    box-shadow: 0 8px 22px rgba(5, 28, 68, .15);
+}
+
+.kavach-media-slot {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 1;
+    min-height: 100px;
+    max-height: 360px;
+    overflow: hidden;
+    background: #0b2855;
+}
+
+.kavach-media-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.kavach-media-slide img,
+.kavach-media-slide video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 520px) {
+    .kavach-promo-banner {
+        width: calc(100% - 12px);
+        margin: 2px auto 10px;
+        border-radius: 10px;
+    }
+
+    .kavach-media-slot {
+        aspect-ratio: 2.7 / 1;
+        min-height: 100px;
+        max-height: 180px;
+    }
+}   
     </style>
 </head>
 <body>
@@ -1577,48 +1629,20 @@ header nav a {
     
 </header>
 <main class="family-page-shell">
-  <section class="kavach-promo-banner"
-         aria-label="SamarthAI Kavach promotional banner">
-    <div class="kavach-promo-copy">
-        <h2>SamarthAI Kavach</h2>
-        <p class="kavach-promo-tagline">Har Zaroorat Ka Sathi</p>
-        <p class="kavach-promo-description">
-            Aapke parivaar ki suraksha, suvidha aur rozmarra
-            ki zarooraton ke liye ek hi saathi.
-        </p>
+<section class="kavach-promo-banner"
+         aria-label="SamarthAI Kavach promotional slideshow">
+
+    <div class="kavach-media-slot"
+         id="kavachPromoMedia"
+         data-max-slides="12"
+         aria-label="Promotional image or video area">
+        <div class="kavach-media-slide"
+             id="kavachPromoSlide1"
+             data-slide-number="1"
+             aria-label="Promotional slide 1"></div>
     </div>
 
-    <div class="kavach-feature-grid">
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">🤖</span>
-            <span class="kavach-feature-name">AI Chat</span>
-        </div>
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">👨‍👩‍👧</span>
-            <span class="kavach-feature-name">Family Security</span>
-        </div>
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">🚨</span>
-            <span class="kavach-feature-name">SOS</span>
-        </div>
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">📍</span>
-            <span class="kavach-feature-name">GPS</span>
-        </div>
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">📄</span>
-            <span class="kavach-feature-name">Scanner</span>
-        </div>
-        <div class="kavach-feature-tile">
-            <span class="kavach-feature-icon">⚙️</span>
-            <span class="kavach-feature-name">Services</span>
-        </div>
-    </div>
-
-    <p class="kavach-banner-note">
-        SamarthAI Kavach — Har Zaroorat Ka Sathi
-    </p>
-</section>  
+</section>
     <section class="family-security-heading"
              aria-labelledby="familySecurityTitle">
         <div class="family-security-heading-icon"
