@@ -16,7 +16,7 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const BANNER_BUCKET = 'samarthai - banners';
+const BANNER_BUCKET = 'samarthai-banners';
 const MAX_BANNER_SIZE = 50 * 1024 * 1024;
 
 const bannerUpload = multer({
