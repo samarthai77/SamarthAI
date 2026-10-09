@@ -1127,7 +1127,199 @@
 
     }
 
+// =================================================
+    // KAVACH BANNER MANAGEMENT
+    // =================================================
 
+    async function loadKavachBanners() {
+      const list = document.getElementById('kavachBannerList');
+      const token = getToken();
+
+      list.replaceChildren();
+      list.textContent = 'Loading banners...';
+
+      try {
+        const response = await fetch(`${API_BASE}/admin/banners`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Banners load नहीं हुए');
+        }
+
+        list.replaceChildren();
+
+        const banners = result.banners || [];
+
+        if (!banners.length) {
+          list.textContent = 'अभी कोई banner upload नहीं है।';
+          return;
+        }
+
+        banners.forEach(banner => {
+          const card = document.createElement('div');
+          card.style.cssText =
+            'border:1px solid #ddd;border-radius:10px;padding:12px;margin:12px 0;';
+
+          const heading = document.createElement('h3');
+          heading.textContent =
+            `Slide ${banner.slide_number} — ${banner.media_type}`;
+          card.appendChild(heading);
+
+          if (banner.preview_url) {
+            const media = document.createElement(
+              banner.media_type === 'video' ? 'video' : 'img'
+            );
+
+            media.src = banner.preview_url;
+            media.style.cssText =
+              'display:block;width:100%;max-width:420px;max-height:220px;object-fit:contain;';
+
+            if (banner.media_type === 'video') {
+              media.controls = true;
+              media.preload = 'metadata';
+            } else {
+              media.alt = `Banner slide ${banner.slide_number}`;
+            }
+
+            card.appendChild(media);
+          } else {
+            const warning = document.createElement('p');
+            warning.textContent = 'Preview उपलब्ध नहीं है।';
+            card.appendChild(warning);
+          }
+
+          const status = document.createElement('p');
+          status.textContent = banner.is_active
+            ? 'Status: Active'
+            : 'Status: Inactive';
+          card.appendChild(status);
+
+          const toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.textContent = banner.is_active ? 'Deactivate' : 'Activate';
+
+          toggle.addEventListener('click', async () => {
+            toggle.disabled = true;
+
+            try {
+              const response = await fetch(
+                `${API_BASE}/admin/banners/${encodeURIComponent(banner.id)}/status`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    Authorization: `Bearer ${getToken()}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    is_active: !banner.is_active
+                  })
+                }
+              );
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                throw new Error(result.error || 'Status update विफल');
+              }
+
+              await loadKavachBanners();
+            } catch (error) {
+              alert(error.message);
+              toggle.disabled = false;
+            }
+          });
+
+          card.appendChild(toggle);
+
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.textContent = 'Delete';
+          remove.style.marginLeft = '8px';
+
+          remove.addEventListener('click', async () => {
+            if (!confirm(`Slide ${banner.slide_number} delete करें?`)) {
+              return;
+            }
+
+            remove.disabled = true;
+
+            try {
+              const response = await fetch(
+                `${API_BASE}/admin/banners/${encodeURIComponent(banner.id)}`,
+                {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${getToken()}` }
+                }
+              );
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                throw new Error(result.error || 'Delete विफल');
+              }
+
+              await loadKavachBanners();
+            } catch (error) {
+              alert(error.message);
+              remove.disabled = false;
+            }
+          });
+
+          card.appendChild(remove);
+          list.appendChild(card);
+        });
+      } catch (error) {
+        list.textContent = `Error: ${error.message}`;
+      }
+    }
+
+
+    // Banner upload
+    document.getElementById('kavachBannerForm')
+      .addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const fileInput = document.getElementById('kavachBannerFile');
+        const message = document.getElementById('kavachBannerMessage');
+        const button = document.getElementById('kavachUploadButton');
+
+        if (!fileInput.files.length) {
+          message.textContent = 'पहले फोटो या वीडियो चुनें।';
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        button.disabled = true;
+        message.textContent = 'Uploading...';
+
+        try {
+          const response = await fetch(`${API_BASE}/admin/banners`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${getToken()}` },
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Upload विफल');
+          }
+
+          message.textContent = 'Upload सफल हुआ। Banner अभी inactive है।';
+          fileInput.value = '';
+
+          await loadKavachBanners();
+        } catch (error) {
+          message.textContent = `Error: ${error.message}`;
+        } finally {
+          button.disabled = false;
+        }
+      });
     // =================================================
     // START
     // =================================================
@@ -1137,7 +1329,7 @@
       () => {
 
         loadDashboard();
-
+loadKavachBanners();
       }
     );
 
