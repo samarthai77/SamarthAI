@@ -773,4 +773,139 @@ router.post(
     }
   }
 );
+/* =========================================
+   KAVACH BANNER MANAGEMENT
+========================================= */
+
+// List banners for authenticated service admins.
+router.get('/banners', async (req, res) => {
+  const auth = await requireServiceAdmin(req, res);
+  if (!auth) return;
+
+  try {
+    const { data, error } = await supabase
+      .from('kavach_banners')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    const banners = await Promise.all(
+      (data || []).map(async (banner) => {
+        const { data: signed, error: urlError } = await supabase.storage
+          .from(BANNER_BUCKET)
+          .createSignedUrl(banner.storage_path, 3600);
+
+        return {
+          ...banner,
+          preview_url: urlError ? null : signed.signedUrl
+        };
+      })
+    );
+
+    return res.json({ success: true, banners });
+  } catch (error) {
+    console.error('Kavach banner list failed:', error);
+    return res.status(500).json({
+      error: 'Unable to load banners'
+    });
+  }
+});
+
+
+// Activate or deactivate one banner.
+router.patch('/banners/:id/status', async (req, res) => {
+  const auth = await requireServiceAdmin(req, res);
+  if (!auth) return;
+
+  const { is_active } = req.body || {};
+
+  if (typeof is_active !== 'boolean') {
+    return res.status(400).json({
+      error: 'is_active must be true or false'
+    });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('kavach_banners')
+      .update({
+        is_active,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', req.params.id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        error: 'Banner not found'
+      });
+    }
+
+    return res.json({ success: true, banner: data });
+  } catch (error) {
+    console.error('Kavach banner status update failed:', error);
+    return res.status(500).json({
+      error: 'Unable to update banner status'
+    });
+  }
+});
+
+
+// Delete a banner and its stored file.
+router.delete('/banners/:id', async (req, res) => {
+  const auth = await requireServiceAdmin(req, res);
+  if (!auth) return;
+
+  try {
+    const { data: banner, error: findError } = await supabase
+      .from('kavach_banners')
+      .select('id, storage_path')
+      .eq('id', req.params.id)
+      .maybeSingle();
+
+    if (findError) throw findError;
+
+    if (!banner) {
+      return res.status(404).json({
+        error: 'Banner not found'
+      });
+    }
+
+    const { error: deleteRowError } = await supabase
+      .from('kavach_banners')
+      .delete()
+      .eq('id', banner.id);
+
+    if (deleteRowError) throw deleteRowError;
+
+    const { error: deleteFileError } = await supabase.storage
+      .from(BANNER_BUCKET)
+      .remove([banner.storage_path]);
+
+    if (deleteFileError) {
+      console.error(
+        'Banner row deleted, but storage cleanup failed:',
+        deleteFileError
+      );
+
+      return res.status(500).json({
+        error: 'Banner record deleted, but stored file cleanup failed'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Banner deleted'
+    });
+  } catch (error) {
+    console.error('Kavach banner delete failed:', error);
+    return res.status(500).json({
+      error: 'Unable to delete banner'
+    });
+  }
+});
 module.exports = router;
