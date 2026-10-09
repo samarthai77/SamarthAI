@@ -1486,6 +1486,65 @@ header nav a {
         min-height: 76px;
     }
 }   
+    /* Mobile banner layout improvements */
+@media (max-width: 520px) {
+    .kavach-promo-banner {
+        width: calc(100% - 20px);
+        margin: 10px auto 16px;
+        padding: 16px 12px 12px;
+        border-radius: 15px;
+    }
+
+    .kavach-promo-copy {
+        max-width: 100%;
+    }
+
+    .kavach-promo-banner h2 {
+        font-size: 1.35rem;
+        line-height: 1.2;
+    }
+
+    .kavach-promo-tagline {
+        margin: 5px 0 10px;
+        font-size: 1rem;
+    }
+
+    .kavach-promo-description {
+        margin-bottom: 13px;
+        font-size: .88rem;
+        line-height: 1.4;
+    }
+
+    .kavach-feature-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .kavach-feature-tile {
+        min-height: 68px;
+        padding: 7px 3px;
+        gap: 5px;
+        border-radius: 10px;
+    }
+
+    .kavach-feature-icon {
+        font-size: 1.3rem;
+    }
+
+    .kavach-feature-name {
+        font-size: .72rem;
+        overflow-wrap: anywhere;
+    }
+
+    .kavach-banner-note {
+        margin-top: 10px;
+        font-size: .68rem;
+    }
+
+    .family-security-heading {
+        margin-top: 0;
+    }
+}    
     </style>
 </head>
 <body>
