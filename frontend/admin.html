@@ -348,7 +348,35 @@
       class="error"
     ></div>
 
+<!-- KAVACH BANNER MANAGEMENT -->
+<section class="section" id="kavachBannerAdmin">
+  <h2>🖼️ SamarthAI Kavach — Banner Management</h2>
+  <p>Maximum 12 slides. JPEG, PNG या MP4; अधिकतम 50 MB प्रति file.</p>
 
+  <form id="kavachBannerForm">
+    <label for="kavachBannerFile">Photo / Video चुनें</label>
+    <input
+      id="kavachBannerFile"
+      name="file"
+      type="file"
+      accept="image/jpeg,image/png,video/mp4"
+      required
+    >
+
+    <button type="submit" id="kavachUploadButton">
+      Upload Banner
+    </button>
+    <p id="kavachBannerMessage" role="status"></p>
+  </form>
+
+  <button type="button" onclick="loadKavachBanners()">
+    Refresh Slides
+  </button>
+
+  <div id="kavachBannerList" aria-live="polite">
+    Banner slides loading...
+  </div>
+</section>
     <!-- DASHBOARD CARDS -->
 
     <div class="cards">
