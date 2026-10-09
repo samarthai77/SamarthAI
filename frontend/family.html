@@ -1582,9 +1582,7 @@ header nav a {
 .kavach-media-slot {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 1;
-    min-height: 100px;
-    max-height: 360px;
+    height: 64px;
     overflow: hidden;
     background: #0b2855;
 }
@@ -1604,19 +1602,20 @@ header nav a {
     object-fit: cover;
 }
 
-@media (max-width: 520px) {
-    .kavach-promo-banner {
-        width: calc(100% - 12px);
-        margin: 2px auto 10px;
-        border-radius: 10px;
-    }
+.kavach-media-slot:has(.kavach-media-slide img),
+.kavach-media-slot:has(.kavach-media-slide video) {
+    height: auto;
+    aspect-ratio: 3 / 1;
+    max-height: 360px;
+}
 
-    .kavach-media-slot {
+@media (max-width: 520px) {
+    .kavach-media-slot:has(.kavach-media-slide img),
+    .kavach-media-slot:has(.kavach-media-slide video) {
         aspect-ratio: 2.7 / 1;
-        min-height: 100px;
         max-height: 180px;
     }
-}   
+}
     </style>
 </head>
 <body>
