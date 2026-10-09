@@ -228,7 +228,7 @@ async function loadFamilyMarkers() {
     if (!token || !gpsMap) return;
 
     try {
-        const res = await fetch(`${API_BASE}/family`, {
+      const res = await fetch(`${API_BASE}/family?noCreate=true`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
