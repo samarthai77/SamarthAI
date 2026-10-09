@@ -696,17 +696,26 @@ router.post(
         });
       }
 
-      const { count, error: countError } = await supabase
-        .from('kavach_banners')
-        .select('id', { count: 'exact', head: true });
+    const { data: existingSlides, error: slidesError } = await supabase
+  .from('kavach_banners')
+  .select('slide_number');
 
-      if (countError) throw countError;
+if (slidesError) throw slidesError;
 
-      if (count >= 12) {
-        return res.status(409).json({
-          error: 'Maximum 12 banners allowed. Delete one before uploading.'
-        });
-      }
+const usedSlides = new Set(
+  (existingSlides || []).map(row => row.slide_number)
+);
+
+const slideNumber = Array.from(
+  { length: 12 },
+  (_, index) => index + 1
+).find(number => !usedSlides.has(number));
+
+if (!slideNumber) {
+  return res.status(409).json({
+    error: 'Maximum 12 banners allowed. Delete one before uploading.'
+  });
+}
 
       const extensionByType = {
         'image/jpeg': 'jpg',
@@ -736,6 +745,7 @@ router.post(
       const { data, error: insertError } = await supabase
         .from('kavach_banners')
         .insert([{
+         slide_number: slideNumber, 
           media_type: mediaType,
           storage_path: uploadedPath,
           is_active: false,
