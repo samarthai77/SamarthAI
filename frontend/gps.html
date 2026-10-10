@@ -95,7 +95,33 @@
     >
         📍 Update Location
     </button>
+<div id="locationSharingControl">
+        <p><strong>Family Location Sharing</strong></p>
 
+        <p>
+            अपनी location परिवार के साथ साझा करने के लिए अनुमति चालू करें।
+        </p>
+
+        <button
+            type="button"
+            class="gps-btn"
+            onclick="setLocationSharing(true)"
+        >
+            Enable Location Sharing
+        </button>
+
+        <button
+            type="button"
+            class="gps-btn"
+            onclick="setLocationSharing(false)"
+        >
+            Disable Location Sharing
+        </button>
+
+        <p id="locationSharingStatus" role="status">
+            Location sharing status not loaded.
+        </p>
+    </div>
     <div id="gpsStatus">
         Ready
     </div>
