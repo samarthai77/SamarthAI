@@ -45,7 +45,89 @@ router.get('/', (req, res) => {
         message: 'GPS tracking service is active'
     });
 });
+// =====================================================
+// PATCH /api/gps/location-sharing
+// Enable or disable the logged-in user's location sharing
+// =====================================================
+router.patch('/location-sharing', async (req, res) => {
+    try {
+        const userId = getUserId(req);
 
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unauthorized'
+            });
+        }
+
+        const { enabled } = req.body || {};
+
+        if (typeof enabled !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                error: 'enabled must be true or false'
+            });
+        }
+
+        const { data: member, error: memberError } = await supabase
+            .from('family_members')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+
+        if (memberError) {
+            console.error('Location sharing lookup error:', memberError);
+
+            return res.status(500).json({
+                success: false,
+                error: 'Could not verify family membership'
+            });
+        }
+
+        if (!member) {
+            return res.status(404).json({
+                success: false,
+                error: 'Active family membership not found'
+            });
+        }
+
+        const { error: updateError } = await supabase
+            .from('family_members')
+            .update({
+                location_sharing_enabled: enabled
+            })
+            .eq('id', member.id)
+            .eq('user_id', userId)
+            .eq('is_active', true);
+
+        if (updateError) {
+            console.error('Location sharing update error:', updateError);
+
+            return res.status(500).json({
+                success: false,
+                error: 'Could not update location sharing'
+            });
+        }
+
+        return res.json({
+            success: true,
+            location_sharing_enabled: enabled,
+            message: enabled
+                ? 'Location sharing enabled'
+                : 'Location sharing disabled'
+        });
+
+    } catch (error) {
+        console.error('Location sharing error:', error);
+
+        return res.status(500).json({
+            success: false,
+            error: 'Location sharing request failed'
+        });
+    }
+});
 
 // =====================================================
 // PUT /api/gps/location
