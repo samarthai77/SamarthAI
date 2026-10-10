@@ -172,7 +172,7 @@ router.put('/location', async (req, res) => {
         // Find the logged-in user's active family membership
         const { data: member, error: memberError } = await supabase
             .from('family_members')
-            .select('id, family_id, user_id, name')
+          .select('id, family_id, user_id, name, location_sharing_enabled')
             .eq('user_id', userId)
             .eq('is_active', true)
             .limit(1)
@@ -193,7 +193,12 @@ router.put('/location', async (req, res) => {
                 error: 'You are not an active family member'
             });
         }
-
+if (member.location_sharing_enabled !== true) {
+            return res.status(403).json({
+                success: false,
+                error: 'Enable Family Location Sharing before updating your location'
+            });
+        }
         // Update location
         const { data: updatedMember, error: updateError } = await supabase
             .from('family_members')
