@@ -2430,7 +2430,69 @@ maxlength="13"
     <script src="js/app.js"></script>
     <script>
     
+(function setupFamilySectionNavigation() {
+    const container = document.querySelector('.family-container');
+    const featureGrid = document.querySelector('.family-v1-feature-grid');
 
+    if (!container || !featureGrid) return;
+
+    const allDetails = Array.from(container.children);
+
+    // Hide all detail content on the initial screen.
+    container.style.display = 'none';
+
+    function openFamilySection(sectionId) {
+        const target = document.getElementById(sectionId);
+
+        if (!target) return;
+
+        // Hide the previously opened section.
+        allDetails.forEach(element => {
+            element.style.display = 'none';
+            element.classList.remove('is-active');
+        });
+
+        // Show the detail container and selected section.
+        container.style.display = 'block';
+        target.style.display = 'block';
+        target.classList.add('is-active');
+
+        // Family Members also needs its member list.
+        if (sectionId === 'familyMembersSection') {
+            const familyList = document.getElementById('familyList');
+
+            if (familyList) {
+                familyList.style.display = 'block';
+            }
+        }
+
+        // Keep the selected section visible without changing its functions.
+        target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+
+    featureGrid.addEventListener('click', event => {
+        const button = event.target.closest('a.family-v1-feature-card');
+
+        if (!button || !featureGrid.contains(button)) return;
+
+        const href = button.getAttribute('href');
+
+        // Preserve the existing SOS page and its functionality.
+        if (!href || href === 'sos.html') return;
+
+        if (href.startsWith('#')) {
+            const sectionId = href.slice(1);
+
+            if (document.getElementById(sectionId)) {
+                event.preventDefault();
+                openFamilySection(sectionId);
+            }
+        }
+    });
+})();
     async function addFamilyMember() {
     const nameInput = document.getElementById('familyName');
     const phoneInput = document.getElementById('familyPhone');
