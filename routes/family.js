@@ -416,12 +416,13 @@ if (!membership?.family_id) {
                         )
                         : null
             }));
-       return res.json({
-            family,
-            members: familyMembers,
-            currentUserRole:
-                membership.role || "member"
-        });
+      return res.json({
+    family,
+    members: familyMembers,
+    currentUserId: userId,
+    currentUserRole:
+        membership.role || "member"
+});
     } catch (err) {
 
         console.error(
