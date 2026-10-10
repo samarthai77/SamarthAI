@@ -225,10 +225,9 @@ async function setLocationSharing(enabled) {
             return;
         }
 
-        const currentMember = data.members.find(
-            member => member.user_id
-        );
-
+       const currentMember = data.members.find(
+    member => member.user_id === data.currentUserId
+);
         if (!currentMember) {
             status.textContent =
                 'Your active family membership was not found.';
