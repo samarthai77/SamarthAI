@@ -274,7 +274,7 @@ router.get('/:memberId', async (req, res) => {
         const { data: member, error: memberError } =
             await supabase
                 .from('family_members')
-                .select('id, family_id, name, location, last_updated')
+    .select('id, family_id, name, location, last_updated, location_sharing_enabled')            
                 .eq('id', memberId)
                 .eq('family_id', currentMember.family_id)
                 .eq('is_active', true)
@@ -295,7 +295,12 @@ router.get('/:memberId', async (req, res) => {
                 error: 'Family member not found'
             });
         }
-
+if (member.location_sharing_enabled !== true) {
+            return res.status(403).json({
+                success: false,
+                error: 'This family member has not enabled location sharing'
+            });
+        }
         return res.json({
             success: true,
             member
