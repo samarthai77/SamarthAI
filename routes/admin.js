@@ -783,6 +783,56 @@ if (!slideNumber) {
     }
   }
 );
+// =====================================================
+// PUBLIC KAVACH BANNERS FOR FAMILY PAGE
+// =====================================================
+
+router.get('/banners/public', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('kavach_banners')
+      .select('id, slide_number, media_type, storage_path, duration_seconds')
+      .eq('is_active', true)
+      .order('slide_number', { ascending: true });
+
+    if (error) throw error;
+
+    const banners = await Promise.all(
+      (data || []).map(async (banner) => {
+        const { data: signed, error: urlError } = await supabase.storage
+          .from(BANNER_BUCKET)
+          .createSignedUrl(banner.storage_path, 3600);
+
+        if (urlError || !signed?.signedUrl) {
+          console.error(
+            'Public banner URL creation failed:',
+            urlError
+          );
+          return null;
+        }
+
+        return {
+          id: banner.id,
+          slide_number: banner.slide_number,
+          media_type: banner.media_type,
+          duration_seconds: banner.duration_seconds,
+          media_url: signed.signedUrl
+        };
+      })
+    );
+
+    return res.json({
+      success: true,
+      banners: banners.filter(Boolean)
+    });
+  } catch (error) {
+    console.error('Public Kavach banners failed:', error);
+
+    return res.status(500).json({
+      error: 'Unable to load promotional banners'
+    });
+  }
+});
 /* =========================================
    KAVACH BANNER MANAGEMENT
 ========================================= */
