@@ -2738,17 +2738,29 @@ async function trackFamilyMember(memberId) {
             return;
         }
 
-        const location = data.location || 'Location not available';
+     const location = data.location || 'Location not available';
 
         const updated = data.last_updated
             ? new Date(data.last_updated).toLocaleString()
             : 'Not available';
 
-        alert(
-            `📍 ${data.name || 'Family Member'}\n\n` +
-            `Location: ${location}\n` +
-            `Last Updated: ${updated}`
+        const locationStatus = document.getElementById(
+            'familyLocationStatus'
         );
+
+        if (locationStatus) {
+            locationStatus.textContent =
+                `📍 ${data.name || 'Family Member'} | ` +
+                `Location: ${location} | ` +
+                `Last Updated: ${updated}`;
+
+            document.getElementById(
+                'familyLocationSection'
+            ).scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } 
 
     } catch (error) {
         console.error('Tracker error:', error);
