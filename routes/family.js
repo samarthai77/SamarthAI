@@ -323,9 +323,9 @@ if (!membership?.family_id) {
             error: membersError
         } = await supabase
             .from("family_members")
-            .select(
-                "id, user_id, family_id, name, phone, location, last_updated, created_at, relation, role, is_active"
-            )
+           .select(
+    "id, user_id, family_id, name, phone, location, last_updated, created_at, relation, role, is_active, location_sharing_enabled"
+)
             .eq(
                 "family_id",
                 membership.family_id
