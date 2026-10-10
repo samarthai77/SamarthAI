@@ -202,6 +202,48 @@ async function setLocationSharing(enabled) {
         status.textContent = '❌ Network error. Please try again.';
     }
 }
+   async function loadLocationSharingStatus() {
+    const status = document.getElementById('locationSharingStatus');
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        status.textContent = 'Please login first.';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/family?noCreate=true`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !Array.isArray(data.members)) {
+            status.textContent = 'Could not load sharing status.';
+            return;
+        }
+
+        const currentMember = data.members.find(
+            member => member.user_id
+        );
+
+        if (!currentMember) {
+            status.textContent =
+                'Your active family membership was not found.';
+            return;
+        }
+
+        status.textContent = currentMember.location_sharing_enabled === true
+            ? '✅ Your Family Location Sharing is ON.'
+            : '🔒 Your Family Location Sharing is OFF.';
+
+    } catch (error) {
+        console.error('Sharing status error:', error);
+        status.textContent = 'Could not load sharing status.';
+    }
+} 
 // =====================================================
 // INITIALIZE MAP
 // =====================================================
@@ -572,8 +614,9 @@ if (
 document.addEventListener(
     'DOMContentLoaded',
     async () => {
-        initializeMap();
-        await loadFamilyMarkers();
+    initializeMap();
+await loadLocationSharingStatus();
+await loadFamilyMarkers();  
     }
 );
 
