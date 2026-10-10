@@ -2868,7 +2868,130 @@ async function copyFamilyCode() {
     }
 }
         // Load family on page load
-        document.addEventListener('DOMContentLoaded', loadFamily);
+       document.addEventListener('DOMContentLoaded', () => {
+  loadFamily();
+  loadKavachPromoSlideshow();
+});
+     // =====================================================
+// SAMARTHAI KAVACH AUTOMATIC BANNER SLIDESHOW
+// =====================================================
+
+async function loadKavachPromoSlideshow() {
+  const container = document.getElementById('kavachPromoMedia');
+
+  if (!container) return;
+
+  let timer = null;
+
+  container.replaceChildren();
+
+  const loading = document.createElement('div');
+  loading.textContent = 'Loading banners...';
+  container.appendChild(loading);
+
+  try {
+    const response = await fetch(
+      'https://samarthai-backend.onrender.com/api/admin/banners/public',
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Banner API returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    const banners = (result.banners || []).filter(
+      banner => banner.media_url &&
+        ['image', 'video'].includes(banner.media_type)
+    );
+
+    container.replaceChildren();
+
+    if (!banners.length) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = '';
+
+    const slides = [];
+
+    banners.forEach((banner, index) => {
+      const slide = document.createElement('div');
+      slide.className = 'kavach-media-slide';
+      slide.style.display = 'none';
+      slide.style.width = '100%';
+      slide.style.height = '100%';
+
+      let media;
+
+      if (banner.media_type === 'video') {
+        media = document.createElement('video');
+        media.autoplay = true;
+        media.muted = true;
+        media.loop = true;
+        media.playsInline = true;
+        media.controls = true;
+      } else {
+        media = document.createElement('img');
+        media.alt = 'SamarthAI Kavach promotional banner';
+      }
+
+      media.src = banner.media_url;
+      media.style.width = '100%';
+      media.style.height = '100%';
+      media.style.display = 'block';
+      media.style.objectFit = 'cover';
+
+      slide.appendChild(media);
+      container.appendChild(slide);
+
+      slides.push({
+        element: slide,
+        media,
+        duration: Math.max(
+          3,
+          Math.min(30, Number(banner.duration_seconds) || 5)
+        )
+      });
+    });
+
+    let currentIndex = 0;
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.element.style.display = i === index ? 'block' : 'none';
+
+        if (slide.media.tagName === 'VIDEO') {
+          if (i === index) {
+            slide.media.currentTime = 0;
+            slide.media.play().catch(() => {});
+          } else {
+            slide.media.pause();
+          }
+        }
+      });
+    }
+
+    function scheduleNext() {
+      clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        showSlide(currentIndex);
+        scheduleNext();
+      }, slides[currentIndex].duration * 1000);
+    }
+
+    showSlide(currentIndex);
+    scheduleNext();
+
+  } catch (error) {
+    console.error('Kavach slideshow error:', error);
+    container.replaceChildren();
+    container.style.display = 'none';
+  }
+}   
     </script>
 </body>
 </html>
