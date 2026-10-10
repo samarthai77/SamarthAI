@@ -943,6 +943,77 @@ router.patch('/banners/:id/settings', async (req, res) => {
     });
   }
 });
+// Update slide order and display duration.
+router.patch('/banners/:id/settings', async (req, res) => {
+  const auth = await requireServiceAdmin(req, res);
+  if (!auth) return;
+
+  const { slide_number, duration_seconds } = req.body || {};
+
+  if (
+    !Number.isInteger(slide_number) ||
+    slide_number < 1 ||
+    slide_number > 12
+  ) {
+    return res.status(400).json({
+      error: 'slide_number must be an integer from 1 to 12'
+    });
+  }
+
+  if (
+    !Number.isInteger(duration_seconds) ||
+    duration_seconds < 3 ||
+    duration_seconds > 30
+  ) {
+    return res.status(400).json({
+      error: 'duration_seconds must be an integer from 3 to 30'
+    });
+  }
+
+  try {
+    const { data: existing, error: findError } = await supabase
+      .from('kavach_banners')
+      .select('id')
+      .eq('slide_number', slide_number)
+      .neq('id', req.params.id)
+      .maybeSingle();
+
+    if (findError) throw findError;
+
+    if (existing) {
+      return res.status(409).json({
+        error: `Slide number ${slide_number} is already in use.`
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('kavach_banners')
+      .update({
+        slide_number,
+        duration_seconds,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', req.params.id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        error: 'Banner not found'
+      });
+    }
+
+    return res.json({ success: true, banner: data });
+  } catch (error) {
+    console.error('Kavach banner settings update failed:', error);
+
+    return res.status(500).json({
+      error: 'Unable to update banner settings'
+    });
+  }
+});
 // Activate or deactivate one banner.
 router.patch('/banners/:id/status', async (req, res) => {
   const auth = await requireServiceAdmin(req, res);
