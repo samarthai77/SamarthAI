@@ -2069,7 +2069,38 @@ body {
         min-height: 96px;
         padding: 12px;
     }
-}   
+}  
+   /* Keep the initial Family Security screen compact */
+#familyJoinSection,
+#familyAdminSection,
+#familyStatusSection,
+#familyLocationSection,
+#familyMembersSection,
+#familyPendingRequestsSection {
+    display: none;
+}
+
+#familyJoinSection.is-active,
+#familyAdminSection.is-active,
+#familyStatusSection.is-active,
+#familyLocationSection.is-active,
+#familyMembersSection.is-active,
+#familyPendingRequestsSection.is-active {
+    display: block;
+}
+
+.family-page-shell {
+    padding-bottom: 8px;
+}
+
+.family-security-heading {
+    margin-bottom: 10px;
+}
+
+.family-v1-features {
+    margin-top: 8px;
+    margin-bottom: 12px;
+}     
     </style>
 </head>
 <body>
