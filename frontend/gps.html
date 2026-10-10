@@ -318,7 +318,12 @@ async function loadFamilyMarkers() {
         familyMarkers = [];
 
         data.members.forEach(member => {
-            if (!member.location) return;
+       if (
+    member.location_sharing_enabled !== true ||
+    !member.location
+) {
+    return;
+}   
 
             const parts = String(member.location)
                 .split(',')
