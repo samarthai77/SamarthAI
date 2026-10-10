@@ -2030,6 +2030,9 @@ if (memberCount) {
         `Family members: ${members.length}`
     );
 }
+     if (statusMemberCount) {
+    statusMemberCount.textContent = String(members.length);
+}   
         if (members.length === 0) {
             list.innerHTML = `
                 <div class="family-item">
