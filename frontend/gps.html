@@ -157,7 +157,51 @@ let gpsMap = null;
 let gpsMarker = null;
 let gpsCircle = null;
 let familyMarkers = [];
+async function setLocationSharing(enabled) {
+    const status = document.getElementById('locationSharingStatus');
+    const token = localStorage.getItem('token');
 
+    if (!token) {
+        status.textContent = '❌ Please login first.';
+        return;
+    }
+
+    status.textContent = 'Updating location sharing permission...';
+
+    try {
+        const res = await fetch(`${API_BASE}/gps/location-sharing`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ enabled })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+            status.textContent =
+                '❌ ' + (data.error || 'Could not update permission');
+            return;
+        }
+
+        status.textContent = enabled
+            ? '✅ Family Location Sharing is ON.'
+            : '🔒 Family Location Sharing is OFF.';
+
+        if (!enabled) {
+            familyMarkers.forEach(marker => gpsMap.removeLayer(marker));
+            familyMarkers = [];
+        } else {
+            await loadFamilyMarkers();
+        }
+
+    } catch (error) {
+        console.error('Location sharing error:', error);
+        status.textContent = '❌ Network error. Please try again.';
+    }
+}
 // =====================================================
 // INITIALIZE MAP
 // =====================================================
