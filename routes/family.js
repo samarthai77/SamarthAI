@@ -1678,7 +1678,7 @@ router.get(
             } = await supabase
                 .from("family_members")
                 .select(
-                    "id, name, location, last_updated"
+         "id, name, location, last_updated, location_sharing_enabled"          
                 )
                 .eq(
                     "id",
@@ -1706,7 +1706,11 @@ router.get(
                         "Family member not found"
                 });
             }
-
+if (member.location_sharing_enabled !== true) {
+                return res.status(403).json({
+                    error: "This family member has not enabled location sharing"
+                });
+            }
 
             return res.json({
                 memberId:
