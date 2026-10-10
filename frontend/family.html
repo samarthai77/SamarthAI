@@ -2890,10 +2890,10 @@ async function loadKavachPromoSlideshow() {
   container.appendChild(loading);
 
   try {
-    const response = await fetch(
-      'https://samarthai-backend.onrender.com/api/admin/banners/public',
-      { cache: 'no-store' }
-    );
+   const response = await fetch(
+  '/api/admin/banners/public',
+  { cache: 'no-store' }
+);
 
     if (!response.ok) {
       throw new Error(`Banner API returned ${response.status}`);
