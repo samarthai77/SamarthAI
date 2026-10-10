@@ -1196,7 +1196,104 @@
             ? 'Status: Active'
             : 'Status: Inactive';
           card.appendChild(status);
+// Slide order and display duration settings
+          const settings = document.createElement('div');
+          settings.style.cssText =
+            'display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0;';
 
+          const slideLabel = document.createElement('label');
+          slideLabel.textContent = 'Slide Number (1–12)';
+          slideLabel.style.cssText =
+            'display:flex;flex-direction:column;gap:5px;';
+
+          const slideInput = document.createElement('input');
+          slideInput.type = 'number';
+          slideInput.min = '1';
+          slideInput.max = '12';
+          slideInput.step = '1';
+          slideInput.value = String(banner.slide_number);
+          slideInput.style.width = '120px';
+          slideLabel.appendChild(slideInput);
+          settings.appendChild(slideLabel);
+
+          const durationLabel = document.createElement('label');
+          durationLabel.textContent = 'Duration (3–30 seconds)';
+          durationLabel.style.cssText =
+            'display:flex;flex-direction:column;gap:5px;';
+
+          const durationInput = document.createElement('input');
+          durationInput.type = 'number';
+          durationInput.min = '3';
+          durationInput.max = '30';
+          durationInput.step = '1';
+          durationInput.value = String(banner.duration_seconds || 5);
+          durationInput.style.width = '150px';
+          durationLabel.appendChild(durationInput);
+          settings.appendChild(durationLabel);
+
+          const saveSettings = document.createElement('button');
+          saveSettings.type = 'button';
+          saveSettings.textContent = 'Save Settings';
+
+          saveSettings.addEventListener('click', async () => {
+            const slide_number = Number(slideInput.value);
+            const duration_seconds = Number(durationInput.value);
+
+            if (
+              !Number.isInteger(slide_number) ||
+              slide_number < 1 ||
+              slide_number > 12
+            ) {
+              alert('Slide Number 1 से 12 के बीच रखें।');
+              return;
+            }
+
+            if (
+              !Number.isInteger(duration_seconds) ||
+              duration_seconds < 3 ||
+              duration_seconds > 30
+            ) {
+              alert('Duration 3 से 30 seconds के बीच रखें।');
+              return;
+            }
+
+            saveSettings.disabled = true;
+
+            try {
+              const response = await fetch(
+                `${API_BASE}/admin/banners/${encodeURIComponent(banner.id)}/settings`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    Authorization: `Bearer ${getToken()}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    slide_number,
+                    duration_seconds
+                  })
+                }
+              );
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                throw new Error(
+                  result.error || 'Settings save नहीं हुईं।'
+                );
+              }
+
+              alert('Banner settings save हो गईं।');
+              await loadKavachBanners();
+            } catch (error) {
+              alert(error.message);
+            } finally {
+              saveSettings.disabled = false;
+            }
+          });
+
+          settings.appendChild(saveSettings);
+          card.appendChild(settings);
           const toggle = document.createElement('button');
           toggle.type = 'button';
           toggle.textContent = banner.is_active ? 'Deactivate' : 'Activate';
