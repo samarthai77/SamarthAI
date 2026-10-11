@@ -2603,7 +2603,16 @@ if (joinRequests) joinRequests.style.display = 'none';
             openView(href.slice(1));
         }
     });
+const guidelinesLink = document.getElementById(
+    'openFamilySafetyGuidelines'
+);
 
+if (guidelinesLink) {
+    guidelinesLink.addEventListener('click', event => {
+        event.preventDefault();
+        openView('familySafetyGuidelines');
+    });
+}
     backButton.addEventListener('click', closeView);
 
     document.addEventListener('keydown', event => {
