@@ -2041,5 +2041,55 @@ router.delete(
     }
 );
 
+/*
+=========================================================
+GET FAMILY ALERTS
+GET /api/family/alerts
+Returns non-SOS alerts for the authenticated member only.
+=========================================================
+*/
+router.get("/alerts", async (req, res) => {
+    try {
+        const userId = getUserId(req);
 
+        const member = await getCurrentMembership(userId);
+
+        if (!member || !member.id || !member.family_id) {
+            return res.status(403).json({
+                error: "Active family membership not found"
+            });
+        }
+
+        const { data, error } = await supabase
+            .from("alerts")
+            .select("id, timestamp, alert_type, message, is_read")
+            .eq("member_id", member.id)
+            .neq("alert_type", "sos")
+            .order("timestamp", { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error("Family alerts fetch error:", error);
+            return res.status(500).json({
+                error: "Could not load family alerts"
+            });
+        }
+
+        return res.json({
+            alerts: data || []
+        });
+
+    } catch (err) {
+        if (isAuthError(err)) {
+            return res.status(401).json({
+                error: "Unauthorized"
+            });
+        }
+
+        console.error("Family alerts error:", err);
+        return res.status(500).json({
+            error: "Could not load family alerts"
+        });
+    }
+});
 module.exports = router;
