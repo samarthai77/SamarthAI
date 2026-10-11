@@ -2439,7 +2439,14 @@ maxlength="13"
     );
 
     if (!featureSection || !featureGrid) return;
+const familyContainer = document.querySelector('.family-container');
+const familyList = document.getElementById('familyList');
+const joinRequests = document.getElementById('joinRequestsSection');
 
+// Keep detail content hidden on the initial card screen.
+if (familyContainer) familyContainer.style.display = 'none';
+if (familyList) familyList.style.display = 'none';
+if (joinRequests) joinRequests.style.display = 'none';
     const overlay = document.createElement('section');
     overlay.id = 'familyFullScreenView';
     overlay.setAttribute('aria-label', 'Family detail view');
