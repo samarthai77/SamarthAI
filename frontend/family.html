@@ -2456,15 +2456,16 @@ maxlength="13"
 
     overlay.innerHTML = `
         <div style="max-width:760px;margin:0 auto;">
-            <button type="button" id="familyViewBack"
+           
+            <div id="familyViewContent" class="family-container"
+                style="display:block;max-width:100%;margin:0 auto;">
+            </div>
+               <button type="button" id="familyViewBack"
                 style="margin:0 0 16px;padding:12px 16px;
                 border:0;border-radius:12px;background:#071A3D;
                 color:white;font-weight:700;">
                 ← Back to Family Security
             </button>
-            <div id="familyViewContent" class="family-container"
-                style="display:block;max-width:100%;margin:0 auto;">
-            </div>
         </div>
     `;
     document.body.appendChild(overlay);
