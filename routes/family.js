@@ -1128,7 +1128,47 @@ router.post(
                 throw requestError;
             }
 
+// Notify the active family admin only.
+            try {
+                const {
+                    data: admin,
+                    error: adminError
+                } = await supabase
+                    .from("family_members")
+                    .select("id")
+                    .eq("family_id", request.family_id)
+                    .eq("role", "admin")
+                    .eq("is_active", true)
+                    .limit(1)
+                    .maybeSingle();
 
+                if (adminError) {
+                    throw adminError;
+                }
+
+                if (admin?.id) {
+                    const { error: alertError } = await supabase
+                        .from("alerts")
+                        .insert([{
+                            member_id: admin.id,
+                            alert_type: "family_join_request",
+                            message: "A new family join request is waiting for your review.",
+                            is_read: false
+                        }]);
+
+                    if (alertError) {
+                        console.error(
+                            "Family join request notification error:",
+                            alertError
+                        );
+                    }
+                }
+            } catch (notificationError) {
+                console.error(
+                    "Family admin notification error:",
+                    notificationError
+                );
+            }
             return res.status(202).json({
 
                 message:
