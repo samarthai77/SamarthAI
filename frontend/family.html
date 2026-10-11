@@ -2431,62 +2431,136 @@ maxlength="13"
     <script>
     
 (function setupFamilySectionNavigation() {
-    const container = document.querySelector('.family-container');
-    const featureGrid = document.querySelector('.family-v1-feature-grid');
+    const featureSection = document.querySelector(
+        'section[aria-label="Family Security Features"]'
+    );
+    const featureGrid = featureSection?.querySelector(
+        '.family-v1-feature-grid'
+    );
 
-    if (!container || !featureGrid) return;
+    if (!featureSection || !featureGrid) return;
 
-    const allDetails = Array.from(container.children);
+    const overlay = document.createElement('section');
+    overlay.id = 'familyFullScreenView';
+    overlay.setAttribute('aria-label', 'Family detail view');
+    overlay.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'z-index:99999',
+        'display:none',
+        'overflow-y:auto',
+        'background:#F5F7FB',
+        'padding:16px',
+        'box-sizing:border-box'
+    ].join(';');
 
-    // Hide all detail content on the initial screen.
-    container.style.display = 'none';
+    overlay.innerHTML = `
+        <div style="max-width:760px;margin:0 auto;">
+            <button type="button" id="familyViewBack"
+                style="margin:0 0 16px;padding:12px 16px;
+                border:0;border-radius:12px;background:#071A3D;
+                color:white;font-weight:700;">
+                ← Back to Family Security
+            </button>
+            <div id="familyViewContent" class="family-container"
+                style="display:block;max-width:100%;margin:0 auto;">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
 
-    function openFamilySection(sectionId) {
+    const viewContent = overlay.querySelector('#familyViewContent');
+    const backButton = overlay.querySelector('#familyViewBack');
+    const movedNodes = [];
+
+    function restoreNode(record) {
+        if (record.placeholder.parentNode) {
+            record.placeholder.replaceWith(record.node);
+        }
+
+        record.node.style.display = record.display;
+        record.node.classList.toggle(
+            'is-active',
+            record.wasActive
+        );
+    }
+
+    function closeView() {
+        movedNodes.slice().reverse().forEach(restoreNode);
+        movedNodes.length = 0;
+
+        overlay.style.display = 'none';
+        featureSection.style.display = '';
+        document.body.style.overflow = '';
+    }
+
+    function openView(sectionId) {
         const target = document.getElementById(sectionId);
-
         if (!target) return;
 
-        // Hide the previously opened section.
-        allDetails.forEach(element => {
-            element.style.display = 'none';
-            element.classList.remove('is-active');
-        });
+        closeView();
 
-        // Show the detail container and selected section.
-        container.style.display = 'block';
-        target.style.display = 'block';
-        target.classList.add('is-active');
+        const nodes = [target];
 
-        // Family Members also needs its member list.
         if (sectionId === 'familyMembersSection') {
-            const familyList = document.getElementById('familyList');
+            const list = document.getElementById('familyList');
+            const requests = document.getElementById('joinRequestsSection');
 
-            if (familyList) {
-                familyList.style.display = 'block';
+            if (list) nodes.push(list);
+            if (requests && getComputedStyle(requests).display !== 'none') {
+                nodes.push(requests);
             }
         }
 
-        // Keep the selected section visible without changing its functions.
-       
+        nodes.forEach(node => {
+            const placeholder = document.createComment(
+                'family-view-placeholder'
+            );
+
+            node.parentNode.insertBefore(placeholder, node);
+
+            movedNodes.push({
+                node,
+                placeholder,
+                display: node.style.display,
+                wasActive: node.classList.contains('is-active')
+            });
+
+            viewContent.appendChild(node);
+        });
+
+        featureSection.style.display = 'none';
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        target.style.display =
+            sectionId === 'familyMembersSection' ? 'flex' : 'block';
+        target.classList.add('is-active');
+
+        if (sectionId === 'familyMembersSection') {
+            const list = document.getElementById('familyList');
+            if (list) list.style.display = 'block';
+        }
     }
 
     featureGrid.addEventListener('click', event => {
-        const button = event.target.closest('a.family-v1-feature-card');
+        const card = event.target.closest('a.family-v1-feature-card');
+        if (!card || !featureGrid.contains(card)) return;
 
-        if (!button || !featureGrid.contains(button)) return;
-
-        const href = button.getAttribute('href');
-
-        // Preserve the existing SOS page and its functionality.
+        const href = card.getAttribute('href');
         if (!href || href === 'sos.html') return;
 
         if (href.startsWith('#')) {
-            const sectionId = href.slice(1);
+            event.preventDefault();
+            openView(href.slice(1));
+        }
+    });
 
-            if (document.getElementById(sectionId)) {
-                event.preventDefault();
-                openFamilySection(sectionId);
-            }
+    backButton.addEventListener('click', closeView);
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && overlay.style.display === 'block') {
+            closeView();
         }
     });
 })();
@@ -3298,12 +3372,7 @@ async function trackFamilyMember(memberId) {
                 `Location: ${location} | ` +
                 `Last Updated: ${updated}`;
 
-            document.getElementById(
-                'familyLocationSection'
-            ).scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+          
         } 
 
     } catch (error) {
