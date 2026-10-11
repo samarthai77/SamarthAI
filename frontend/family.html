@@ -2360,7 +2360,7 @@ body {
         transition: none;
     }
 }   
-    /* Family Security: compact feature cards */
+  /* Family Security: compact 3-column feature grid */
 .family-v1-feature-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2370,27 +2370,78 @@ body {
 .family-v1-feature-card {
     box-sizing: border-box;
     min-width: 0;
-    min-height: 76px;
-    padding: 8px;
-    border-radius: 12px;
+    min-height: 82px;
+    padding: 8px 6px;
+    border-radius: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
 }
 
 .family-v1-feature-icon {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
+    line-height: 1;
 }
 
 .family-v1-feature-title {
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
 .family-v1-feature-description {
     display: block;
     color: #64748B;
-    font-size: 0.72rem;
-    line-height: 1.25;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
+/* SOS: subtle visual emphasis */
+.family-v1-feature-sos {
+    min-height: 92px;
+    padding: 9px 7px;
+    border: 2px solid #FF8490;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #B51F36, #E12D43);
+    box-shadow: 0 5px 14px rgba(181, 31, 54, 0.28);
+}
+
+.family-v1-feature-sos .family-v1-feature-icon {
+    font-size: 1.3rem;
+}
+
+.family-v1-feature-sos .family-v1-feature-title {
+    color: #FFFFFF;
+    font-weight: 800;
+}
+
+@media (max-width: 650px) {
+    .family-v1-feature-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    .family-v1-feature-card {
+        min-height: 76px;
+        padding: 7px 5px;
+        gap: 4px;
+    }
+
+    .family-v1-feature-title {
+        font-size: 0.72rem;
+    }
+
+    .family-v1-feature-description {
+        font-size: 0.60rem;
+    }
+
+    .family-v1-feature-sos {
+        min-height: 86px;
+    }
+}
 @media (max-width: 650px) {
     .family-v1-feature-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
