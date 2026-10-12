@@ -9,437 +9,317 @@
     <link rel="stylesheet" href="css/style.css" />
 
     <style>
-        :root {
-            --blue: #003366;
-            --blue2: #00509e;
-            --saffron: #ff6b00;
-            --gold: #ffd700;
-            --bg: #f5f8fc;
-            --card: #ffffff;
-            --text: #172033;
-            --muted: #687386;
-            --border: #e4e9f0;
+        :root { --navy:#071A3D; --royal:#174EA6; --orange:#F47721; --gold:#D5A943; --ink:#17243d; --muted:#68758a; --line:#e1e8f2; --surface:#fff; --page:#f4f7fc; --shadow:0 14px 34px rgba(7,26,61,.08); }
+        *,*::before,*::after { box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { margin:0; color:var(--ink); background:var(--page); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.5; padding-bottom:0; }
+        button,input,textarea,select { font:inherit; }
+        button,a { -webkit-tap-highlight-color:transparent; }
+        a { color:inherit; }
+        button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible { outline:3px solid rgba(244,119,33,.45); outline-offset:2px; }
+        .site-header { position:sticky; top:0; z-index:50; color:#fff; background:linear-gradient(105deg,var(--navy),#0b3476 72%,var(--royal)); border-bottom:3px solid var(--gold); box-shadow:0 5px 18px rgba(7,26,61,.18); }
+        .header-inner { width:min(1380px,calc(100% - 36px)); min-height:70px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:22px; }
+        .brand { min-width:0; display:inline-flex; align-items:center; gap:10px; color:#fff; text-decoration:none; }
+        .brand-logo { display:block; width:48px; height:48px; flex:0 0 48px; object-fit:contain; border-radius:11px; background:#fff; }
+        .brand-copy { display:grid; line-height:1.1; }
+        .brand-copy strong { font-size:1rem; letter-spacing:.01em; }
+        .brand-copy small { margin-top:4px; color:rgba(255,255,255,.76); font-size:.68rem; letter-spacing:.025em; }
+        .primary-nav { display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+        .primary-nav a { padding:9px 10px; border-radius:9px; color:rgba(255,255,255,.88); text-decoration:none; font-size:.82rem; font-weight:650; white-space:nowrap; transition:background .18s ease,color .18s ease; }
+        .primary-nav a:hover,.primary-nav a[aria-current="page"] { color:#fff; background:rgba(255,255,255,.13); }
+        .primary-nav .logout-link { color:#ffd7bd; }
+        .nav-toggle { display:none; width:42px; height:42px; border:1px solid rgba(255,255,255,.27); border-radius:11px; color:#fff; background:rgba(255,255,255,.1); font-size:1.2rem; cursor:pointer; }
+        .services-container { width:min(1380px,calc(100% - 36px)); margin:0 auto; padding:24px 0 44px; }
+        .services-hero { position:relative; isolation:isolate; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.65fr) minmax(250px,.75fr); align-items:center; gap:clamp(20px,4vw,54px); min-height:270px; margin-bottom:22px; padding:clamp(24px,4vw,46px); border:1px solid rgba(255,255,255,.16); border-radius:24px; color:#fff; background:radial-gradient(ellipse at 78% 18%,rgba(91,166,255,.33),transparent 34%),radial-gradient(ellipse at 12% 100%,rgba(22,101,193,.68),transparent 48%),linear-gradient(115deg,var(--navy) 2%,#0b3476 55%,var(--royal) 100%); box-shadow:0 18px 42px rgba(7,26,61,.17); }
+        .services-hero::before,.services-hero::after { position:absolute; z-index:-1; content:""; pointer-events:none; }
+        .services-hero::before { width:450px; height:450px; right:18%; top:-310px; border:1px solid rgba(255,255,255,.12); border-radius:50%; box-shadow:0 0 0 28px rgba(255,255,255,.025),0 0 0 60px rgba(255,255,255,.025); }
+        .services-hero::after { inset:auto 0 0; height:4px; background:linear-gradient(90deg,var(--orange),var(--gold),transparent 78%); }
+        .hero-copy { min-width:0; }
+        .eyebrow,.section-eyebrow { margin:0 0 8px; color:var(--gold); font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+        .services-hero h1 { margin:0; color:#fff; font-size:clamp(2rem,5vw,3.45rem); line-height:1.05; letter-spacing:-.04em; }
+        .hero-subtitle { margin:9px 0 19px; color:rgba(255,255,255,.9); font-size:clamp(.93rem,1.7vw,1.1rem); }
+        .search-box { width:min(100%,760px); padding:5px; border:1px solid rgba(255,255,255,.36); border-radius:15px; background:#fff; box-shadow:0 10px 24px rgba(0,0,0,.17); }
+        .search-row { display:flex; align-items:center; gap:6px; min-width:0; }
+        .search-symbol { padding:0 6px 0 12px; color:var(--royal); font-size:1.15rem; }
+        .search-row input { width:100%; min-width:0; height:48px; border:0; outline:0; color:var(--ink); background:transparent; font-size:.95rem; }
+        .search-row input::placeholder { color:#78869b; opacity:1; }
+        .search-submit { flex:0 0 auto; min-width:100px; min-height:44px; padding:0 19px; border:0; border-radius:11px; color:#fff; background:var(--orange); font-weight:800; cursor:pointer; transition:transform .15s ease,background .15s ease; }
+        .search-submit:hover { background:#e96812; transform:translateY(-1px); }
+        .popular-searches { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:11px 2px 0; }
+        .popular-searches>span { margin-right:2px; color:rgba(255,255,255,.78); font-size:.74rem; font-weight:700; }
+        .search-chip { min-height:29px; padding:4px 10px; border:1px solid rgba(255,255,255,.32); border-radius:999px; color:#fff; background:rgba(3,18,48,.24); font-size:.7rem; cursor:pointer; }
+        .search-chip:hover { border-color:var(--gold); background:rgba(255,255,255,.12); }
+        .nearby-search { width:100%; min-height:40px; margin-top:8px; padding:8px 12px; border:1px solid rgba(7,26,61,.12); border-radius:10px; color:var(--navy); background:#f5f8fd; font-size:.82rem; font-weight:750; cursor:pointer; }
+        .nearby-search:hover:not(:disabled) { background:#eaf1fb; }
+        .nearby-search:disabled { opacity:.65; cursor:wait; }
+        .hero-info { align-self:stretch; display:flex; flex-direction:column; justify-content:center; padding:18px; border:1px solid rgba(255,255,255,.2); border-radius:18px; background:rgba(5,22,55,.52); backdrop-filter:blur(8px); }
+        .hero-info h2 { margin:0 0 12px; color:#fff; font-size:.95rem; }
+        .hero-info-list { display:grid; gap:9px; }
+        .hero-info-item { display:flex; align-items:center; gap:10px; color:rgba(255,255,255,.9); font-size:.8rem; line-height:1.25; }
+        .hero-info-icon { display:grid; width:31px; height:31px; flex:0 0 31px; place-items:center; border:1px solid rgba(213,169,67,.35); border-radius:9px; color:#ffd36a; background:rgba(213,169,67,.1); font-size:1rem; }
+        .market-section { margin:0 0 22px; }
+        .section-heading { display:flex; align-items:end; justify-content:space-between; gap:15px; margin:0 2px 11px; }
+        .section-heading-copy { min-width:0; }
+        .section-eyebrow { margin-bottom:3px; color:var(--royal); font-size:.62rem; }
+        .section-heading h2 { margin:0; color:var(--navy); font-size:clamp(1.12rem,2vw,1.45rem); line-height:1.25; }
+        .section-heading p:not(.section-eyebrow) { margin:3px 0 0; color:var(--muted); font-size:.82rem; }
+        .section-heading-actions { display:flex; align-items:center; gap:10px; }
+        .section-count { display:inline-flex; align-items:center; min-height:29px; padding:4px 10px; border:1px solid #d8e4f5; border-radius:999px; color:var(--royal); background:#edf4ff; font-size:.73rem; font-weight:750; white-space:nowrap; }
+        .text-action { border:0; color:var(--royal); background:transparent; font-size:.78rem; font-weight:800; cursor:pointer; }
+        .text-action:hover { color:var(--orange); }
+        .category-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; }
+        .category-btn { min-width:0; min-height:116px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px 7px 10px; border:1px solid var(--line); border-radius:15px; color:var(--navy); background:var(--surface); box-shadow:0 5px 16px rgba(15,45,88,.055); text-align:center; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+        .category-btn:hover { transform:translateY(-2px); border-color:#b8cdef; box-shadow:0 9px 20px rgba(15,45,88,.1); }
+        .category-btn.active { border-color:var(--orange); box-shadow:0 0 0 2px rgba(244,119,33,.16),0 8px 18px rgba(15,45,88,.08); }
+        .category-icon { display:grid; width:46px; height:46px; place-items:center; border-radius:14px; color:var(--royal); background:linear-gradient(145deg,#edf4ff,#f8fbff); font-size:1.55rem; }
+        .category-btn:nth-child(4n+2) .category-icon { color:#bb5a16; background:#fff4e9; }
+        .category-btn:nth-child(3n) .category-icon { color:#927014; background:#fff8df; }
+        .category-label { min-height:2.25em; display:flex; align-items:center; justify-content:center; font-size:.76rem; font-weight:800; line-height:1.15; }
+        .category-count { color:var(--muted); font-size:.65rem; line-height:1.1; }
+        .service-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:13px; }
+        .service-card { min-width:0; display:flex; flex-direction:column; padding:16px; border:1px solid var(--line); border-radius:17px; background:var(--surface); box-shadow:0 7px 20px rgba(14,43,83,.065); transition:transform .16s ease,box-shadow .16s ease; }
+        .service-card:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(14,43,83,.105); }
+        .service-card h3 { margin:0 0 7px; color:var(--navy); font-size:1.02rem; line-height:1.3; overflow-wrap:anywhere; }
+        .service-card p { margin:7px 0; line-height:1.45; overflow-wrap:anywhere; }
+        .service-description { color:#59667b; font-size:.84rem; }
+        .service-price { color:var(--royal); font-weight:850; font-size:1.08rem; }
+        .service-meta { color:var(--muted); font-size:.79rem; }
+        .category-tag { align-self:flex-start; display:inline-flex; width:fit-content; max-width:100%; margin:4px 0; padding:5px 9px; border-radius:999px; color:var(--royal); background:#edf4ff; font-size:.69rem; font-weight:750; overflow-wrap:anywhere; }
+        .provider-box { display:flex; align-items:center; gap:10px; margin-top:auto; padding-top:12px; border-top:1px solid var(--line); }
+        .provider-photo { width:44px; height:44px; flex:0 0 44px; border:2px solid rgba(213,169,67,.62); border-radius:50%; object-fit:cover; background:#edf2fa; }
+        .provider-info { min-width:0; display:grid; gap:2px; }
+        .provider-label { color:var(--muted); font-size:.68rem; }
+        .provider-name { color:var(--navy); font-size:.84rem; overflow-wrap:anywhere; }
+        .rating-summary { margin-top:2px; color:#986d12; font-size:.76rem; font-weight:750; }
+        .service-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:13px; }
+        .service-action-btn { flex:1 1 76px; min-width:0; min-height:38px; padding:8px 9px; border:1px solid transparent; border-radius:10px; font-size:.72rem; font-weight:800; line-height:1.2; cursor:pointer; transition:background .15s ease,transform .15s ease; }
+        .service-action-btn:hover { transform:translateY(-1px); }
+        .call-btn { color:#17613c; background:#e9f7ef; }
+        .chat-btn { color:var(--royal); background:#edf4ff; }
+        .request-btn { color:#b75312; background:#fff1e6; }
+        .details-btn { color:#34445e; background:#f0f3f8; }
+        .service-action-btn.owner-btn { color:#fff; background:var(--royal); }
+        .service-action-btn.delete-btn { color:#a12732; background:#fff0f1; }
+        .empty-state { grid-column:1/-1; padding:25px 17px; border:1px dashed #bfccdd; border-radius:16px; color:var(--muted); background:rgba(255,255,255,.8); text-align:center; }
+        .empty-state strong { display:block; margin-bottom:4px; color:var(--navy); font-size:.96rem; }
+        .empty-state p { margin:0; font-size:.82rem; }
+        .empty-state.error-state { border-color:#e5b6b8; color:#8f2d31; background:#fff8f8; }
+        .state-action { margin-top:12px; padding:8px 13px; border:1px solid #c9d8ed; border-radius:9px; color:var(--royal); background:#fff; font-size:.77rem; font-weight:800; cursor:pointer; }
+        .food-section { margin-top:25px; }
+        .ad-placeholder { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:22px 0; padding:14px 17px; border:1px solid #e8dfc8; border-left:4px solid var(--gold); border-radius:13px; color:#657186; background:linear-gradient(110deg,#fffdf7,#fff); }
+        .ad-placeholder-copy { min-width:0; }
+        .ad-label { display:block; margin-bottom:2px; color:#94701d; font-size:.63rem; font-weight:850; letter-spacing:.14em; }
+        .ad-placeholder p { margin:0; font-size:.78rem; }
+        .ad-mark { color:#a38a53; font-size:.75rem; font-weight:800; }
+        .add-service-form { margin-top:23px; border:1px solid var(--line); border-radius:17px; background:var(--surface); box-shadow:var(--shadow); }
+        .add-service-form details { overflow:hidden; border-radius:inherit; }
+        .add-service-form summary { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:17px 19px; color:var(--navy); list-style:none; cursor:pointer; }
+        .add-service-form summary::-webkit-details-marker { display:none; }
+        .form-summary-title { display:grid; gap:2px; }
+        .form-summary-title strong { font-size:1rem; }
+        .form-summary-title small { color:var(--muted); font-size:.76rem; }
+        .form-summary-icon { display:grid; width:36px; height:36px; flex:0 0 36px; place-items:center; border-radius:11px; color:#fff; background:var(--orange); font-size:1.2rem; font-weight:800; }
+        .add-service-content { padding:0 19px 19px; }
+        .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+        .add-service-form input,.add-service-form textarea,.add-service-form select { width:100%; min-height:44px; padding:10px 12px; border:1px solid #ccd6e4; border-radius:10px; color:var(--ink); background:#fff; font-size:.88rem; }
+        .add-service-form textarea { min-height:88px; resize:vertical; }
+        .full { grid-column:1/-1; }
+        .primary-btn { min-height:43px; padding:10px 18px; border:0; border-radius:11px; color:#fff; background:var(--orange); font-weight:850; cursor:pointer; }
+        .primary-btn:disabled { opacity:.6; cursor:wait; }
+        .status { margin-top:9px; color:var(--muted); font-size:.82rem; }
+        .notification-card { border:2px solid var(--orange); }
+        .notification-kicker { color:#a74a0e; font-weight:850; }
+        .notification-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+        .notification-actions button { flex:1 1 140px; min-height:41px; border:0; border-radius:10px; color:#fff; font-weight:800; cursor:pointer; }
+        .accept-btn { background:#198754; }
+        .reject-btn { background:#c63843; }
+        .notification-status { margin-top:12px; padding:10px; border-radius:10px; background:#f3f6fb; font-weight:750; }
+        .site-footer { padding:18px 18px 25px; color:#68758a; text-align:center; font-size:.76rem; }
+        .mobile-bottom-nav { display:none; }
+        .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+        @media (max-width:1100px) {
+            .category-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+            .service-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .services-hero { grid-template-columns:minmax(0,1.45fr) minmax(225px,.75fr); }
         }
-
-        * {
-            box-sizing: border-box;
+        @media (max-width:760px) {
+            body { padding-bottom:calc(68px + env(safe-area-inset-bottom)); }
+            .header-inner { width:calc(100% - 24px); min-height:61px; gap:10px; }
+            .brand-logo { width:42px; height:42px; flex-basis:42px; }
+            .brand-copy strong { font-size:.92rem; }
+            .brand-copy small { font-size:.61rem; }
+            .nav-toggle { display:inline-grid; place-items:center; flex:0 0 42px; }
+            .primary-nav { position:absolute; top:calc(100% + 3px); left:0; right:0; display:none; padding:9px 12px 12px; border-bottom:2px solid var(--gold); background:#0a2c66; box-shadow:0 12px 20px rgba(7,26,61,.18); }
+            .primary-nav.is-open { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .primary-nav a { padding:10px; font-size:.82rem; }
+            .services-container { width:calc(100% - 24px); padding:14px 0 27px; }
+            .services-hero { grid-template-columns:1fr; gap:14px; min-height:0; margin-bottom:17px; padding:21px 17px 16px; border-radius:19px; }
+            .services-hero h1 { font-size:clamp(1.95rem,8vw,2.5rem); }
+            .hero-subtitle { margin:6px 0 14px; font-size:.89rem; }
+            .search-box { padding:4px; border-radius:13px; }
+            .search-row input { height:43px; font-size:.84rem; }
+            .search-submit { min-width:77px; min-height:40px; padding:0 12px; font-size:.8rem; }
+            .popular-searches { gap:6px; margin-top:9px; }
+            .popular-searches>span { font-size:.67rem; }
+            .search-chip { min-height:27px; padding:3px 8px; font-size:.66rem; }
+            .nearby-search { min-height:36px; margin-top:7px; font-size:.75rem; }
+            .hero-info { padding:12px 13px; border-radius:13px; }
+            .hero-info h2 { margin-bottom:8px; font-size:.82rem; }
+            .hero-info-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 10px; }
+            .hero-info-item { gap:7px; font-size:.68rem; }
+            .hero-info-icon { width:27px; height:27px; flex-basis:27px; border-radius:8px; font-size:.88rem; }
+            .market-section { margin-bottom:19px; }
+            .section-heading { align-items:center; margin-bottom:9px; }
+            .section-heading p:not(.section-eyebrow) { font-size:.75rem; }
+            .section-count { min-height:27px; padding:4px 8px; font-size:.68rem; }
+            .category-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+            .category-btn { min-height:92px; gap:5px; padding:8px 4px 7px; border-radius:12px; }
+            .category-icon { width:34px; height:34px; border-radius:10px; font-size:1.16rem; }
+            .category-label { min-height:2.2em; font-size:.65rem; }
+            .category-count { font-size:.58rem; }
+            .service-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+            .service-card { padding:12px; border-radius:14px; }
+            .service-card h3 { font-size:.9rem; }
+            .service-card p { margin:5px 0; }
+            .service-description { font-size:.75rem; }
+            .service-price { font-size:.95rem; }
+            .service-meta { font-size:.7rem; }
+            .category-tag { padding:4px 7px; font-size:.62rem; }
+            .provider-box { gap:7px; padding-top:9px; }
+            .provider-photo { width:35px; height:35px; flex-basis:35px; }
+            .provider-name { font-size:.74rem; }
+            .provider-label { font-size:.62rem; }
+            .rating-summary { font-size:.66rem; }
+            .service-actions { gap:5px; margin-top:10px; }
+            .service-action-btn { flex-basis:calc(50% - 3px); min-height:36px; padding:7px 5px; font-size:.65rem; }
+            .food-section { margin-top:20px; }
+            .ad-placeholder { margin:18px 0; padding:11px 12px; }
+            .add-service-form { margin-top:18px; }
+            .add-service-form summary { padding:14px; }
+            .add-service-content { padding:0 14px 14px; }
+            .form-grid { grid-template-columns:1fr; gap:9px; }
+            .full { grid-column:auto; }
+            .mobile-bottom-nav { position:fixed; z-index:60; right:0; bottom:0; left:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:6px 6px calc(6px + env(safe-area-inset-bottom)); border-top:1px solid #d9e2ef; background:rgba(255,255,255,.97); box-shadow:0 -7px 22px rgba(7,26,61,.1); backdrop-filter:blur(12px); }
+            .mobile-bottom-nav a { min-width:0; display:grid; justify-items:center; gap:2px; padding:3px 1px; border-radius:9px; color:#64748b; text-decoration:none; font-size:.57rem; font-weight:750; }
+            .mobile-bottom-nav a span:first-child { font-size:1.05rem; line-height:1.15; }
+            .mobile-bottom-nav a[aria-current="page"] { color:var(--orange); background:#fff5eb; }
+            .site-footer { padding-bottom:11px; }
         }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: Arial, sans-serif;
+        @media (max-width:430px) {
+            .services-container { width:calc(100% - 20px); }
+            .hero-info-list { gap:6px; }
+            .hero-info-item { font-size:.64rem; }
+            .service-card { padding:10px; }
+            .service-actions { gap:4px; }
+            .service-action-btn { font-size:.61rem; }
         }
-
-        header {
-            background: linear-gradient(135deg, var(--blue), var(--blue2));
-            color: white;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            flex-wrap: wrap;
+        @media (max-width:365px) {
+            .header-inner { width:calc(100% - 18px); }
+            .brand { gap:7px; }
+            .brand-logo { width:38px; height:38px; flex-basis:38px; }
+            .brand-copy strong { font-size:.84rem; }
+            .brand-copy small { font-size:.55rem; }
+            .services-container { width:calc(100% - 18px); }
+            .hero-info { padding:10px; }
+            .hero-info-item { font-size:.6rem; }
+            .category-grid { gap:5px; }
+            .category-btn { min-height:88px; padding-inline:2px; }
+            .category-label { font-size:.59rem; }
+            .service-card { padding:9px; }
+            .service-action-btn { font-size:.57rem; }
         }
-
-        .logo {
-            font-size: 1.35rem;
-            font-weight: 800;
+        @media (min-width:761px) and (max-width:900px) {
+            .services-hero { grid-template-columns:minmax(0,1.2fr) minmax(210px,.8fr); padding:25px; }
         }
-
-        header nav {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        header nav a {
-            color: white;
-            text-decoration: none;
-            font-size: 0.9rem;
-            padding: 6px 8px;
-        }
-
-        .services-container {
-            width: min(1100px, 100%);
-            margin: auto;
-            padding: 18px 14px 35px;
-        }
-
-        /* Hero */
-        .services-hero {
-            background: linear-gradient(135deg, #003366, #00509e);
-            color: white;
-            border-radius: 20px;
-            padding: 24px 20px;
-            margin-bottom: 18px;
-            box-shadow: 0 8px 25px rgba(0, 51, 102, 0.16);
-        }
-
-        .services-hero h1 {
-            margin: 0 0 7px;
-            font-size: clamp(1.7rem, 5vw, 2.4rem);
-        }
-
-        .services-hero p {
-            margin: 0;
-            opacity: 0.9;
-            line-height: 1.5;
-        }
-
-        /* Search */
-        .search-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 18px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
-        }
-
-        .search-box input {
-            width: 100%;
-            border: 0;
-            outline: none;
-            font-size: 1rem;
-            padding: 9px 6px;
-            background: transparent;
-            color: var(--text);
-        }
-
-        /* Categories */
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 2px 10px;
-        }
-
-        .section-title h2 {
-            margin: 0;
-            font-size: 1.15rem;
-            color: var(--blue);
-        }
-
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 9px;
-        }
-
-        .category-btn {
-            border: 1px solid var(--border);
-            background: white;
-            border-radius: 14px;
-            padding: 12px 7px;
-            cursor: pointer;
-            color: var(--text);
-            font-size: 0.82rem;
-            min-height: 75px;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .category-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 14px rgba(0,0,0,0.08);
-        }
-
-        .category-icon {
-            display: block;
-            font-size: 1.55rem;
-            margin-bottom: 5px;
-        }
-
-        .category-btn.active {
-            border-color: var(--saffron);
-            box-shadow: 0 0 0 2px rgba(255,107,0,0.12);
-        }
-
-        /* Services */
-        .service-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 13px;
-        }
-
-        .service-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 17px;
-            padding: 16px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
-        }
-
-        .service-card h3 {
-            color: var(--blue);
-            margin: 0 0 7px;
-        }
-
-        .service-card p {
-            margin: 7px 0;
-            line-height: 1.45;
-        }
-
-        .service-price {
-            color: var(--saffron);
-            font-weight: 800;
-            font-size: 1.15rem;
-        }
-
-        .service-meta {
-            color: var(--muted);
-            font-size: 0.84rem;
-        }
-
-        .category-tag {
-            display: inline-block;
-            background: #eef4fa;
-            color: var(--blue);
-            border-radius: 20px;
-            padding: 5px 9px;
-            font-size: 0.75rem;
-            margin-top: 5px;
-        }
-.service-actions {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-}
-
-.service-action-btn {
-    flex: 1;
-    min-width: 90px;
-    border: 0;
-    border-radius: 10px;
-    padding: 9px 8px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.call-btn {
-    background: #e8f7ed;
-    color: #18733a;
-}
-
-.chat-btn {
-    background: #e8f0ff;
-    color: #174d9b;
-}
-
-.request-btn {
-    background: #fff0e6;
-    color: #d85b00;
-}
-
-.details-btn {
-    background: #f0f0f0;
-    color: #333;
-}
-        .empty-state {
-            background: white;
-            border: 1px dashed #cbd4df;
-            border-radius: 16px;
-            padding: 28px 15px;
-            text-align: center;
-            color: var(--muted);
-        }
-
-        /* Add service */
-        .add-service-form {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 18px;
-            margin-top: 25px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
-        }
-
-        .add-service-form h2 {
-            margin-top: 0;
-            color: var(--blue);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .add-service-form input,
-        .add-service-form textarea,
-        .add-service-form select {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #ccd4df;
-            border-radius: 10px;
-            outline: none;
-            font-size: 0.95rem;
-        }
-
-        .add-service-form textarea {
-            min-height: 90px;
-            resize: vertical;
-        }
-
-        .full {
-            grid-column: 1 / -1;
-        }
-
-        .primary-btn {
-            background: var(--saffron);
-            color: white;
-            border: 0;
-            border-radius: 25px;
-            padding: 11px 20px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .primary-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .status {
-            margin-top: 10px;
-            font-size: 0.88rem;
-        }
-
-        @media (max-width: 600px) {
-            header {
-                align-items: flex-start;
-            }
-
-            header nav {
-                width: 100%;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .full {
-                grid-column: auto;
-            }
-
-            .category-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        @media (prefers-reduced-motion:reduce) {
+            html { scroll-behavior:auto; }
+            *,*::before,*::after { transition-duration:.01ms !important; animation-duration:.01ms !important; }
         }
     </style>
 </head>
 
 <body>
-
-<header>
-    <div class="logo">SamarthAI</div>
-
-    <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="chat.html">Chat</a>
-        <a href="camera.html">Camera</a>
-        <a href="services.html">Services</a>
-        <a href="profile.html">Profile</a>
-        <a href="#" id="logoutBtn">Logout</a>
+<header class="site-header"><div class="header-inner">
+    <a class="brand" href="dashboard.html" aria-label="SamarthAI Kavach Home">
+        <img class="brand-logo" src="samarthai-kavach-logo.jpg" alt="SamarthAI Kavach logo" />
+        <span class="brand-copy"><strong>SamarthAI Kavach</strong><small>Har Zaroorat Ka Sathi</small></span>
+    </a>
+    <button class="nav-toggle" id="mobileMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primaryNav">☰</button>
+    <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">
+        <a href="dashboard.html">Home</a><a href="chat.html">AI Chat</a><a href="camera.html">Camera</a>
+        <a href="services.html" aria-current="page">Services</a><a href="profile.html">My Profile</a>
+        <a href="#" class="logout-link" id="logoutBtn">Logout</a>
     </nav>
-</header>
-
+</div></header>
 <main class="services-container">
-
-    <section class="services-hero">
-        <h1>🛠️ Har Zaroorat Ki Service</h1>
-        <p>
-            Apne aas-paas ki useful services khojiye — simple, fast aur low-data.
-        </p>
-    </section>
-
-    <!-- Search -->
-    <div class="search-box">
-        <input
-            type="search"
-            id="serviceSearch"
-            placeholder="🔎 Plumber, Electrician, Painter..."
-            autocomplete="off"
-        />
-    </div>
-
-    <!-- Categories -->
-    <div class="section-title">
-        <h2>Popular Categories</h2>
-    </div>
-
-    <div class="category-grid" id="categoryGrid"></div>
-<!-- Notification Request -->
-<div id="notificationRequestSection" style="display:none; margin-bottom:18px;"></div>
-    <!-- Service List -->
-    <div class="section-title">
-        <h2>Available Services</h2>
-    </div>
-
-    <div id="serviceList" class="service-grid">
-        <div class="empty-state">Services load ho rahi hain...</div>
-    </div>
-
-    <!-- Add Service -->
-    <section class="add-service-form">
-        <h2>➕ Apni Service Add Karein</h2>
-
-        <div class="form-grid">
-
-            <input
-                type="text"
-                id="serviceTitle"
-                placeholder="Service name"
-                maxlength="100"
-            />
-
-            <input
-                type="number"
-                id="servicePrice"
-                placeholder="Price (₹)"
-                min="0"
-                max="10000000"
-            />
-
-            <textarea
-                class="full"
-                id="serviceDesc"
-                placeholder="Service ke baare mein..."
-                maxlength="500"
-            ></textarea>
-
-            <select id="serviceCategory">
-                <option value="">Category select karein</option>
-            </select>
-
-            <input
-                type="text"
-                id="serviceLocation"
-                placeholder="Location"
-                maxlength="100"
-            />
-
-            <div class="full">
-                <button class="primary-btn" id="addServiceBtn">
-                    Add Service
-                </button>
-
-                <div id="addStatus" class="status"></div>
-            </div>
-
+    <section class="services-hero" aria-labelledby="servicesTitle">
+        <div class="hero-copy">
+            <p class="eyebrow">SamarthAI Kavach · Services</p><h1 id="servicesTitle">Services</h1>
+            <p class="hero-subtitle">Ghar se bahar, har zaroorat ke liye, ek hi jagah.</p>
+            <div class="search-box" role="search"><div class="search-row">
+                <label class="sr-only" for="serviceSearch">Search services</label><span class="search-symbol" aria-hidden="true">⌕</span>
+                <input type="search" id="serviceSearch" placeholder="Aapko kis service ki zaroorat hai?" autocomplete="off" />
+                <button class="search-submit" id="searchServicesBtn" type="button">Search</button>
+            </div><div class="popular-searches" aria-label="Popular search suggestions">
+                <span>Popular:</span>
+                <button class="search-chip" type="button" data-search-term="Plumber">Plumber</button>
+                <button class="search-chip" type="button" data-search-term="Electrician">Electrician</button>
+                <button class="search-chip" type="button" data-search-term="AC / Fridge">AC / Fridge</button>
+                <button class="search-chip" type="button" data-search-term="Transport">Transport</button>
+                <button class="search-chip" type="button" data-search-term="Construction">Construction</button>
+            </div></div>
         </div>
+        <aside class="hero-info" aria-label="Ways to use Services"><h2>Find the help you need</h2>
+            <div class="hero-info-list">
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌕</span><span>Search active service listings</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">▦</span><span>Browse eight service categories</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌖</span><span>Use GPS for nearby search</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">↗</span><span>Contact or request a service</span></div>
+            </div>
+        </aside>
     </section>
-
+    <section class="market-section" aria-labelledby="categoryHeading">
+        <div class="section-heading">
+            <div class="section-heading-copy"><p class="section-eyebrow">Explore the marketplace</p><h2 id="categoryHeading">Service Categories</h2><p>Choose a category to filter active listings.</p></div>
+            <button class="text-action" id="showAllServicesBtn" type="button">All Services <span aria-hidden="true">→</span></button>
+        </div><div class="category-grid" id="categoryGrid" aria-label="Service category filters"></div>
+    </section>
+    <section id="notificationRequestSection" class="market-section" style="display:none;" aria-live="polite"></section>
+    <section class="market-section" aria-labelledby="servicesHeading">
+        <div class="section-heading">
+            <div class="section-heading-copy"><p class="section-eyebrow">Community listings</p><h2 id="servicesHeading">Available Services</h2><p>Services currently listed by the SamarthAI community.</p></div>
+            <div class="section-heading-actions"><span class="section-count" id="serviceCount" aria-live="polite">Loading listings…</span><a class="text-action" href="#addServiceSection">List a service <span aria-hidden="true">＋</span></a></div>
+        </div><div id="serviceList" class="service-grid" aria-live="polite" aria-busy="true"><div class="empty-state">Services load ho rahi hain...</div></div>
+    </section>
+    <section class="market-section food-section" id="foodSection" aria-labelledby="foodHeading">
+        <div class="section-heading">
+            <div class="section-heading-copy"><p class="section-eyebrow">Browse by category</p><h2 id="foodHeading">Local Food &amp; Sweets</h2><p>Food and sweets listings from the active marketplace.</p></div>
+            <button class="text-action" id="showFoodServicesBtn" type="button">View listings <span aria-hidden="true">→</span></button>
+        </div><div id="foodServiceList" class="service-grid" aria-live="polite"></div>
+    </section>
+    <aside class="ad-placeholder" aria-label="Advertisement placeholder">
+        <div class="ad-placeholder-copy"><span class="ad-label">ADVERTISEMENT</span><p>Reserved space for a relevant sponsored placement.</p></div><span class="ad-mark" aria-hidden="true">Ad</span>
+    </aside>
+    <section class="add-service-form" id="addServiceSection"><details id="listServiceDetails">
+        <summary><span class="form-summary-title"><strong>List a Service</strong><small>Share your service with the SamarthAI community.</small></span><span class="form-summary-icon" aria-hidden="true">＋</span></summary>
+        <div class="add-service-content"><div class="form-grid">
+            <input type="text" id="serviceTitle" placeholder="Service name" maxlength="100" aria-label="Service name" />
+            <input type="number" id="servicePrice" placeholder="Price (₹)" min="0" max="10000000" aria-label="Price in rupees" />
+            <textarea class="full" id="serviceDesc" placeholder="Service ke baare mein..." maxlength="500" aria-label="Service description"></textarea>
+            <select id="serviceCategory" aria-label="Service category"><option value="">Category select karein</option></select>
+            <input type="text" id="serviceLocation" placeholder="Location" maxlength="100" aria-label="Location" />
+            <div class="full"><button class="primary-btn" id="addServiceBtn" type="button">Add Service</button><div id="addStatus" class="status" role="status" aria-live="polite"></div></div>
+        </div></div>
+    </details></section>
 </main>
-
-<footer>
-    <p style="text-align:center;">
-        &copy; 2026 SamarthAI — Har Zaroorat Ka Sathi
-    </p>
-</footer>
+<footer class="site-footer"><p>&copy; 2026 SamarthAI — Har Zaroorat Ka Sathi</p></footer>
+<nav class="mobile-bottom-nav" aria-label="Quick navigation">
+    <a href="dashboard.html"><span aria-hidden="true">⌂</span><span>Home</span></a>
+    <a href="chat.html"><span aria-hidden="true">✦</span><span>AI Chat</span></a>
+    <a href="services.html" aria-current="page"><span aria-hidden="true">▦</span><span>Services</span></a>
+    <a href="camera.html"><span aria-hidden="true">▣</span><span>Camera</span></a>
+    <a href="#addServiceSection"><span aria-hidden="true">＋</span><span>My Service</span></a>
+</nav>
 
 <script src="js/app.js"></script>
 
@@ -476,32 +356,43 @@ const notificationRequestId = urlParams.get('request_id');
         { name: 'Technician', icon: '👨‍🔧' },
         { name: 'Other', icon: '➕' }
     ];
+    const marketplaceCategories = [
+        { name: 'Home Services', icon: '⌂', aliases: ['Home Services', 'Home Service', 'Plumber', 'Electrician', 'Painter', 'Carpenter', 'Cleaning', 'Home Repair', 'Gardening'] },
+        { name: 'Food & Sweets', icon: '♨', aliases: ['Food & Sweets', 'Food and Sweets', 'Food', 'Sweet', 'Sweets', 'Restaurant', 'Restaurants', 'Bakery', 'Catering'] },
+        { name: 'Travel & Hotels', icon: '⌑', aliases: ['Travel & Hotels', 'Travel and Hotels', 'Travel', 'Hotel', 'Hotels'] },
+        { name: 'Cab & Transport', icon: '⌖', aliases: ['Cab & Transport', 'Cab and Transport', 'Cab', 'Cabs', 'Transport', 'Vehicle', 'Vehicles'] },
+        { name: 'Shopping', icon: '▤', aliases: ['Shopping', 'Shop', 'Retail'] },
+        { name: 'Beauty & Events', icon: '✦', aliases: ['Beauty & Events', 'Beauty and Events', 'Beauty', 'Event', 'Events', 'Salon', 'Makeup'] },
+        { name: 'Construction', icon: '⌂', aliases: ['Construction'] },
+        { name: 'Repair & Electronics', icon: '⚙', aliases: ['Repair & Electronics', 'Repair and Electronics', 'Repair', 'Electronics', 'Electronic Repair', 'AC / Fridge', 'AC and Fridge', 'AC Fridge', 'Computer', 'Technician'] }
+    ];
+    const categoryAliasMap = new Map();
+    marketplaceCategories.forEach(group => group.aliases.forEach(alias => categoryAliasMap.set(normalizeCategory(alias), group.name)));
+    function normalizeCategory(value) {
+        return String(value || '').trim().toLowerCase().replace(/&/g, ' and ').replace(/[/_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function marketplaceCategory(value) {
+        return categoryAliasMap.get(normalizeCategory(value)) || '';
+    }
+
 
     let allServices = [];
     let activeCategory = '';
+    let servicesLoadState = 'loading';
 
     const serviceList = document.getElementById('serviceList');
     const searchInput = document.getElementById('serviceSearch');
     const categoryGrid = document.getElementById('categoryGrid');
     const categorySelect = document.getElementById('serviceCategory');
+    const foodServiceList = document.getElementById('foodServiceList');
+    const serviceCount = document.getElementById('serviceCount');
 // ============ NEARBY SERVICE SEARCH ============
 
 const nearbyButton = document.createElement('button');
 
 nearbyButton.type = 'button';
 nearbyButton.textContent = '📍 Mere Paas Ki Services';
-nearbyButton.style.cssText = `
-    width: 100%;
-    margin-top: 10px;
-    padding: 11px;
-    border: 0;
-    border-radius: 12px;
-    background: #003366;
-    color: white;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-`;
+nearbyButton.className = 'nearby-search';
 
 document.querySelector('.search-box').appendChild(nearbyButton);
 
@@ -541,10 +432,6 @@ nearbyButton.addEventListener('click', async () => {
             radius: '20'
         });
 
-        if (category) {
-            params.set('category', category);
-        }
-
         const response = await fetch(
             `${SERVICE_API}/nearby?${params.toString()}`,
             {
@@ -560,6 +447,7 @@ nearbyButton.addEventListener('click', async () => {
         }
 
         allServices = Array.isArray(data) ? data : [];
+        servicesLoadState = 'loaded';
 
         renderServices();
 
@@ -593,223 +481,146 @@ nearbyButton.addEventListener('click', async () => {
         nearbyButton.textContent = '📍 Mere Paas Ki Services';
     }
 });
+
     function buildCategories() {
         categoryGrid.textContent = '';
-        categorySelect.innerHTML = '<option value="">Category select karein</option>';
-
-        categories.forEach(category => {
+        categorySelect.textContent = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Category select karein';
+        categorySelect.appendChild(placeholder);
+        marketplaceCategories.forEach(category => {
             const button = document.createElement('button');
-
             button.type = 'button';
             button.className = 'category-btn';
             button.dataset.category = category.name;
-
+            button.setAttribute('aria-pressed', 'false');
             const icon = document.createElement('span');
             icon.className = 'category-icon';
+            icon.setAttribute('aria-hidden', 'true');
             icon.textContent = category.icon;
-
             const label = document.createElement('span');
+            label.className = 'category-label';
             label.textContent = category.name;
-
-            button.appendChild(icon);
-            button.appendChild(label);
-
+            const count = document.createElement('span');
+            count.className = 'category-count';
+            count.dataset.countFor = category.name;
+            count.textContent = 'Loading…';
+            button.append(icon, label, count);
             button.addEventListener('click', () => {
-                if (activeCategory === category.name) {
-                    activeCategory = '';
-                } else {
-                    activeCategory = category.name;
-                }
-
+                activeCategory = activeCategory === category.name ? '' : category.name;
                 updateCategoryButtons();
                 renderServices();
             });
-
             categoryGrid.appendChild(button);
-
+        });
+        categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.name;
             option.textContent = category.name;
             categorySelect.appendChild(option);
         });
+        updateCategoryButtons();
+        updateCategoryCounts();
     }
-
     function updateCategoryButtons() {
         document.querySelectorAll('.category-btn').forEach(button => {
-            button.classList.toggle(
-                'active',
-                button.dataset.category === activeCategory
-            );
+            const active = button.dataset.category === activeCategory;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
+    }
+    function updateCategoryCounts() {
+        document.querySelectorAll('.category-count').forEach(count => {
+            if (servicesLoadState === 'loading') { count.textContent = 'Loading…'; return; }
+            if (servicesLoadState === 'error') { count.textContent = 'Unavailable'; return; }
+            const total = allServices.filter(service => marketplaceCategory(service.category) === count.dataset.countFor).length;
+            count.textContent = total + (total === 1 ? ' listing' : ' listings');
         });
     }
 
  function createServiceCard(service) {
     const card = document.createElement('article');
     card.className = 'service-card';
-
     const title = document.createElement('h3');
-    title.textContent = service.title || 'Service';
-
-    const description = document.createElement('p');
-    description.textContent =
-        service.description || 'No description available.';
-
-    const price = document.createElement('p');
-    price.className = 'service-price';
-    price.textContent =
-        service.price !== null && service.price !== undefined
-            ? `₹${service.price}`
-            : 'Price available on request';
-
-    const category = document.createElement('span');
-    category.className = 'category-tag';
-    category.textContent = service.category || 'Other';
-
-    const location = document.createElement('p');
-    location.className = 'service-meta';
-    location.textContent =
-        `📍 ${service.location || 'Location not specified'}`;
-
-    const provider = {
-        name: service.provider_name || 'Service Provider',
-        photo: service.provider_photo_url || ''
-    };
-
-    const providerBox = document.createElement('div');
-
-    providerBox.style.cssText = `
-        display:flex;
-        align-items:center;
-        gap:10px;
-        margin-top:12px;
-        padding-top:10px;
-        border-top:1px solid var(--border);
-    `;
-
-    const providerPhoto = document.createElement('img');
-
-    providerPhoto.src =
-        provider.photo ||
-        'data:image/svg+xml;charset=UTF-8,' +
-        encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
-                <rect width="60" height="60" rx="30" fill="#eef4fa"/>
-                <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
-            </svg>
-        `);
-
-    providerPhoto.alt =
-        `${provider.name} profile photo`;
-
-    providerPhoto.style.cssText = `
-        width:52px;
-        height:52px;
-        border-radius:50%;
-        object-fit:cover;
-        border:2px solid var(--saffron);
-        flex-shrink:0;
-    `;
-
-    providerPhoto.onerror = () => {
-        providerPhoto.src =
-            'data:image/svg+xml;charset=UTF-8,' +
-            encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
-                    <rect width="60" height="60" rx="30" fill="#eef4fa"/>
-                    <text x="30" y="39" text-anchor="middle" font-size="28">👤</text>
-                </svg>
-            `);
-    };
-
-    const providerInfo = document.createElement('div');
-
-    providerInfo.innerHTML = `
-        <div style="
-            font-size:0.72rem;
-            color:var(--muted);
-            margin-bottom:2px;
-        ">
-            Service Provider
-        </div>
-    `;
-
-    const providerName = document.createElement('strong');
-
-    providerName.textContent = provider.name;
-
-    providerName.style.cssText = `
-        color:var(--blue);
-        font-size:0.95rem;
-    `;
-
-    providerInfo.appendChild(providerName);
-
-    const ratingBox = document.createElement('div');
-
-    ratingBox.textContent =
-        '⭐ Rating load ho rahi hai...';
-
-    ratingBox.style.cssText = `
-        margin-top:4px;
-        font-size:0.82rem;
-        color:#d88900;
-        font-weight:700;
-    `;
-
-    providerInfo.appendChild(ratingBox);
-
-    if (service.provider_id) {
-
-        fetch(
-            `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(service.provider_id)}`,
-            {
-                method: 'GET',
-                cache: 'no-store'
-            }
-        )
-        .then(response => response.json())
-        .then(data => {
-
-            const rating =
-                Number(data.average_rating || 0);
-
-            const count =
-                Number(data.rating_count || 0);
-
-            if (count > 0) {
-
-                ratingBox.textContent =
-                    `⭐ ${rating.toFixed(1)} (${count} rating${count === 1 ? '' : 's'})`;
-
-            } else {
-
-                ratingBox.textContent =
-                    '⭐ No ratings yet';
-            }
-        })
-        .catch(error => {
-
-            console.error(
-                'Provider rating error:',
-                error
-            );
-
-            ratingBox.textContent =
-                '⭐ Rating unavailable';
-        });
-    }
-
-    providerBox.appendChild(providerPhoto);
-    providerBox.appendChild(providerInfo);
-
+    title.className = 'service-title';
+    title.textContent = String(service.title || 'Service');
     card.appendChild(title);
-    card.appendChild(description);
-    card.appendChild(price);
-    card.appendChild(category);
-    card.appendChild(location);
-    card.appendChild(providerBox);
-
+    if (service.description) {
+        const description = document.createElement('p');
+        description.className = 'service-description';
+        description.textContent = String(service.description);
+        card.appendChild(description);
+    }
+    if (service.price !== null && service.price !== undefined && String(service.price) !== '') {
+        const price = document.createElement('p');
+        price.className = 'service-price';
+        price.textContent = '₹' + String(service.price);
+        card.appendChild(price);
+    }
+    if (service.category) {
+        const category = document.createElement('span');
+        category.className = 'category-tag';
+        category.textContent = String(service.category);
+        card.appendChild(category);
+    }
+    if (service.location) {
+        const location = document.createElement('p');
+        location.className = 'service-meta';
+        location.textContent = '📍 ' + String(service.location);
+        card.appendChild(location);
+    }
+    const provider = { name: String(service.provider_name || '').trim(), photo: String(service.provider_photo_url || '').trim() };
+    const providerBox = document.createElement('div');
+    providerBox.className = 'provider-box';
+    const providerInfo = document.createElement('div');
+    providerInfo.className = 'provider-info';
+    let hasProviderDetails = false;
+    if (provider.photo && /^https?:\/\//i.test(provider.photo)) {
+        const providerPhoto = document.createElement('img');
+        providerPhoto.className = 'provider-photo';
+        providerPhoto.src = provider.photo;
+        providerPhoto.alt = provider.name ? provider.name + ' profile photo' : 'Provider profile photo';
+        providerPhoto.loading = 'lazy';
+        providerPhoto.referrerPolicy = 'no-referrer';
+        providerPhoto.addEventListener('error', () => providerPhoto.remove(), { once: true });
+        providerBox.appendChild(providerPhoto);
+        hasProviderDetails = true;
+    }
+    if (provider.name) {
+        const providerLabel = document.createElement('span');
+        providerLabel.className = 'provider-label';
+        providerLabel.textContent = 'Service Provider';
+        const providerName = document.createElement('strong');
+        providerName.className = 'provider-name';
+        providerName.textContent = provider.name;
+        providerInfo.append(providerLabel, providerName);
+        hasProviderDetails = true;
+    }
+    if (service.provider_id) {
+        const ratingBox = document.createElement('div');
+        ratingBox.className = 'rating-summary';
+        ratingBox.textContent = '⭐ Rating load ho rahi hai…';
+        fetch('https://samarthai-backend.onrender.com/api/reviews/provider/' + encodeURIComponent(service.provider_id), { method: 'GET', cache: 'no-store' })
+            .then(response => response.json())
+            .then(data => {
+                const rating = Number(data.average_rating || 0);
+                const count = Number(data.rating_count || 0);
+                ratingBox.textContent = count > 0 ? '⭐ ' + rating.toFixed(1) + ' (' + count + ' rating' + (count === 1 ? '' : 's') + ')' : '⭐ No ratings yet';
+            })
+            .catch(error => {
+                console.error('Provider rating error:', error);
+                ratingBox.textContent = '⭐ Rating unavailable';
+            });
+        providerInfo.appendChild(ratingBox);
+        hasProviderDetails = true;
+    }
+    if (hasProviderDetails) {
+        providerBox.appendChild(providerInfo);
+        card.appendChild(providerBox);
+    }
     const actions = document.createElement('div');
+
 
     actions.className =
         'service-actions';
@@ -1489,7 +1300,7 @@ async function openProviderReviews(service) {
             ? `⭐ ${rating.toFixed(1)} / 5 — ${count} rating${count === 1 ? '' : 's'}`
             : '⭐ No ratings yet';
 
-        reviewsList.innerHTML = '';
+        reviewsList.textContent = '';
 
         if (!reviews.length) {
             const empty = document.createElement('div');
@@ -2182,7 +1993,7 @@ async function openPortfolio(service) {
     });
 
     async function loadPortfolioPhotos() {
-        gallery.innerHTML = '';
+        gallery.textContent = '';
         status.textContent = 'Photos load ho rahi hain...';
 
         try {
@@ -2273,44 +2084,63 @@ async function openPortfolio(service) {
 
     loadPortfolioPhotos();
 } 
+
+    function showCollectionState(container, heading, message, isError = false) {
+        container.textContent = '';
+        const panel = document.createElement('div');
+        panel.className = 'empty-state' + (isError ? ' error-state' : '');
+        const title = document.createElement('strong');
+        title.textContent = heading;
+        const detail = document.createElement('p');
+        detail.textContent = message;
+        panel.append(title, detail);
+        if (isError) {
+            const retry = document.createElement('button');
+            retry.className = 'state-action';
+            retry.type = 'button';
+            retry.textContent = 'Try again';
+            retry.addEventListener('click', loadServices);
+            panel.appendChild(retry);
+        }
+        container.appendChild(panel);
+    }
+    function serviceMatchesSearch(service, query) {
+        if (!query) return true;
+        return [service.title, service.description, service.category, service.location, service.provider_name]
+            .some(value => String(value || '').toLowerCase().includes(query));
+    }
     function renderServices() {
+        updateCategoryCounts();
         const query = searchInput.value.trim().toLowerCase();
-
-        const filtered = allServices.filter(service => {
-            const title = String(service.title || '').toLowerCase();
-            const description = String(service.description || '').toLowerCase();
-            const category = String(service.category || '').toLowerCase();
-            const location = String(service.location || '').toLowerCase();
-
-            const matchesSearch =
-                !query ||
-                title.includes(query) ||
-                description.includes(query) ||
-                category.includes(query) ||
-                location.includes(query);
-
-            const matchesCategory =
-                !activeCategory ||
-                category === activeCategory.toLowerCase();
-
-            return matchesSearch && matchesCategory;
-        });
-
-        serviceList.textContent = '';
-
-        if (!filtered.length) {
-            const empty = document.createElement('div');
-            empty.className = 'empty-state';
-            empty.textContent =
-                'Is category mein abhi koi service nahi mili.';
-            serviceList.appendChild(empty);
+        serviceList.setAttribute('aria-busy', String(servicesLoadState === 'loading'));
+        if (servicesLoadState === 'loading') {
+            showCollectionState(serviceList, 'Loading services', 'Active listings are being loaded from the marketplace.');
+            showCollectionState(foodServiceList, 'Loading food listings', 'Food & Sweets listings are being loaded.');
+            serviceCount.textContent = 'Loading listings…';
             return;
         }
-
-        filtered.forEach(service => {
-            serviceList.appendChild(createServiceCard(service));
+        if (servicesLoadState === 'error') {
+            showCollectionState(serviceList, 'Services could not be loaded', 'Please check your connection and try again.', true);
+            showCollectionState(foodServiceList, 'Food listings unavailable', 'The marketplace could not be reached.', true);
+            serviceCount.textContent = 'Listings unavailable';
+            return;
+        }
+        const filtered = allServices.filter(service => {
+            const matchesCategory = !activeCategory || marketplaceCategory(service.category) === activeCategory;
+            return matchesCategory && serviceMatchesSearch(service, query);
         });
+        serviceList.textContent = '';
+        if (!allServices.length) showCollectionState(serviceList, 'No active services yet', 'Listings will appear here when a service is added.');
+        else if (!filtered.length) showCollectionState(serviceList, 'No matching services', 'Try another search or select a different category.');
+        else filtered.forEach(service => serviceList.appendChild(createServiceCard(service)));
+        serviceCount.textContent = filtered.length + (filtered.length === 1 ? ' service' : ' services');
+        const foodListings = allServices.filter(service => marketplaceCategory(service.category) === 'Food & Sweets' && serviceMatchesSearch(service, query));
+        foodServiceList.textContent = '';
+        if (!allServices.length) showCollectionState(foodServiceList, 'No food listings to show', 'Food & Sweets listings will appear here when available.');
+        else if (!foodListings.length) showCollectionState(foodServiceList, 'No Food & Sweets listings', query ? 'No Food & Sweets listings match your search.' : 'There are no active Food & Sweets listings in the loaded results.');
+        else foodListings.forEach(service => foodServiceList.appendChild(createServiceCard(service)));
     }
+
 async function loadNotificationRequest() {
     if (!notificationRequestId) return;
 
@@ -2366,161 +2196,60 @@ async function loadNotificationRequest() {
                 request.status || 'pending'
             ).toLowerCase();
 
-        section.innerHTML = `
-
-            <div
-                class="service-card"
-                style="
-                    border:2px solid #ff6b00;
-                    box-shadow:
-                        0 6px 20px
-                        rgba(255,107,0,0.15);
-                "
-            >
-
-                <div
-                    style="
-                        color:#ff6b00;
-                        font-weight:800;
-                        margin-bottom:8px;
-                    "
-                >
-                    🔔 Notification Se Aayi Request
-                </div>
-
-                <h3>
-                    🛠️ ${request.category || 'Service Request'}
-                </h3>
-
-                <p>
-                    <strong>Request:</strong>
-                    ${request.description || 'Details available nahi hain.'}
-                </p>
-
-                ${
-                    request.budget !== null &&
-                    request.budget !== undefined
-                    ? `
-                        <p class="service-price">
-                            💰 Budget: ₹${request.budget}
-                        </p>
-                    `
-                    : ''
-                }
-
-                ${
-                    request.location
-                    ? `
-                        <p class="service-meta">
-                            📍 ${request.location}
-                        </p>
-                    `
-                    : ''
-                }
-
-                <p class="service-meta">
-                    📌 Status:
-                    <strong>
-                        ${currentStatus}
-                    </strong>
-                </p>
-
-                ${
-                    currentStatus === 'pending'
-                    ? `
-                        <div
-                            style="
-                                display:flex;
-                                gap:8px;
-                                margin-top:14px;
-                                flex-wrap:wrap;
-                            "
-                        >
-
-                            <button
-                                type="button"
-                                id="acceptRequestBtn"
-                                style="
-                                    flex:1;
-                                    min-width:130px;
-                                    padding:11px;
-                                    border:0;
-                                    border-radius:10px;
-                                    background:#198754;
-                                    color:white;
-                                    font-weight:700;
-                                    cursor:pointer;
-                                "
-                            >
-                                ✅ Accept Request
-                            </button>
-
-                            <button
-                                type="button"
-                                id="rejectRequestBtn"
-                                style="
-                                    flex:1;
-                                    min-width:130px;
-                                    padding:11px;
-                                    border:0;
-                                    border-radius:10px;
-                                    background:#dc3545;
-                                    color:white;
-                                    font-weight:700;
-                                    cursor:pointer;
-                                "
-                            >
-                                ❌ Reject Request
-                            </button>
-
-                        </div>
-                    `
-                    : `
-                        <div
-                            style="
-                                margin-top:12px;
-                                padding:10px;
-                                background:#f5f8fc;
-                                border-radius:10px;
-                                font-weight:700;
-                            "
-                        >
-                            ${
-                                currentStatus === 'accepted'
-                                ? '✅ Request accepted'
-                                : '❌ Request rejected'
-                            }
-                        </div>
-                    `
-                }
-
-            </div>
-        `;
-
-        if (currentStatus === 'pending') {
-
-            document
-                .getElementById('acceptRequestBtn')
-                .addEventListener(
-                    'click',
-                    () =>
-                        updateProviderRequestStatus(
-                            request.id,
-                            'accepted'
-                        )
-                );
-
-            document
-                .getElementById('rejectRequestBtn')
-                .addEventListener(
-                    'click',
-                    () =>
-                        updateProviderRequestStatus(
-                            request.id,
-                            'rejected'
-                        )
-                );
+        const card = document.createElement('article');
+        card.className = 'service-card notification-card';
+        const kicker = document.createElement('p');
+        kicker.className = 'notification-kicker';
+        kicker.textContent = '🔔 Notification Se Aayi Request';
+        const heading = document.createElement('h3');
+        heading.textContent = '🛠️ ' + String(request.category || 'Service Request');
+        const descriptionRow = document.createElement('p');
+        const descriptionLabel = document.createElement('strong');
+        descriptionLabel.textContent = 'Request: ';
+        const descriptionValue = document.createElement('span');
+        descriptionValue.textContent = String(request.description || 'Details available nahi hain.');
+        descriptionRow.append(descriptionLabel, descriptionValue);
+        const statusRow = document.createElement('p');
+        statusRow.className = 'service-meta';
+        statusRow.textContent = '📌 Status: ' + currentStatus;
+        card.append(kicker, heading, descriptionRow);
+        if (request.budget !== null && request.budget !== undefined) {
+            const budget = document.createElement('p');
+            budget.className = 'service-price';
+            budget.textContent = '💰 Budget: ₹' + String(request.budget);
+            card.appendChild(budget);
         }
+        if (request.location) {
+            const location = document.createElement('p');
+            location.className = 'service-meta';
+            location.textContent = '📍 ' + String(request.location);
+            card.appendChild(location);
+        }
+        card.appendChild(statusRow);
+        if (currentStatus === 'pending') {
+            const actions = document.createElement('div');
+            actions.className = 'notification-actions';
+            const acceptButton = document.createElement('button');
+            acceptButton.type = 'button';
+            acceptButton.id = 'acceptRequestBtn';
+            acceptButton.className = 'accept-btn';
+            acceptButton.textContent = '✅ Accept Request';
+            acceptButton.addEventListener('click', () => updateProviderRequestStatus(request.id, 'accepted'));
+            const rejectButton = document.createElement('button');
+            rejectButton.type = 'button';
+            rejectButton.id = 'rejectRequestBtn';
+            rejectButton.className = 'reject-btn';
+            rejectButton.textContent = '❌ Reject Request';
+            rejectButton.addEventListener('click', () => updateProviderRequestStatus(request.id, 'rejected'));
+            actions.append(acceptButton, rejectButton);
+            card.appendChild(actions);
+        } else {
+            const statusNotice = document.createElement('div');
+            statusNotice.className = 'notification-status';
+            statusNotice.textContent = currentStatus === 'accepted' ? '✅ Request accepted' : '❌ Request rejected';
+            card.appendChild(statusNotice);
+        }
+        section.replaceChildren(card);
 
     } catch (error) {
 
@@ -2689,85 +2418,40 @@ async function loadNotificationComplaint() {
                 complaint.status || 'pending'
             );
 
-        section.innerHTML = `
-
-            <div
-                class="service-card"
-                style="
-                    border:2px solid #dc2626;
-                    box-shadow:
-                        0 6px 20px
-                        rgba(220,38,38,0.15);
-                "
-            >
-
-                <div
-                    style="
-                        color:#dc2626;
-                        font-weight:800;
-                        margin-bottom:10px;
-                    "
-                >
-                    🚩 Customer Complaint
-                </div>
-
-                <h3>
-                    ${complaint.service_title || 'Service'}
-                </h3>
-
-                <p>
-                    <strong>Customer:</strong>
-                    ${complaint.customer_name || 'Customer'}
-                </p>
-
-                <p>
-                    <strong>Complaint Reason:</strong>
-                    ${complaint.reason || 'Not specified'}
-                </p>
-
-                <p>
-                    <strong>Details:</strong>
-                    ${complaint.description || 'No details provided.'}
-                </p>
-
-                <p>
-                    <strong>Status:</strong>
-                    ${status}
-                </p>
-
-                ${
-                    complaint.created_at
-                    ? `
-                        <p
-                            class="service-meta"
-                        >
-                            📅 ${
-                                new Date(
-                                    complaint.created_at
-                                ).toLocaleString('en-IN')
-                            }
-                        </p>
-                    `
-                    : ''
-                }
-
-                <div
-                    style="
-                        margin-top:12px;
-                        padding:10px;
-                        background:#fff5f5;
-                        border-radius:10px;
-                        color:#7f1d1d;
-                        font-size:0.85rem;
-                        line-height:1.4;
-                    "
-                >
-                    ⚠️ Complaint SamarthAI moderation
-                    ke liye record mein hai.
-                </div>
-
-            </div>
-        `;
+        const card = document.createElement('article');
+        card.className = 'service-card notification-card';
+        card.style.borderColor = '#c63843';
+        const kicker = document.createElement('p');
+        kicker.className = 'notification-kicker';
+        kicker.style.color = '#a12732';
+        kicker.textContent = '🚩 Customer Complaint';
+        const heading = document.createElement('h3');
+        heading.textContent = String(complaint.service_title || 'Service');
+        function addComplaintField(labelText, valueText) {
+            const row = document.createElement('p');
+            const label = document.createElement('strong');
+            label.textContent = labelText + ': ';
+            const value = document.createElement('span');
+            value.textContent = String(valueText);
+            row.append(label, value);
+            card.appendChild(row);
+        }
+        card.append(kicker, heading);
+        addComplaintField('Customer', complaint.customer_name || 'Customer');
+        addComplaintField('Complaint Reason', complaint.reason || 'Not specified');
+        addComplaintField('Details', complaint.description || 'No details provided.');
+        addComplaintField('Status', status);
+        if (complaint.created_at) {
+            const date = document.createElement('p');
+            date.className = 'service-meta';
+            date.textContent = '📅 ' + new Date(complaint.created_at).toLocaleString('en-IN');
+            card.appendChild(date);
+        }
+        const note = document.createElement('p');
+        note.className = 'notification-status';
+        note.textContent = '⚠️ Complaint SamarthAI moderation ke liye record mein hai.';
+        card.appendChild(note);
+        section.replaceChildren(card);
 
     } catch (error) {
 
@@ -2780,33 +2464,20 @@ async function loadNotificationComplaint() {
     }
 }   
     async function loadServices() {
+        servicesLoadState = 'loading';
+        renderServices();
         try {
-            const response = await fetch(SERVICE_API, {
-                method: 'GET',
-                cache: 'no-store'
-            });
-
-            if (!response.ok) {
-                throw new Error('Services load failed');
-            }
-
+            const response = await fetch(SERVICE_API, { method: 'GET', cache: 'no-store' });
+            if (!response.ok) throw new Error('Services load failed');
             const data = await response.json();
-
-            allServices = Array.isArray(data) ? data : [];
-
+            if (!Array.isArray(data)) throw new Error('Unexpected services response');
+            allServices = data;
+            servicesLoadState = 'loaded';
             renderServices();
-
         } catch (error) {
             console.error('Services load error:', error);
-
-            serviceList.textContent = '';
-
-            const empty = document.createElement('div');
-            empty.className = 'empty-state';
-            empty.textContent =
-                'Services abhi load nahi ho pa rahi hain. Thodi der baad try karein.';
-
-            serviceList.appendChild(empty);
+            servicesLoadState = 'error';
+            renderServices();
         }
     }
 
@@ -2910,6 +2581,37 @@ try {
     }
 
     searchInput.addEventListener('input', renderServices);
+    document.getElementById('searchServicesBtn').addEventListener('click', () => {
+        renderServices();
+        document.getElementById('servicesHeading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.querySelectorAll('[data-search-term]').forEach(chip => chip.addEventListener('click', () => {
+        searchInput.value = chip.dataset.searchTerm || '';
+        renderServices();
+        document.getElementById('servicesHeading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    document.getElementById('showAllServicesBtn').addEventListener('click', () => {
+        activeCategory = '';
+        searchInput.value = '';
+        updateCategoryButtons();
+        loadServices();
+    });
+    document.getElementById('showFoodServicesBtn').addEventListener('click', () => {
+        activeCategory = 'Food & Sweets';
+        updateCategoryButtons();
+        renderServices();
+        document.getElementById('foodHeading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('mobileMenuToggle').addEventListener('click', event => {
+        const nav = document.getElementById('primaryNav');
+        const isOpen = nav.classList.toggle('is-open');
+        event.currentTarget.setAttribute('aria-expanded', String(isOpen));
+        event.currentTarget.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+    });
+    document.querySelectorAll('.primary-nav a, .mobile-bottom-nav a').forEach(link => link.addEventListener('click', () => {
+        document.getElementById('primaryNav').classList.remove('is-open');
+        document.getElementById('mobileMenuToggle').setAttribute('aria-expanded', 'false');
+    }));
 
     document
         .getElementById('addServiceBtn')
