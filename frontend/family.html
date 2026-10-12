@@ -2326,25 +2326,38 @@ body {
     padding: 6px 10px 8px;
 }
 .family-app-header {
-    padding: 7px 12px;
-    gap: 6px;
-    min-height: 0;
-}
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 12px;
+        gap: 6px;
+        min-height: 0;
+    }
 
-.family-brand {
-    gap: 8px;
-}
+    .family-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
 
-.family-brand-mark {
-    width: 36px;
-    height: 36px;
-    font-size: 19px;
-}
+    .family-brand-mark {
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        font-size: 18px;
+    }
 
-.family-brand-name {
-    font-size: 1.12rem;
-    line-height: 1.1;
-}
+    .family-brand-name {
+        font-size: 1.1rem;
+        line-height: 1.1;
+        white-space: nowrap;
+    }
     .family-v1-features {
         width: calc(100% - 24px);
     }
