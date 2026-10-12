@@ -2451,11 +2451,18 @@ body {
         gap: 6px;
     }
 
-    .family-v1-feature-card {
-        min-height: 66px;
-        padding: 6px;
-        gap: 4px;
-    }
+   .family-v1-feature-card {
+    min-height: 58px;
+    padding: 5px;
+    gap: 3px;
+}
+
+.family-v1-feature-card .family-v1-feature-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 1rem;
+}
 
     .family-v1-feature-title {
         font-size: 0.68rem;
@@ -2465,7 +2472,28 @@ body {
     .family-v1-feature-description {
         font-size: 0.58rem;
     }
+.family-v1-feature-grid > .family-v1-feature-card:nth-child(n+4) {
+    min-height: 54px;
+    padding: 4px;
+    gap: 2px;
+}
 
+.family-v1-feature-grid > .family-v1-feature-card:nth-child(n+4) .family-v1-feature-icon {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+    font-size: 0.9rem;
+}
+
+.family-v1-feature-grid > .family-v1-feature-card:nth-child(n+4) .family-v1-feature-title {
+    font-size: 0.65rem;
+    line-height: 1.1;
+}
+
+.family-v1-feature-grid > .family-v1-feature-card:nth-child(6) .family-v1-feature-description {
+    font-size: 0.54rem;
+    line-height: 1.05;
+}
     .family-v1-feature-sos {
         min-height: 70px;
         padding: 7px 6px;
