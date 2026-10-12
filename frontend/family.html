@@ -2063,15 +2063,28 @@ body {
 
 @media (max-width: 650px) {
     .family-security-heading {
-        margin: 10px 0 12px;
-        padding: 12px;
+        margin: 6px 0 7px;
+        padding: 7px 10px;
+        gap: 8px;
     }
 
-    .family-v1-feature-card {
-        min-height: 96px;
-        padding: 12px;
+    .family-security-heading-icon {
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        font-size: 19px;
     }
-}  
+
+    .family-security-heading h1 {
+        font-size: 1.1rem;
+        line-height: 1.15;
+    }
+
+    .family-security-heading p {
+        font-size: 0.76rem;
+        line-height: 1.2;
+    }
+}
    /* Keep the initial Family Security screen compact */
 #familyJoinSection,
 #familyAdminSection,
@@ -2319,36 +2332,48 @@ body {
 
     .family-v1-feature-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
+        gap: 6px;
     }
 
     .family-v1-feature-card {
-        min-height: 100px;
+        min-height: 66px;
         padding: 6px;
         border-radius: 16px;
     }
 
     #emergencyHelpSection {
         width: calc(100% - 24px);
-        gap: 8px;
+        gap: 5px;
         border-radius: 18px !important;
     }
 
     #emergencyHelpSection > a {
-        min-height: 62px;
-        padding: 10px !important;
-        font-size: 0.86rem;
+        min-height: 44px;
+        padding: 6px !important;
+        font-size: 0.68rem;
     }
 }
 
 @media (max-width: 360px) {
     #emergencyHelpSection {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        padding: 6px !important;
     }
 
-    #emergencyHelpSection > a,
+    #emergencyHelpSection > a {
+        grid-column: auto;
+        min-height: 42px;
+        padding: 5px 3px !important;
+        font-size: 0.61rem;
+        line-height: 1.15;
+    }
+
     #emergencyHelpSection > a[href="tel:112"] {
         grid-column: 1 / -1;
+        min-height: 44px;
+        padding: 6px !important;
+        font-size: 0.72rem;
     }
 }
 
@@ -2423,28 +2448,29 @@ body {
 @media (max-width: 900px) {
     .family-v1-feature-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 7px;
+        gap: 6px;
     }
 
     .family-v1-feature-card {
-        min-height: 76px;
-        padding: 7px 5px;
+        min-height: 66px;
+        padding: 6px;
         gap: 4px;
     }
 
     .family-v1-feature-title {
-        font-size: 0.72rem;
+        font-size: 0.68rem;
+        line-height: 1.15;
     }
- 
+
     .family-v1-feature-description {
-        font-size: 0.60rem;
+        font-size: 0.58rem;
     }
 
     .family-v1-feature-sos {
-        min-height: 86px;
+        min-height: 70px;
+        padding: 7px 6px;
     }
 }
-
     </style>
 </head>
 <body>
