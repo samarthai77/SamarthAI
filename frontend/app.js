@@ -123,7 +123,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'sos.html',
         'gps.html',
         'camera.html',
-        'services.html'
+        'services.html',
+        'category.html'
     ];
 
     const currentPage =
