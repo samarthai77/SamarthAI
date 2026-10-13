@@ -75,14 +75,30 @@
         .text-action { border:0; color:var(--royal); background:transparent; font-size:.78rem; font-weight:800; cursor:pointer; }
         .text-action:hover { color:var(--orange); }
         .category-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; }
-        .category-btn { min-width:0; min-height:116px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px 7px 10px; border:1px solid var(--line); border-radius:15px; color:var(--navy); background:var(--surface); box-shadow:0 5px 16px rgba(15,45,88,.055); text-align:center; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+        .category-accordion { min-width:0; }
+        .category-accordion.is-expanded { grid-column:1/-1; display:grid; gap:8px; }
+        .category-btn { position:relative; width:100%; min-width:0; min-height:116px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px 7px 10px; border:1px solid var(--line); border-radius:15px; color:var(--navy); background:var(--surface); box-shadow:0 5px 16px rgba(15,45,88,.055); text-align:center; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
         .category-btn:hover { transform:translateY(-2px); border-color:#b8cdef; box-shadow:0 9px 20px rgba(15,45,88,.1); }
         .category-btn.active { border-color:var(--orange); box-shadow:0 0 0 2px rgba(244,119,33,.16),0 8px 18px rgba(15,45,88,.08); }
         .category-icon { display:grid; width:46px; height:46px; place-items:center; border-radius:14px; color:var(--royal); background:linear-gradient(145deg,#edf4ff,#f8fbff); font-size:1.55rem; }
-        .category-btn:nth-child(4n+2) .category-icon { color:#bb5a16; background:#fff4e9; }
-        .category-btn:nth-child(3n) .category-icon { color:#927014; background:#fff8df; }
+        .category-accordion:nth-child(4n+2) .category-icon { color:#bb5a16; background:#fff4e9; }
+        .category-accordion:nth-child(3n) .category-icon { color:#927014; background:#fff8df; }
         .category-label { min-height:2.25em; display:flex; align-items:center; justify-content:center; font-size:.76rem; font-weight:800; line-height:1.15; }
         .category-count { color:var(--muted); font-size:.65rem; line-height:1.1; }
+        .category-disclosure { position:absolute; top:7px; right:8px; color:var(--muted); font-size:.85rem; line-height:1; transition:transform .18s ease; }
+        .category-accordion.is-expanded .category-btn { min-height:62px; flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 14px; border-color:var(--gold); text-align:left; }
+        .category-accordion.is-expanded .category-icon { width:38px; height:38px; flex:0 0 38px; border-radius:11px; font-size:1.2rem; }
+        .category-accordion.is-expanded .category-label { min-height:0; flex:1; justify-content:flex-start; text-align:left; }
+        .category-accordion.is-expanded .category-count { white-space:nowrap; }
+        .category-accordion.is-expanded .category-disclosure { position:static; margin-left:2px; transform:rotate(180deg); }
+        .subcategory-panel { padding:13px; border:1px solid #dce5f2; border-radius:14px; background:linear-gradient(135deg,#fff,#f5f8fd); box-shadow:0 6px 16px rgba(15,45,88,.045); }
+        .subcategory-panel[hidden] { display:none; }
+        .subcategory-heading { margin:0 0 9px; color:var(--navy); font-size:.76rem; font-weight:800; }
+        .subcategory-options { display:flex; flex-wrap:wrap; gap:7px; }
+        .subcategory-chip,.subcategory-view-all { min-height:34px; padding:7px 11px; border:1px solid #d6e1f0; border-radius:999px; color:var(--royal); background:#fff; font-size:.72rem; font-weight:750; line-height:1.15; cursor:pointer; transition:border-color .16s ease,background .16s ease,color .16s ease; }
+        .subcategory-chip:hover,.subcategory-chip:focus-visible,.subcategory-view-all:hover,.subcategory-view-all:focus-visible { border-color:var(--gold); color:var(--navy); background:#fffaf0; }
+        .subcategory-chip[hidden] { display:none; }
+        .subcategory-view-all { border-color:rgba(213,169,67,.6); color:#795c14; background:#fff9e8; }
         .service-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:13px; }
         .service-card { min-width:0; display:flex; flex-direction:column; padding:16px; border:1px solid var(--line); border-radius:17px; background:var(--surface); box-shadow:0 7px 20px rgba(14,43,83,.065); transition:transform .16s ease,box-shadow .16s ease; }
         .service-card:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(14,43,83,.105); }
@@ -169,8 +185,7 @@
             .search-symbol { padding:0 4px 0 7px; font-size:1rem; }
             .search-row input { height:32px; font-size:.8rem; }
             .search-submit { min-width:67px; min-height:32px; padding:0 9px; font-size:.74rem; }
-            .popular-searches { flex-wrap:nowrap; gap:6px; margin:7px 0 0; overflow-x:auto; scrollbar-width:none; }
-            .popular-searches::-webkit-scrollbar { display:none; }
+            .popular-searches { flex-wrap:wrap; gap:5px 6px; margin:7px 0 0; }
             .popular-searches>span { flex:0 0 auto; font-size:.65rem; }
             .search-chip { flex:0 0 auto; min-height:26px; padding:3px 8px; font-size:.63rem; }
             .location-controls { gap:6px; margin-top:6px; }
@@ -180,10 +195,11 @@
             .location-status { font-size:.6rem; line-height:1.2; }
             .hero-info { padding:4px 3px; border-radius:12px; }
             .hero-info-list { grid-template-columns:repeat(4,minmax(0,1fr)); }
-            .hero-info-item { min-height:55px; flex-direction:column; justify-content:center; gap:3px; padding:4px 2px; border-right:1px solid rgba(255,255,255,.13); text-align:center; font-size:.56rem; line-height:1.15; }
+            .hero-info-item { min-height:60px; flex-direction:column; justify-content:center; gap:4px; padding:5px 3px; border-right:1px solid rgba(255,255,255,.13); text-align:center; font-size:.6rem; line-height:1.18; }
+            .hero-info-item>span:last-child { max-width:100%; white-space:normal; overflow-wrap:normal; }
             .hero-info-item:nth-child(odd),.hero-info-item:nth-child(-n+2) { border-bottom:0; }
             .hero-info-item:last-child { border-right:0; }
-            .hero-info-icon { width:23px; height:23px; flex-basis:23px; border-radius:7px; font-size:.8rem; }
+            .hero-info-icon { width:25px; height:25px; flex-basis:25px; border-radius:8px; font-size:.86rem; }
             .market-section { margin-bottom:19px; }
             .section-heading { align-items:center; margin-bottom:9px; }
             .section-heading p:not(.section-eyebrow) { font-size:.75rem; }
@@ -193,6 +209,14 @@
             .category-icon { width:34px; height:34px; border-radius:10px; font-size:1.16rem; }
             .category-label { min-height:2.2em; font-size:.65rem; }
             .category-count { font-size:.58rem; }
+            .category-accordion.is-expanded .category-btn { min-height:54px; gap:8px; padding:8px 10px; }
+            .category-accordion.is-expanded .category-icon { width:34px; height:34px; flex-basis:34px; font-size:1.05rem; }
+            .category-accordion.is-expanded .category-label { font-size:.68rem; }
+            .category-accordion.is-expanded .category-count { font-size:.56rem; }
+            .subcategory-panel { padding:9px; border-radius:12px; }
+            .subcategory-heading { margin-bottom:7px; font-size:.7rem; }
+            .subcategory-options { gap:6px; }
+            .subcategory-chip,.subcategory-view-all { min-height:31px; padding:6px 9px; font-size:.66rem; }
             .service-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
             .service-card { padding:12px; border-radius:14px; }
             .service-card h3 { font-size:.9rem; }
@@ -223,7 +247,7 @@
         }
         @media (max-width:430px) {
             .services-container { width:calc(100% - 20px); }
-            .hero-info-item { font-size:.54rem; }
+            .hero-info-item { font-size:.58rem; }
             .service-card { padding:10px; }
             .service-actions { gap:4px; }
             .service-action-btn { font-size:.61rem; }
@@ -236,7 +260,7 @@
             .brand-copy small { font-size:.55rem; }
             .services-container { width:calc(100% - 18px); }
             .hero-info { padding:3px 2px; }
-            .hero-info-item { min-height:53px; font-size:.51rem; }
+            .hero-info-item { min-height:60px; font-size:.56rem; }
             .category-grid { gap:5px; }
             .category-btn { min-height:88px; padding-inline:2px; }
             .category-label { font-size:.59rem; }
@@ -299,16 +323,16 @@
         </div>
         <aside class="hero-info" aria-label="Ways to use Services"><h2>Find the help you need</h2>
             <div class="hero-info-list">
-                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌕</span><span>Search active service listings</span></div>
-                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">▦</span><span>Browse eight service categories</span></div>
-                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌖</span><span>Use GPS for nearby search</span></div>
-                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">↗</span><span>Contact or request a service</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌕</span><span>Search listings</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">▦</span><span>Browse categories</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">⌖</span><span>Nearby search</span></div>
+                <div class="hero-info-item"><span class="hero-info-icon" aria-hidden="true">✉</span><span>Contact / request</span></div>
             </div>
         </aside>
     </section>
     <section class="market-section" aria-labelledby="categoryHeading">
         <div class="section-heading">
-            <div class="section-heading-copy"><p class="section-eyebrow">Explore the marketplace</p><h2 id="categoryHeading">Service Categories</h2><p>Choose a category to filter active listings.</p></div>
+            <div class="section-heading-copy"><p class="section-eyebrow">Explore the marketplace</p><h2 id="categoryHeading">Service Categories</h2><p>Choose a category, then pick a service to see matching listings.</p></div>
             <button class="text-action" id="showAllServicesBtn" type="button">All Services <span aria-hidden="true">→</span></button>
         </div><div class="category-grid" id="categoryGrid" aria-label="Service category filters"></div>
     </section>
@@ -382,14 +406,46 @@ const notificationRequestId = urlParams.get('request_id');
         { name: 'Other', icon: '➕' }
     ];
     const marketplaceCategories = [
-        { name: 'Home Services', icon: '⌂', aliases: ['Home Services', 'Home Service', 'Plumber', 'Electrician', 'Painter', 'Carpenter', 'Cleaning', 'Home Repair', 'Gardening'] },
-        { name: 'Food & Sweets', icon: '♨', aliases: ['Food & Sweets', 'Food and Sweets', 'Food', 'Sweet', 'Sweets', 'Restaurant', 'Restaurants', 'Bakery', 'Catering'] },
-        { name: 'Travel & Hotels', icon: '⌑', aliases: ['Travel & Hotels', 'Travel and Hotels', 'Travel', 'Hotel', 'Hotels'] },
-        { name: 'Cab & Transport', icon: '⌖', aliases: ['Cab & Transport', 'Cab and Transport', 'Cab', 'Cabs', 'Transport', 'Vehicle', 'Vehicles'] },
-        { name: 'Shopping', icon: '▤', aliases: ['Shopping', 'Shop', 'Retail'] },
-        { name: 'Beauty & Events', icon: '✦', aliases: ['Beauty & Events', 'Beauty and Events', 'Beauty', 'Event', 'Events', 'Salon', 'Makeup'] },
-        { name: 'Construction', icon: '⌂', aliases: ['Construction'] },
-        { name: 'Repair & Electronics', icon: '⚙', aliases: ['Repair & Electronics', 'Repair and Electronics', 'Repair', 'Electronics', 'Electronic Repair', 'AC / Fridge', 'AC and Fridge', 'AC Fridge', 'Computer', 'Technician'] }
+        { name: 'Home Services', icon: '⌂', aliases: ['Home Services', 'Home Service', 'Plumber', 'Electrician', 'Painter', 'Carpenter', 'Cleaning', 'Home Repair', 'Gardening'], subcategories: [
+            { name: 'Plumber', searchTerm: 'Plumber' }, { name: 'Electrician', searchTerm: 'Electrician' },
+            { name: 'Home Cleaning', searchTerm: 'Cleaning' }, { name: 'Pest Control', searchTerm: 'Pest' },
+            { name: 'AC Repair', searchTerm: 'AC' }, { name: 'Carpenter', searchTerm: 'Carpenter' },
+            { name: 'Painter', searchTerm: 'Painter' }, { name: 'Gardening', searchTerm: 'Gardening' },
+            { name: 'Home Repair', searchTerm: 'Home Repair' }
+        ] },
+        { name: 'Food & Sweets', icon: '♨', aliases: ['Food & Sweets', 'Food and Sweets', 'Food', 'Sweet', 'Sweets', 'Restaurant', 'Restaurants', 'Bakery', 'Catering'], subcategories: [
+            { name: 'Restaurants', searchTerm: 'Restaurant' }, { name: 'Bakery', searchTerm: 'Bakery' },
+            { name: 'Sweets & Mithai', searchTerm: 'Sweets' }, { name: 'Catering', searchTerm: 'Catering' },
+            { name: 'Tiffin Service', searchTerm: 'Tiffin' }
+        ] },
+        { name: 'Travel & Hotels', icon: '⌑', aliases: ['Travel & Hotels', 'Travel and Hotels', 'Travel', 'Hotel', 'Hotels'], subcategories: [
+            { name: 'Hotels', searchTerm: 'Hotel' }, { name: 'Homestays', searchTerm: 'Homestay' },
+            { name: 'Travel Agents', searchTerm: 'Travel Agent' }, { name: 'Tour Packages', searchTerm: 'Tour' }
+        ] },
+        { name: 'Cab & Transport', icon: '⌖', aliases: ['Cab & Transport', 'Cab and Transport', 'Cab', 'Cabs', 'Transport', 'Vehicle', 'Vehicles'], subcategories: [
+            { name: 'Cabs', searchTerm: 'Cab' }, { name: 'Airport Taxi', searchTerm: 'Airport' },
+            { name: 'Local Transport', searchTerm: 'Transport' }, { name: 'Packers & Movers', searchTerm: 'Packers' },
+            { name: 'Goods Transport', searchTerm: 'Goods Transport' }
+        ] },
+        { name: 'Shopping', icon: '▤', aliases: ['Shopping', 'Shop', 'Retail'], subcategories: [
+            { name: 'Grocery', searchTerm: 'Grocery' }, { name: 'Electronics', searchTerm: 'Electronics' },
+            { name: 'Clothing', searchTerm: 'Clothing' }, { name: 'Home Essentials', searchTerm: 'Home Essentials' }
+        ] },
+        { name: 'Beauty & Events', icon: '✦', aliases: ['Beauty & Events', 'Beauty and Events', 'Beauty', 'Event', 'Events', 'Salon', 'Makeup'], subcategories: [
+            { name: 'Salon & Spa', searchTerm: 'Salon' }, { name: 'Makeup Artist', searchTerm: 'Makeup' },
+            { name: 'Event Planners', searchTerm: 'Event' }, { name: 'Photographers', searchTerm: 'Photographer' },
+            { name: 'Decorators', searchTerm: 'Decorator' }
+        ] },
+        { name: 'Construction', icon: '⌂', aliases: ['Construction'], subcategories: [
+            { name: 'Contractors', searchTerm: 'Contractor' }, { name: 'Masonry', searchTerm: 'Mason' },
+            { name: 'Civil Work', searchTerm: 'Civil' }, { name: 'Flooring & Tiling', searchTerm: 'Flooring' },
+            { name: 'Painting', searchTerm: 'Painting' }
+        ] },
+        { name: 'Repair & Electronics', icon: '⚙', aliases: ['Repair & Electronics', 'Repair and Electronics', 'Repair', 'Electronics', 'Electronic Repair', 'AC / Fridge', 'AC and Fridge', 'AC Fridge', 'Computer', 'Technician'], subcategories: [
+            { name: 'AC Repair', searchTerm: 'AC' }, { name: 'Refrigerator Repair', searchTerm: 'Fridge' },
+            { name: 'Computer Repair', searchTerm: 'Computer' }, { name: 'Mobile Repair', searchTerm: 'Mobile' },
+            { name: 'Appliance Repair', searchTerm: 'Appliance' }, { name: 'Technician', searchTerm: 'Technician' }
+        ] }
     ];
     const categoryAliasMap = new Map();
     marketplaceCategories.forEach(group => group.aliases.forEach(alias => categoryAliasMap.set(normalizeCategory(alias), group.name)));
@@ -403,6 +459,8 @@ const notificationRequestId = urlParams.get('request_id');
 
     let allServices = [];
     let activeCategory = '';
+    let expandedCategory = '';
+    let homeServicesExpanded = false;
     let servicesLoadState = 'loading';
     let activeLocationMode = '';
     let preferredCityValue = '';
@@ -566,12 +624,15 @@ const notificationRequestId = urlParams.get('request_id');
         placeholder.value = '';
         placeholder.textContent = 'Category select karein';
         categorySelect.appendChild(placeholder);
-        marketplaceCategories.forEach(category => {
+        marketplaceCategories.forEach((category, categoryIndex) => {
+            const accordion = document.createElement('div');
+            accordion.className = 'category-accordion';
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'category-btn';
             button.dataset.category = category.name;
-            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-expanded', 'false');
+            button.setAttribute('aria-controls', `subcategory-panel-${categoryIndex}`);
             const icon = document.createElement('span');
             icon.className = 'category-icon';
             icon.setAttribute('aria-hidden', 'true');
@@ -583,13 +644,63 @@ const notificationRequestId = urlParams.get('request_id');
             count.className = 'category-count';
             count.dataset.countFor = category.name;
             count.textContent = 'Loading…';
-            button.append(icon, label, count);
-            button.addEventListener('click', () => {
-                activeCategory = activeCategory === category.name ? '' : category.name;
-                updateCategoryButtons();
-                renderServices();
+            const disclosure = document.createElement('span');
+            disclosure.className = 'category-disclosure';
+            disclosure.setAttribute('aria-hidden', 'true');
+            disclosure.textContent = '⌄';
+            button.append(icon, label, count, disclosure);
+
+            const panel = document.createElement('div');
+            panel.className = 'subcategory-panel';
+            panel.id = `subcategory-panel-${categoryIndex}`;
+            panel.hidden = true;
+            panel.setAttribute('role', 'region');
+            const panelHeading = document.createElement('p');
+            panelHeading.className = 'subcategory-heading';
+            panelHeading.id = `subcategory-heading-${categoryIndex}`;
+            panelHeading.textContent = `Services in ${category.name}`;
+            panel.setAttribute('aria-labelledby', panelHeading.id);
+            const options = document.createElement('div');
+            options.className = 'subcategory-options';
+
+            (category.subcategories || []).forEach((subcategory, subcategoryIndex) => {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'subcategory-chip';
+                option.textContent = subcategory.name;
+                const isHomeExtra = category.name === 'Home Services' && subcategoryIndex >= 6;
+                if (isHomeExtra) {
+                    option.dataset.homeServiceExtra = 'true';
+                    option.hidden = !homeServicesExpanded;
+                }
+                option.addEventListener('click', () => selectSubcategory(category, subcategory));
+                options.appendChild(option);
             });
-            categoryGrid.appendChild(button);
+
+            panel.append(panelHeading, options);
+            if (category.name === 'Home Services' && category.subcategories.length > 6) {
+                const viewAll = document.createElement('button');
+                viewAll.type = 'button';
+                viewAll.className = 'subcategory-view-all';
+                viewAll.textContent = homeServicesExpanded ? 'Show fewer Home Services' : 'View All Home Services';
+                viewAll.setAttribute('aria-expanded', String(homeServicesExpanded));
+                viewAll.addEventListener('click', () => {
+                    homeServicesExpanded = !homeServicesExpanded;
+                    panel.querySelectorAll('[data-home-service-extra]').forEach(option => {
+                        option.hidden = !homeServicesExpanded;
+                    });
+                    viewAll.textContent = homeServicesExpanded ? 'Show fewer Home Services' : 'View All Home Services';
+                    viewAll.setAttribute('aria-expanded', String(homeServicesExpanded));
+                });
+                options.appendChild(viewAll);
+            }
+
+            button.addEventListener('click', () => {
+                expandedCategory = expandedCategory === category.name ? '' : category.name;
+                updateCategoryButtons();
+            });
+            accordion.append(button, panel);
+            categoryGrid.appendChild(accordion);
         });
         categories.forEach(category => {
             const option = document.createElement('option');
@@ -601,11 +712,24 @@ const notificationRequestId = urlParams.get('request_id');
         updateCategoryCounts();
     }
     function updateCategoryButtons() {
-        document.querySelectorAll('.category-btn').forEach(button => {
+        document.querySelectorAll('.category-accordion').forEach(accordion => {
+            const button = accordion.querySelector('.category-btn');
+            const panel = accordion.querySelector('.subcategory-panel');
             const active = button.dataset.category === activeCategory;
+            const expanded = button.dataset.category === expandedCategory;
             button.classList.toggle('active', active);
-            button.setAttribute('aria-pressed', String(active));
+            button.setAttribute('aria-expanded', String(expanded));
+            accordion.classList.toggle('is-expanded', expanded);
+            panel.hidden = !expanded;
         });
+    }
+    function selectSubcategory(category, subcategory) {
+        activeCategory = '';
+        expandedCategory = '';
+        searchInput.value = subcategory.searchTerm || subcategory.name;
+        updateCategoryButtons();
+        renderServices();
+        document.getElementById('servicesHeading').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function updateCategoryCounts() {
         document.querySelectorAll('.category-count').forEach(count => {
