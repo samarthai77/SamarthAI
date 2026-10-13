@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071A3D" />
+    <meta name="description" content="Explore local services and businesses with SamarthAI Kavach." />
+    <title>Category — SamarthAI Kavach</title>
+    <link rel="stylesheet" href="category-page.css" />
+</head>
+<body>
+    <header class="category-header">
+        <div class="category-header__inner">
+            <a class="category-brand" href="dashboard.html" aria-label="SamarthAI Kavach home">
+                <img src="samarthai-kavach-logo.jpg" alt="SamarthAI Kavach logo" width="48" height="48" />
+                <span><strong>SamarthAI Kavach</strong><small>Har Zaroorat Ka Sathi</small></span>
+            </a>
+            <button class="category-menu-toggle" id="categoryMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="categoryNav">☰</button>
+            <nav class="category-nav" id="categoryNav" aria-label="Main navigation">
+                <a href="dashboard.html">Home</a>
+                <a href="chat.html">AI Chat</a>
+                <a href="family.html">Family</a>
+                <a href="services.html" aria-current="page">Services</a>
+                <a href="profile.html">My Profile</a>
+                <a href="index.html" id="categoryLogout">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <aside class="category-ad-slot" aria-label="Advertisement">
+        <div><span>ADVERTISEMENT</span><p>Reserved space for a relevant sponsored placement.</p></div>
+        <strong aria-hidden="true">Ad</strong>
+    </aside>
+
+    <main class="category-shell">
+        <nav class="category-breadcrumb" aria-label="Breadcrumb">
+            <a href="services.html">Services</a><span aria-hidden="true">/</span>
+            <span id="categoryBreadcrumb" aria-current="page">Category</span>
+        </nav>
+
+        <section class="category-hero" aria-labelledby="categoryTitle">
+            <div class="category-hero__copy">
+                <p class="category-eyebrow" id="categoryEyebrow">SAMARTHAI KAVACH · MARKETPLACE</p>
+                <h1 id="categoryTitle">Explore local services</h1>
+                <p class="category-intro" id="categoryDescription">Find relevant services and businesses in the active marketplace.</p>
+
+                <form class="category-search" id="categorySearchForm" role="search">
+                    <label class="visually-hidden" for="categorySearchInput">Search this category</label>
+                    <span aria-hidden="true">⌕</span>
+                    <input id="categorySearchInput" type="search" placeholder="Search a service…" autocomplete="off" />
+                    <button type="submit">Search</button>
+                </form>
+
+                <div class="category-location" aria-label="Location options">
+                    <div class="category-location__options" role="group" aria-label="Choose a location filter">
+                        <button id="categoryNearbyButton" type="button" aria-pressed="false">Nearby Services</button>
+                        <button id="categoryCityButton" type="button" aria-pressed="false">Preferred City</button>
+                    </div>
+                    <label class="category-city-select" id="categoryCityWrap" for="categoryCitySelect" hidden>
+                        <span>City / area</span>
+                        <select id="categoryCitySelect" disabled><option value="">Choose a listed city / area</option></select>
+                    </label>
+                    <p id="categoryLocationStatus" aria-live="polite">City options load from active listings.</p>
+                </div>
+
+                <div class="category-quick-links" id="categoryQuickLinks" aria-label="Popular services"></div>
+            </div>
+
+            <figure class="category-hero-photo" id="categoryPhotoFrame">
+                <div class="category-photo-fallback" id="categoryPhotoFallback" hidden aria-hidden="true">
+                    <span id="categoryPhotoFallbackMark">SK</span>
+                    <strong id="categoryPhotoFallbackTitle">SamarthAI Services</strong>
+                    <small>Category photo is temporarily unavailable</small>
+                </div>
+                <img id="categoryHeroImage" alt="" width="1280" height="900" />
+                <figcaption>
+                    <span id="categoryPhotoCaption">Category photo</span>
+                    <a id="categoryPhotoCredit" href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Photo source</a>
+                </figcaption>
+            </figure>
+        </section>
+
+        <section class="category-subcategory-section" aria-labelledby="subcategoryHeading">
+            <div class="category-section-heading">
+                <div>
+                    <p class="category-section-kicker">Explore the category</p>
+                    <h2 id="subcategoryHeading">Popular services</h2>
+                    <p id="subcategoryDescription">Choose a service to filter current listings.</p>
+                </div>
+                <button class="category-text-button" id="viewAllSubcategories" type="button" aria-expanded="false" hidden>View All</button>
+            </div>
+            <div class="category-subcategory-grid" id="subcategoryGrid"></div>
+        </section>
+
+        <section class="category-listings-section" id="categoryListings" aria-labelledby="listingHeading">
+            <div class="category-section-heading category-listings-heading">
+                <div>
+                    <p class="category-section-kicker">Live marketplace</p>
+                    <h2 id="listingHeading">Available listings</h2>
+                    <p id="listingContext">Only active listings from the service API appear here.</p>
+                </div>
+                <span class="category-result-count" id="categoryResultCount" aria-live="polite">Loading listings…</span>
+            </div>
+            <div class="category-state" id="categoryListingsState" role="status" aria-live="polite">
+                <span class="category-spinner" aria-hidden="true"></span>
+                <strong>Loading active listings</strong>
+                <p>Fetching current marketplace data.</p>
+            </div>
+            <div class="category-listing-grid" id="categoryListingGrid" aria-live="polite" hidden></div>
+        </section>
+
+        <section class="category-related-section" aria-labelledby="relatedHeading">
+            <div class="category-section-heading">
+                <div>
+                    <p class="category-section-kicker">Continue browsing</p>
+                    <h2 id="relatedHeading">Related categories</h2>
+                </div>
+            </div>
+            <div class="category-related-grid" id="relatedCategoryGrid"></div>
+        </section>
+    </main>
+
+    <footer class="category-footer"><p>&copy; 2026 SamarthAI Kavach — Har Zaroorat Ka Sathi</p></footer>
+    <nav class="category-bottom-nav" aria-label="Quick navigation">
+        <a href="dashboard.html"><span aria-hidden="true">⌂</span><span>Home</span></a>
+        <a href="chat.html"><span aria-hidden="true">✦</span><span>AI Chat</span></a>
+        <a href="services.html" aria-current="page"><span aria-hidden="true">▦</span><span>Services</span></a>
+        <a href="camera.html"><span aria-hidden="true">▣</span><span>Camera</span></a>
+        <a href="profile.html"><span aria-hidden="true">◉</span><span>Profile</span></a>
+    </nav>
+
+    <script src="app.js"></script>
+    <script src="category-page.js"></script>
+</body>
+</html>

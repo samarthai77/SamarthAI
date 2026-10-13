@@ -75,9 +75,9 @@
         .text-action { border:0; color:var(--royal); background:transparent; font-size:.78rem; font-weight:800; cursor:pointer; }
         .text-action:hover { color:var(--orange); }
         .category-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; }
-        .category-accordion { min-width:0; }
+        .category-accordion { position:relative; min-width:0; }
         .category-accordion.is-expanded { grid-column:1/-1; display:grid; gap:8px; }
-        .category-btn { position:relative; width:100%; min-width:0; min-height:116px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px 7px 10px; border:1px solid var(--line); border-radius:15px; color:var(--navy); background:var(--surface); box-shadow:0 5px 16px rgba(15,45,88,.055); text-align:center; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+        .category-btn { position:relative; width:100%; min-width:0; min-height:116px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px 35px 10px; border:1px solid var(--line); border-radius:15px; color:var(--navy); background:var(--surface); box-shadow:0 5px 16px rgba(15,45,88,.055); text-align:center; text-decoration:none; cursor:pointer; transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
         .category-btn:hover { transform:translateY(-2px); border-color:#b8cdef; box-shadow:0 9px 20px rgba(15,45,88,.1); }
         .category-btn.active { border-color:var(--orange); box-shadow:0 0 0 2px rgba(244,119,33,.16),0 8px 18px rgba(15,45,88,.08); }
         .category-icon { display:grid; width:46px; height:46px; place-items:center; border-radius:14px; color:var(--royal); background:linear-gradient(145deg,#edf4ff,#f8fbff); font-size:1.55rem; }
@@ -85,12 +85,13 @@
         .category-accordion:nth-child(3n) .category-icon { color:#927014; background:#fff8df; }
         .category-label { min-height:2.25em; display:flex; align-items:center; justify-content:center; font-size:.76rem; font-weight:800; line-height:1.15; }
         .category-count { color:var(--muted); font-size:.65rem; line-height:1.1; }
-        .category-disclosure { position:absolute; top:7px; right:8px; color:var(--muted); font-size:.85rem; line-height:1; transition:transform .18s ease; }
-        .category-accordion.is-expanded .category-btn { min-height:62px; flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 14px; border-color:var(--gold); text-align:left; }
+        .category-disclosure { position:absolute; z-index:2; top:8px; right:8px; display:grid; width:27px; height:27px; place-items:center; padding:0; border:1px solid #d9e2ef; border-radius:8px; color:var(--muted); background:#fff; font-size:.85rem; line-height:1; cursor:pointer; transition:transform .18s ease,border-color .18s ease; }
+        .category-disclosure:hover { border-color:var(--gold); color:var(--navy); }
+        .category-accordion.is-expanded .category-btn { min-height:62px; flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 48px 10px 14px; border-color:var(--gold); text-align:left; }
         .category-accordion.is-expanded .category-icon { width:38px; height:38px; flex:0 0 38px; border-radius:11px; font-size:1.2rem; }
         .category-accordion.is-expanded .category-label { min-height:0; flex:1; justify-content:flex-start; text-align:left; }
         .category-accordion.is-expanded .category-count { white-space:nowrap; }
-        .category-accordion.is-expanded .category-disclosure { position:static; margin-left:2px; transform:rotate(180deg); }
+        .category-accordion.is-expanded .category-disclosure { transform:rotate(180deg); }
         .subcategory-panel { padding:13px; border:1px solid #dce5f2; border-radius:14px; background:linear-gradient(135deg,#fff,#f5f8fd); box-shadow:0 6px 16px rgba(15,45,88,.045); }
         .subcategory-panel[hidden] { display:none; }
         .subcategory-heading { margin:0 0 9px; color:var(--navy); font-size:.76rem; font-weight:800; }
@@ -99,6 +100,8 @@
         .subcategory-chip:hover,.subcategory-chip:focus-visible,.subcategory-view-all:hover,.subcategory-view-all:focus-visible { border-color:var(--gold); color:var(--navy); background:#fffaf0; }
         .subcategory-chip[hidden] { display:none; }
         .subcategory-view-all { border-color:rgba(213,169,67,.6); color:#795c14; background:#fff9e8; }
+        .category-page-link { display:inline-flex; min-height:34px; align-items:center; gap:6px; margin:0 0 9px; padding:0 11px; border:1px solid rgba(213,169,67,.62); border-radius:9px; color:#795c14; background:#fff9e8; font-size:.72rem; font-weight:800; text-decoration:none; }
+        .category-page-link:hover { border-color:var(--gold); color:var(--navy); background:#fff5d9; }
         .service-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:13px; }
         .service-card { min-width:0; display:flex; flex-direction:column; padding:16px; border:1px solid var(--line); border-radius:17px; background:var(--surface); box-shadow:0 7px 20px rgba(14,43,83,.065); cursor:pointer; transition:transform .16s ease,box-shadow .16s ease; }
         .service-card:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(14,43,83,.105); }
@@ -409,47 +412,47 @@ const notificationRequestId = urlParams.get('request_id');
         { name: 'Other', icon: '➕' }
     ];
     const marketplaceCategories = [
-        { name: 'Home Services', icon: '⌂', aliases: ['Home Services', 'Home Service', 'Plumber', 'Electrician', 'Painter', 'Carpenter', 'Cleaning', 'Home Repair', 'Gardening'], subcategories: [
+        { name: 'Home Services', pageId: 'home', icon: '⌂', aliases: ['Home Services', 'Home Service', 'Plumber', 'Electrician', 'Painter', 'Carpenter', 'Cleaning', 'Home Repair', 'Gardening'], subcategories: [
             { name: 'Plumber', searchTerm: 'Plumber', matchTerms: ['plumber', 'plumbers', 'plumbing', 'pipe fitting', 'drain repair'] },
             { name: 'Electrician', searchTerm: 'Electrician', matchTerms: ['electrician', 'electricians', 'electrical', 'electric', 'wiring'] },
             { name: 'Home Cleaning', searchTerm: 'Home Cleaning', matchTerms: ['home cleaning', 'house cleaning', 'cleaning', 'cleaner', 'cleaners', 'maid service', 'maids'] },
             { name: 'Pest Control', searchTerm: 'Pest Control', matchTerms: ['pest control', 'pest', 'pests', 'exterminator', 'extermination'] },
-            { name: 'AC Repair', searchTerm: 'AC Repair', matchTerms: ['ac', 'air conditioning', 'air conditioner', 'hvac'] },
+            { name: 'AC Repair', searchTerm: 'AC Repair', matchTerms: ['ac repair', 'ac service', 'ac installation', 'air conditioning', 'air conditioner', 'hvac'] },
             { name: 'Carpenter', searchTerm: 'Carpenter', matchTerms: ['carpenter', 'carpenters', 'carpentry', 'woodwork'] },
             { name: 'Painter', searchTerm: 'Painter', matchTerms: ['painter', 'painters', 'painting', 'wall paint'] },
             { name: 'Gardening', searchTerm: 'Gardening', matchTerms: ['gardening', 'gardener', 'gardeners', 'garden', 'landscaping'] },
             { name: 'Home Repair', searchTerm: 'Home Repair', matchTerms: ['home repair', 'handyman', 'home maintenance', 'household repair'] }
         ] },
-        { name: 'Food & Sweets', icon: '♨', aliases: ['Food & Sweets', 'Food and Sweets', 'Food', 'Sweet', 'Sweets', 'Restaurant', 'Restaurants', 'Bakery', 'Catering'], subcategories: [
+        { name: 'Food & Sweets', pageId: 'food', icon: '♨', aliases: ['Food & Sweets', 'Food and Sweets', 'Food', 'Sweet', 'Sweets', 'Restaurant', 'Restaurants', 'Bakery', 'Catering'], subcategories: [
             { name: 'Restaurants', searchTerm: 'Restaurant' }, { name: 'Bakery', searchTerm: 'Bakery' },
             { name: 'Sweets & Mithai', searchTerm: 'Sweets' }, { name: 'Catering', searchTerm: 'Catering' },
             { name: 'Tiffin Service', searchTerm: 'Tiffin' }
         ] },
-        { name: 'Travel & Hotels', icon: '⌑', aliases: ['Travel & Hotels', 'Travel and Hotels', 'Travel', 'Hotel', 'Hotels'], subcategories: [
+        { name: 'Travel & Hotels', pageId: 'travel', icon: '⌑', aliases: ['Travel & Hotels', 'Travel and Hotels', 'Travel', 'Hotel', 'Hotels'], subcategories: [
             { name: 'Hotels', searchTerm: 'Hotel' }, { name: 'Homestays', searchTerm: 'Homestay' },
             { name: 'Travel Agents', searchTerm: 'Travel Agent' }, { name: 'Tour Packages', searchTerm: 'Tour' }
         ] },
-        { name: 'Cab & Transport', icon: '⌖', aliases: ['Cab & Transport', 'Cab and Transport', 'Cab', 'Cabs', 'Transport', 'Vehicle', 'Vehicles'], subcategories: [
+        { name: 'Cab & Transport', pageId: 'transport', icon: '⌖', aliases: ['Cab & Transport', 'Cab and Transport', 'Cab', 'Cabs', 'Transport', 'Vehicle', 'Vehicles'], subcategories: [
             { name: 'Cabs', searchTerm: 'Cab' }, { name: 'Airport Taxi', searchTerm: 'Airport' },
             { name: 'Local Transport', searchTerm: 'Transport' }, { name: 'Packers & Movers', searchTerm: 'Packers' },
             { name: 'Goods Transport', searchTerm: 'Goods Transport' }
         ] },
-        { name: 'Shopping', icon: '▤', aliases: ['Shopping', 'Shop', 'Retail'], subcategories: [
+        { name: 'Shopping', pageId: 'shopping', icon: '▤', aliases: ['Shopping', 'Shop', 'Retail'], subcategories: [
             { name: 'Grocery', searchTerm: 'Grocery' }, { name: 'Electronics', searchTerm: 'Electronics' },
             { name: 'Clothing', searchTerm: 'Clothing' }, { name: 'Home Essentials', searchTerm: 'Home Essentials' }
         ] },
-        { name: 'Beauty & Events', icon: '✦', aliases: ['Beauty & Events', 'Beauty and Events', 'Beauty', 'Event', 'Events', 'Salon', 'Makeup'], subcategories: [
+        { name: 'Beauty & Events', pageId: 'beauty', icon: '✦', aliases: ['Beauty & Events', 'Beauty and Events', 'Beauty', 'Event', 'Events', 'Salon', 'Makeup'], subcategories: [
             { name: 'Salon & Spa', searchTerm: 'Salon' }, { name: 'Makeup Artist', searchTerm: 'Makeup' },
             { name: 'Event Planners', searchTerm: 'Event' }, { name: 'Photographers', searchTerm: 'Photographer' },
             { name: 'Decorators', searchTerm: 'Decorator' }
         ] },
-        { name: 'Construction', icon: '⌂', aliases: ['Construction'], subcategories: [
+        { name: 'Construction', pageId: 'construction', icon: '⌂', aliases: ['Construction'], subcategories: [
             { name: 'Contractors', searchTerm: 'Contractor' }, { name: 'Masonry', searchTerm: 'Mason' },
             { name: 'Civil Work', searchTerm: 'Civil' }, { name: 'Flooring & Tiling', searchTerm: 'Flooring' },
             { name: 'Painting', searchTerm: 'Painting' }
         ] },
-        { name: 'Repair & Electronics', icon: '⚙', aliases: ['Repair & Electronics', 'Repair and Electronics', 'Repair', 'Electronics', 'Electronic Repair', 'AC / Fridge', 'AC and Fridge', 'AC Fridge', 'Computer', 'Technician'], subcategories: [
-            { name: 'AC Repair', searchTerm: 'AC' }, { name: 'Refrigerator Repair', searchTerm: 'Fridge' },
+        { name: 'Repair & Electronics', pageId: 'repair', icon: '⚙', aliases: ['Repair & Electronics', 'Repair and Electronics', 'Repair', 'Electronics', 'Electronic Repair', 'AC / Fridge', 'AC and Fridge', 'AC Fridge', 'Computer', 'Technician'], subcategories: [
+            { name: 'AC Repair', searchTerm: 'AC Repair', matchTerms: ['ac repair', 'ac service', 'ac installation', 'air conditioning', 'air conditioner', 'hvac', 'ac fridge'] }, { name: 'Refrigerator Repair', searchTerm: 'Fridge', matchTerms: ['fridge', 'refrigerator', 'refrigerator repair'] },
             { name: 'Computer Repair', searchTerm: 'Computer' }, { name: 'Mobile Repair', searchTerm: 'Mobile' },
             { name: 'Appliance Repair', searchTerm: 'Appliance' }, { name: 'Technician', searchTerm: 'Technician' }
         ] }
@@ -635,12 +638,11 @@ const notificationRequestId = urlParams.get('request_id');
         marketplaceCategories.forEach((category, categoryIndex) => {
             const accordion = document.createElement('div');
             accordion.className = 'category-accordion';
-            const button = document.createElement('button');
-            button.type = 'button';
+            const button = document.createElement('a');
             button.className = 'category-btn';
+            button.href = `category.html?category=${encodeURIComponent(category.pageId)}`;
+            button.setAttribute('aria-label', `Open the ${category.name} marketplace`);
             button.dataset.category = category.name;
-            button.setAttribute('aria-expanded', 'false');
-            button.setAttribute('aria-controls', `subcategory-panel-${categoryIndex}`);
             const icon = document.createElement('span');
             icon.className = 'category-icon';
             icon.setAttribute('aria-hidden', 'true');
@@ -652,11 +654,14 @@ const notificationRequestId = urlParams.get('request_id');
             count.className = 'category-count';
             count.dataset.countFor = category.name;
             count.textContent = 'Loading…';
-            const disclosure = document.createElement('span');
+            const disclosure = document.createElement('button');
+            disclosure.type = 'button';
             disclosure.className = 'category-disclosure';
-            disclosure.setAttribute('aria-hidden', 'true');
+            disclosure.setAttribute('aria-expanded', 'false');
+            disclosure.setAttribute('aria-controls', `subcategory-panel-${categoryIndex}`);
+            disclosure.setAttribute('aria-label', `Show ${category.name} subcategories`);
             disclosure.textContent = '⌄';
-            button.append(icon, label, count, disclosure);
+            button.append(icon, label, count);
 
             const panel = document.createElement('div');
             panel.className = 'subcategory-panel';
@@ -670,6 +675,11 @@ const notificationRequestId = urlParams.get('request_id');
             panel.setAttribute('aria-labelledby', panelHeading.id);
             const options = document.createElement('div');
             options.className = 'subcategory-options';
+            const categoryPageLink = document.createElement('a');
+            categoryPageLink.className = 'category-page-link';
+            categoryPageLink.href = `category.html?category=${encodeURIComponent(category.pageId)}`;
+            categoryPageLink.textContent = `Explore ${category.name} →`;
+            options.appendChild(categoryPageLink);
 
             (category.subcategories || []).forEach((subcategory, subcategoryIndex) => {
                 const option = document.createElement('button');
@@ -703,11 +713,11 @@ const notificationRequestId = urlParams.get('request_id');
                 options.appendChild(viewAll);
             }
 
-            button.addEventListener('click', () => {
+            disclosure.addEventListener('click', () => {
                 expandedCategory = expandedCategory === category.name ? '' : category.name;
                 updateCategoryButtons();
             });
-            accordion.append(button, panel);
+            accordion.append(button, disclosure, panel);
             categoryGrid.appendChild(accordion);
         });
         categories.forEach(category => {
@@ -722,11 +732,14 @@ const notificationRequestId = urlParams.get('request_id');
     function updateCategoryButtons() {
         document.querySelectorAll('.category-accordion').forEach(accordion => {
             const button = accordion.querySelector('.category-btn');
+            const disclosure = accordion.querySelector('.category-disclosure');
             const panel = accordion.querySelector('.subcategory-panel');
             const active = button.dataset.category === activeCategory;
             const expanded = button.dataset.category === expandedCategory;
             button.classList.toggle('active', active);
-            button.setAttribute('aria-expanded', String(expanded));
+            disclosure.setAttribute('aria-expanded', String(expanded));
+            disclosure.setAttribute('aria-label', `${expanded ? 'Hide' : 'Show'} ${button.dataset.category} subcategories`);
+            disclosure.textContent = expanded ? '⌃' : '⌄';
             accordion.classList.toggle('is-expanded', expanded);
             panel.hidden = !expanded;
         });
