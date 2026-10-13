@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#003366" />
     <title>Services — SamarthAI</title>
 
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="style.css" />
 
     <style>
         :root { --navy:#071A3D; --royal:#174EA6; --orange:#F47721; --gold:#D5A943; --ink:#17243d; --muted:#68758a; --line:#e1e8f2; --surface:#fff; --page:#f4f7fc; --shadow:0 14px 34px rgba(7,26,61,.08); }
@@ -49,9 +49,14 @@
         .popular-searches>span { margin-right:2px; color:rgba(255,255,255,.78); font-size:.74rem; font-weight:700; }
         .search-chip { min-height:29px; padding:4px 10px; border:1px solid rgba(255,255,255,.32); border-radius:999px; color:#fff; background:rgba(3,18,48,.24); font-size:.7rem; cursor:pointer; }
         .search-chip:hover { border-color:var(--gold); background:rgba(255,255,255,.12); }
-        .nearby-search { width:100%; min-height:40px; margin-top:8px; padding:8px 12px; border:1px solid rgba(7,26,61,.12); border-radius:10px; color:var(--navy); background:#f5f8fd; font-size:.82rem; font-weight:750; cursor:pointer; }
-        .nearby-search:hover:not(:disabled) { background:#eaf1fb; }
-        .nearby-search:disabled { opacity:.65; cursor:wait; }
+        .location-controls { display:flex; flex-wrap:wrap; align-items:center; gap:7px; width:min(100%,760px); margin-top:7px; }
+        .location-option { min-height:31px; padding:0 11px; border:1px solid rgba(255,255,255,.45); border-radius:999px; color:#fff; background:rgba(3,18,48,.24); font-size:.7rem; font-weight:750; cursor:pointer; }
+        .location-option[aria-pressed="true"] { border-color:var(--gold); color:#fff; background:rgba(213,169,67,.2); }
+        .location-option:disabled { opacity:.58; cursor:not-allowed; }
+        .city-select-wrap { display:inline-flex; align-items:center; gap:6px; color:rgba(255,255,255,.86); font-size:.7rem; font-weight:700; }
+        .city-select-wrap[hidden] { display:none; }
+        .city-select-wrap select { max-width:min(260px,56vw); min-height:31px; padding:0 8px; border:1px solid #cad6e8; border-radius:8px; color:var(--ink); background:#fff; font-size:.74rem; }
+        .location-status { flex-basis:100%; margin:0; color:rgba(255,255,255,.78); font-size:.68rem; line-height:1.35; }
         .hero-info { align-self:stretch; display:flex; flex-direction:column; justify-content:center; padding:18px; border:1px solid rgba(255,255,255,.2); border-radius:18px; background:rgba(5,22,55,.52); backdrop-filter:blur(8px); }
         .hero-info h2 { margin:0 0 12px; color:#fff; font-size:.95rem; }
         .hero-info-list { display:grid; gap:9px; }
@@ -106,7 +111,7 @@
         .empty-state.error-state { border-color:#e5b6b8; color:#8f2d31; background:#fff8f8; }
         .state-action { margin-top:12px; padding:8px 13px; border:1px solid #c9d8ed; border-radius:9px; color:var(--royal); background:#fff; font-size:.77rem; font-weight:800; cursor:pointer; }
         .food-section { margin-top:25px; }
-        .ad-placeholder { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:22px 0; padding:14px 17px; border:1px solid #e8dfc8; border-left:4px solid var(--gold); border-radius:13px; color:#657186; background:linear-gradient(110deg,#fffdf7,#fff); }
+        .ad-placeholder { display:flex; width:min(1380px,calc(100% - 36px)); align-items:center; justify-content:space-between; gap:16px; margin:8px auto 0; padding:14px 17px; border:1px solid #e8dfc8; border-left:4px solid var(--gold); border-radius:13px; color:#657186; background:linear-gradient(110deg,#fffdf7,#fff); }
         .ad-placeholder-copy { min-width:0; }
         .ad-label { display:block; margin-bottom:2px; color:#94701d; font-size:.63rem; font-weight:850; letter-spacing:.14em; }
         .ad-placeholder p { margin:0; font-size:.78rem; }
@@ -157,12 +162,18 @@
             .services-hero h1 { font-size:clamp(1.95rem,8vw,2.5rem); }
             .hero-subtitle { margin:6px 0 14px; font-size:.89rem; }
             .search-box { padding:4px; border-radius:13px; }
-            .search-row input { height:43px; font-size:.84rem; }
-            .search-submit { min-width:77px; min-height:40px; padding:0 12px; font-size:.8rem; }
+            .search-row { gap:4px; }
+            .search-symbol { padding:0 4px 0 7px; font-size:1rem; }
+            .search-row input { height:32px; font-size:.82rem; }
+            .search-submit { min-width:67px; min-height:32px; padding:0 9px; font-size:.74rem; }
             .popular-searches { gap:6px; margin-top:9px; }
             .popular-searches>span { font-size:.67rem; }
             .search-chip { min-height:27px; padding:3px 8px; font-size:.66rem; }
-            .nearby-search { min-height:36px; margin-top:7px; font-size:.75rem; }
+            .location-controls { gap:6px; margin-top:6px; }
+            .location-option { min-height:29px; padding:0 9px; font-size:.66rem; }
+            .city-select-wrap { flex-wrap:wrap; font-size:.65rem; }
+            .city-select-wrap select { max-width:48vw; min-height:29px; }
+            .location-status { font-size:.63rem; }
             .hero-info { padding:12px 13px; border-radius:13px; }
             .hero-info h2 { margin-bottom:8px; font-size:.82rem; }
             .hero-info-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 10px; }
@@ -193,7 +204,7 @@
             .service-actions { gap:5px; margin-top:10px; }
             .service-action-btn { flex-basis:calc(50% - 3px); min-height:36px; padding:7px 5px; font-size:.65rem; }
             .food-section { margin-top:20px; }
-            .ad-placeholder { margin:18px 0; padding:11px 12px; }
+            .ad-placeholder { width:calc(100% - 24px); margin:7px auto 0; padding:11px 12px; }
             .add-service-form { margin-top:18px; }
             .add-service-form summary { padding:14px; }
             .add-service-content { padding:0 14px 14px; }
@@ -251,6 +262,9 @@
         <a href="#" class="logout-link" id="logoutBtn">Logout</a>
     </nav>
 </div></header>
+<aside class="ad-placeholder" aria-label="Advertisement placeholder">
+    <div class="ad-placeholder-copy"><span class="ad-label">ADVERTISEMENT</span><p>Reserved space for a relevant sponsored placement.</p></div><span class="ad-mark" aria-hidden="true">Ad</span>
+</aside>
 <main class="services-container">
     <section class="services-hero" aria-labelledby="servicesTitle">
         <div class="hero-copy">
@@ -268,6 +282,15 @@
                 <button class="search-chip" type="button" data-search-term="Transport">Transport</button>
                 <button class="search-chip" type="button" data-search-term="Construction">Construction</button>
             </div></div>
+            <div class="location-controls" aria-label="Service location options">
+                <button class="location-option" id="nearbyServicesOption" type="button" aria-pressed="false">Nearby Services</button>
+                <button class="location-option" id="preferredCityOption" type="button" aria-pressed="false">Preferred City</button>
+                <label class="city-select-wrap" id="preferredCitySelectWrap" for="preferredCitySelect" hidden>
+                    <span>City / area</span>
+                    <select id="preferredCitySelect" disabled><option value="">Select a listed city / area</option></select>
+                </label>
+                <p class="location-status" id="locationFilterStatus" aria-live="polite">Loading location options from service listings…</p>
+            </div>
         </div>
         <aside class="hero-info" aria-label="Ways to use Services"><h2>Find the help you need</h2>
             <div class="hero-info-list">
@@ -297,9 +320,6 @@
             <button class="text-action" id="showFoodServicesBtn" type="button">View listings <span aria-hidden="true">→</span></button>
         </div><div id="foodServiceList" class="service-grid" aria-live="polite"></div>
     </section>
-    <aside class="ad-placeholder" aria-label="Advertisement placeholder">
-        <div class="ad-placeholder-copy"><span class="ad-label">ADVERTISEMENT</span><p>Reserved space for a relevant sponsored placement.</p></div><span class="ad-mark" aria-hidden="true">Ad</span>
-    </aside>
     <section class="add-service-form" id="addServiceSection"><details id="listServiceDetails">
         <summary><span class="form-summary-title"><strong>List a Service</strong><small>Share your service with the SamarthAI community.</small></span><span class="form-summary-icon" aria-hidden="true">＋</span></summary>
         <div class="add-service-content"><div class="form-grid">
@@ -321,7 +341,7 @@
     <a href="#addServiceSection"><span aria-hidden="true">＋</span><span>My Service</span></a>
 </nav>
 
-<script src="js/app.js"></script>
+<script src="app.js"></script>
 
 <script>
     /*
@@ -379,6 +399,9 @@ const notificationRequestId = urlParams.get('request_id');
     let allServices = [];
     let activeCategory = '';
     let servicesLoadState = 'loading';
+    let activeLocationMode = '';
+    let preferredCityValue = '';
+    let nearbyServices = [];
 
     const serviceList = document.getElementById('serviceList');
     const searchInput = document.getElementById('serviceSearch');
@@ -386,101 +409,150 @@ const notificationRequestId = urlParams.get('request_id');
     const categorySelect = document.getElementById('serviceCategory');
     const foodServiceList = document.getElementById('foodServiceList');
     const serviceCount = document.getElementById('serviceCount');
-// ============ NEARBY SERVICE SEARCH ============
+    const nearbyButton = document.getElementById('nearbyServicesOption');
+    const preferredCityButton = document.getElementById('preferredCityOption');
+    const preferredCitySelectWrap = document.getElementById('preferredCitySelectWrap');
+    const preferredCitySelect = document.getElementById('preferredCitySelect');
+    const locationFilterStatus = document.getElementById('locationFilterStatus');
 
-const nearbyButton = document.createElement('button');
+    function getServiceLocations() {
+        const locations = new Map();
+        allServices.forEach(service => {
+            const location = typeof service.location === 'string' ? service.location.trim() : '';
+            if (!location) return;
+            const key = location.toLocaleLowerCase();
+            if (!locations.has(key)) locations.set(key, location);
+        });
+        return Array.from(locations, ([value, label]) => ({ value, label }))
+            .sort((first, second) => first.label.localeCompare(second.label));
+    }
 
-nearbyButton.type = 'button';
-nearbyButton.textContent = '📍 Mere Paas Ki Services';
-nearbyButton.className = 'nearby-search';
+    function updateLocationControls() {
+        const locations = getServiceLocations();
+        nearbyButton.disabled = !navigator.geolocation;
+        preferredCityButton.disabled = !locations.length;
+        nearbyButton.setAttribute('aria-pressed', String(activeLocationMode === 'nearby'));
+        preferredCityButton.setAttribute('aria-pressed', String(activeLocationMode === 'preferred-city'));
+        preferredCitySelectWrap.hidden = activeLocationMode !== 'preferred-city';
+        preferredCitySelect.disabled = activeLocationMode !== 'preferred-city' || !locations.length;
 
-document.querySelector('.search-box').appendChild(nearbyButton);
+        if (activeLocationMode === 'nearby') {
+            locationFilterStatus.textContent = 'Showing active API listings within 20 km of your device location.';
+        } else if (activeLocationMode === 'preferred-city' && preferredCityValue) {
+            const selected = locations.find(location => location.value === preferredCityValue);
+            locationFilterStatus.textContent = selected
+                ? `Filtering active API listings in ${selected.label}.`
+                : 'Choose a city or area from the service listings.';
+        } else if (!locations.length) {
+            locationFilterStatus.textContent = 'City choices will appear when listings include a location.';
+        } else {
+            locationFilterStatus.textContent = 'Choose Nearby Services or a Preferred City.';
+        }
+    }
 
-nearbyButton.addEventListener('click', async () => {
-    const query = searchInput.value.trim();
-    const category = activeCategory;
+    function refreshPreferredCityOptions() {
+        const currentValue = preferredCityValue;
+        preferredCitySelect.replaceChildren();
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select a listed city / area';
+        preferredCitySelect.appendChild(placeholder);
 
-    nearbyButton.disabled = true;
-    nearbyButton.textContent = '📍 Location detect ho rahi hai...';
+        const locations = getServiceLocations();
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.value;
+            option.textContent = location.label;
+            preferredCitySelect.appendChild(option);
+        });
 
-    try {
-        const position = await new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error('GPS supported nahi hai.'));
-                return;
-            }
+        preferredCityValue = locations.some(location => location.value === currentValue) ? currentValue : '';
+        preferredCitySelect.value = preferredCityValue;
+        if (!preferredCityValue && activeLocationMode === 'preferred-city' && !locations.length) {
+            activeLocationMode = '';
+        }
+        updateLocationControls();
+    }
 
-            navigator.geolocation.getCurrentPosition(
-                resolve,
-                reject,
-                {
+    function serviceMatchesLocation(service) {
+        if (activeLocationMode !== 'preferred-city') return true;
+        if (!preferredCityValue) return false;
+        const location = typeof service.location === 'string' ? service.location.trim().toLocaleLowerCase() : '';
+        return location === preferredCityValue;
+    }
+
+    async function activateNearbyServices() {
+        if (activeLocationMode === 'nearby') {
+            activeLocationMode = '';
+            nearbyServices = [];
+            updateLocationControls();
+            renderServices();
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            locationFilterStatus.textContent = 'Nearby Services needs device location support in this browser.';
+            return;
+        }
+
+        nearbyButton.disabled = true;
+        locationFilterStatus.textContent = 'Getting your device location and nearby listings…';
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
                     enableHighAccuracy: true,
                     timeout: 15000,
                     maximumAge: 0
-                }
-            );
-        });
-
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-
-        nearbyButton.textContent = '🔎 Nearby services search ho rahi hain...';
-
-        const params = new URLSearchParams({
-            latitude,
-            longitude,
-            radius: '20'
-        });
-
-        const response = await fetch(
-            `${SERVICE_API}/nearby?${params.toString()}`,
-            {
+                });
+            });
+            const params = new URLSearchParams({
+                latitude: String(position.coords.latitude),
+                longitude: String(position.coords.longitude),
+                radius: '20'
+            });
+            const response = await fetch(`${SERVICE_API}/nearby?${params.toString()}`, {
                 method: 'GET',
                 cache: 'no-store'
-            }
-        );
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Nearby search failed.');
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Nearby search failed');
+            nearbyServices = Array.isArray(data) ? data : [];
+            activeLocationMode = 'nearby';
+            preferredCityValue = '';
+            preferredCitySelect.value = '';
+            servicesLoadState = 'loaded';
+            updateLocationControls();
+            renderServices();
+        } catch (error) {
+            console.error('Nearby service error:', error);
+            locationFilterStatus.textContent = error && error.code === 1
+                ? 'Nearby Services needs location permission. Allow it in your browser and try again.'
+                : error && error.message ? error.message : 'Nearby Services could not load. Please try again.';
+        } finally {
+            nearbyButton.disabled = !navigator.geolocation;
         }
-
-        allServices = Array.isArray(data) ? data : [];
-        servicesLoadState = 'loaded';
-
-        renderServices();
-
-        if (!allServices.length) {
-            alert(
-                category
-                    ? `20 km ke andar "${category}" service nahi mili.`
-                    : '20 km ke andar koi service nahi mili.'
-            );
-        }
-
-    } catch (error) {
-        console.error('Nearby service error:', error);
-
-        if (error.code === 1) {
-            alert('❌ Location permission allow karein.');
-        } else if (error.code === 2) {
-            alert('❌ Location available nahi hai.');
-        } else if (error.code === 3) {
-            alert('❌ Location detect karne mein timeout hua.');
-        } else {
-            alert(
-                `❌ Nearby service search failed: ${
-                    error.message || 'Please try again.'
-                }`
-            );
-        }
-
-    } finally {
-        nearbyButton.disabled = false;
-        nearbyButton.textContent = '📍 Mere Paas Ki Services';
     }
-});
+
+    nearbyButton.addEventListener('click', activateNearbyServices);
+    preferredCityButton.addEventListener('click', () => {
+        if (activeLocationMode === 'preferred-city') {
+            activeLocationMode = '';
+            preferredCityValue = '';
+        } else {
+            activeLocationMode = 'preferred-city';
+            preferredCityValue = '';
+            nearbyServices = [];
+        }
+        preferredCitySelect.value = '';
+        updateLocationControls();
+        renderServices();
+    });
+    preferredCitySelect.addEventListener('change', () => {
+        preferredCityValue = preferredCitySelect.value;
+        updateLocationControls();
+        renderServices();
+    });
 
     function buildCategories() {
         categoryGrid.textContent = '';
@@ -2112,6 +2184,7 @@ async function openPortfolio(service) {
     function renderServices() {
         updateCategoryCounts();
         const query = searchInput.value.trim().toLowerCase();
+        const currentServices = activeLocationMode === 'nearby' ? nearbyServices : allServices;
         serviceList.setAttribute('aria-busy', String(servicesLoadState === 'loading'));
         if (servicesLoadState === 'loading') {
             showCollectionState(serviceList, 'Loading services', 'Active listings are being loaded from the marketplace.');
@@ -2125,18 +2198,26 @@ async function openPortfolio(service) {
             serviceCount.textContent = 'Listings unavailable';
             return;
         }
-        const filtered = allServices.filter(service => {
+        if (activeLocationMode === 'preferred-city' && !preferredCityValue) {
+            showCollectionState(serviceList, 'Choose a preferred city', 'Select a city or area from the active service listings.');
+            showCollectionState(foodServiceList, 'Choose a preferred city', 'Food listings will appear when a city or area is selected.');
+            serviceCount.textContent = 'Choose a city';
+            return;
+        }
+        const filtered = currentServices.filter(service => {
             const matchesCategory = !activeCategory || marketplaceCategory(service.category) === activeCategory;
-            return matchesCategory && serviceMatchesSearch(service, query);
+            return matchesCategory && serviceMatchesLocation(service) && serviceMatchesSearch(service, query);
         });
         serviceList.textContent = '';
-        if (!allServices.length) showCollectionState(serviceList, 'No active services yet', 'Listings will appear here when a service is added.');
-        else if (!filtered.length) showCollectionState(serviceList, 'No matching services', 'Try another search or select a different category.');
+        if (!currentServices.length && activeLocationMode === 'nearby') showCollectionState(serviceList, 'No nearby services found', 'No active API listings were found within 20 km of your location.');
+        else if (!currentServices.length) showCollectionState(serviceList, 'No active services yet', 'Listings will appear here when a service is added.');
+        else if (!filtered.length) showCollectionState(serviceList, 'No matching services', 'Try another search, city, or category.');
         else filtered.forEach(service => serviceList.appendChild(createServiceCard(service)));
         serviceCount.textContent = filtered.length + (filtered.length === 1 ? ' service' : ' services');
-        const foodListings = allServices.filter(service => marketplaceCategory(service.category) === 'Food & Sweets' && serviceMatchesSearch(service, query));
+        const foodListings = currentServices.filter(service => marketplaceCategory(service.category) === 'Food & Sweets' && serviceMatchesLocation(service) && serviceMatchesSearch(service, query));
         foodServiceList.textContent = '';
-        if (!allServices.length) showCollectionState(foodServiceList, 'No food listings to show', 'Food & Sweets listings will appear here when available.');
+        if (!currentServices.length && activeLocationMode === 'nearby') showCollectionState(foodServiceList, 'No nearby food listings', 'No active Food & Sweets listings were found within 20 km.');
+        else if (!currentServices.length) showCollectionState(foodServiceList, 'No food listings to show', 'Food & Sweets listings will appear here when available.');
         else if (!foodListings.length) showCollectionState(foodServiceList, 'No Food & Sweets listings', query ? 'No Food & Sweets listings match your search.' : 'There are no active Food & Sweets listings in the loaded results.');
         else foodListings.forEach(service => foodServiceList.appendChild(createServiceCard(service)));
     }
@@ -2472,6 +2553,7 @@ async function loadNotificationComplaint() {
             const data = await response.json();
             if (!Array.isArray(data)) throw new Error('Unexpected services response');
             allServices = data;
+            refreshPreferredCityOptions();
             servicesLoadState = 'loaded';
             renderServices();
         } catch (error) {
@@ -2593,6 +2675,11 @@ try {
     document.getElementById('showAllServicesBtn').addEventListener('click', () => {
         activeCategory = '';
         searchInput.value = '';
+        activeLocationMode = '';
+        preferredCityValue = '';
+        nearbyServices = [];
+        preferredCitySelect.value = '';
+        updateLocationControls();
         updateCategoryButtons();
         loadServices();
     });
