@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#071A3D" />
     <title>Services — SamarthAI Kavach</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="style.css" />
     <style>
         :root {
             --kavach-navy: #071A3D;
@@ -362,10 +362,10 @@
         .services-search {
             display: flex;
             max-width: 690px;
-            min-height: 58px;
+            min-height: 46px;
             align-items: center;
-            gap: 8px;
-            padding: 6px;
+            gap: 6px;
+            padding: 4px;
             border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 15px;
             background: var(--kavach-white);
@@ -374,21 +374,21 @@
 
         .services-search__icon {
             flex: 0 0 auto;
-            margin-left: 12px;
+            margin-left: 8px;
             color: var(--kavach-blue);
-            font-size: 1.15rem;
+            font-size: 1rem;
         }
 
         .services-search input {
             width: 100%;
             min-width: 0;
-            height: 44px;
-            padding: 0 7px;
+            height: 34px;
+            padding: 0 6px;
             border: 0;
             outline: 0;
             background: transparent;
             color: var(--services-ink);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .services-search input::placeholder {
@@ -398,6 +398,81 @@
 
         .services-search input:focus-visible {
             outline: 0;
+        }
+
+        .services-search .services-button {
+            min-height: 34px;
+            padding: 0 14px;
+            font-size: 0.82rem;
+        }
+
+        .services-location-controls {
+            display: flex;
+            max-width: 690px;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 7px;
+            margin-top: 7px;
+        }
+
+        .services-location-controls__options {
+            display: inline-flex;
+            flex: 0 0 auto;
+            gap: 6px;
+        }
+
+        .services-location-option {
+            min-height: 31px;
+            padding: 0 11px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 999px;
+            background: rgba(6, 26, 61, 0.35);
+            color: #f7f9fd;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .services-location-option[aria-pressed="true"] {
+            border-color: var(--kavach-gold);
+            background: rgba(244, 179, 35, 0.2);
+        }
+
+        .services-location-option:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+        }
+
+        .services-location-select {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #e0e9f8;
+            font-size: 0.68rem;
+            font-weight: 650;
+        }
+
+        .services-location-select[hidden] {
+            display: none;
+        }
+
+        .services-location-select select {
+            max-width: min(260px, 56vw);
+            min-height: 31px;
+            padding: 0 8px;
+            border: 1px solid #cad6e8;
+            border-radius: 8px;
+            background: #fff;
+            color: var(--services-ink);
+            font-size: 0.72rem;
+        }
+
+        .services-location-status {
+            flex-basis: 100%;
+            margin: 0;
+            color: #d8e5fa;
+            font-size: 0.67rem;
+            line-height: 1.35;
         }
 
         .services-button {
@@ -442,19 +517,20 @@
         }
 
         .services-ad-slot {
-            margin: 14px 0 24px;
+            width: min(1160px, calc(100% - 32px));
+            margin: 8px auto 0;
         }
 
         .services-ad-banner {
             display: flex;
-            min-height: 62px;
+            min-height: 50px;
             align-items: center;
             justify-content: space-between;
-            gap: 18px;
-            padding: 11px 16px;
+            gap: 12px;
+            padding: 8px 12px;
             border: 1px solid #d8e2f1;
             border-left: 4px solid var(--kavach-orange);
-            border-radius: 15px;
+            border-radius: 12px;
             background: linear-gradient(100deg, #fff 0%, #f5f8fd 100%);
         }
 
@@ -1308,24 +1384,53 @@
             }
 
             .services-search {
-                min-height: 54px;
+                min-height: 42px;
                 gap: 4px;
-                padding: 5px;
+                padding: 3px;
             }
 
             .services-search input {
-                height: 42px;
+                height: 32px;
                 font-size: 0.85rem;
             }
 
             .services-search .services-button {
-                min-height: 42px;
-                padding: 0 12px;
+                min-height: 32px;
+                padding: 0 10px;
                 font-size: 0.82rem;
             }
 
             .services-search__icon {
-                margin-left: 8px;
+                margin-left: 6px;
+            }
+
+            .services-location-controls {
+                gap: 6px;
+                margin-top: 6px;
+            }
+
+            .services-location-controls__options {
+                gap: 5px;
+            }
+
+            .services-location-option {
+                min-height: 29px;
+                padding: 0 9px;
+                font-size: 0.66rem;
+            }
+
+            .services-location-select {
+                flex-wrap: wrap;
+                font-size: 0.65rem;
+            }
+
+            .services-location-select select {
+                max-width: 48vw;
+                min-height: 29px;
+            }
+
+            .services-location-status {
+                font-size: 0.63rem;
             }
 
             .services-search-popular {
@@ -1357,12 +1462,12 @@
             }
 
             .services-ad-slot {
-                margin: 19px 0 22px;
+                margin: 6px auto 0;
             }
 
             .services-ad-banner {
-                min-height: 54px;
-                padding: 9px 12px;
+                min-height: 46px;
+                padding: 7px 10px;
             }
 
             .services-ad-banner__message {
@@ -1490,6 +1595,8 @@
         </div>
     </header>
 
+    <div class="services-ad-slot" id="advertisementSlot"></div>
+
     <main class="services-shell">
         <section class="services-hero" aria-labelledby="services-title">
             <div class="services-hero__copy">
@@ -1508,6 +1615,25 @@
                     />
                     <button class="services-button" type="submit">Search</button>
                 </form>
+                <div class="services-location-controls" aria-label="Service location options">
+                    <div class="services-location-controls__options" role="group" aria-label="Choose a location filter">
+                        <button class="services-location-option" id="nearbyServicesOption" type="button" aria-pressed="false" disabled>
+                            Nearby Services
+                        </button>
+                        <button class="services-location-option" id="preferredCityOption" type="button" aria-pressed="false" disabled>
+                            Preferred City
+                        </button>
+                    </div>
+                    <label class="services-location-select" id="preferredCitySelectWrap" for="preferredCitySelect" hidden>
+                        <span>City / area</span>
+                        <select id="preferredCitySelect" disabled>
+                            <option value="">Select a listed city / area</option>
+                        </select>
+                    </label>
+                    <p class="services-location-status" id="locationFilterStatus" aria-live="polite">
+                        Loading location options from service listings…
+                    </p>
+                </div>
                 <div class="services-search-popular" id="popularSearchChips" aria-label="Popular categories" hidden></div>
             </div>
             <aside class="services-hero__trust" aria-label="Marketplace highlights">
@@ -1567,8 +1693,6 @@
             <div id="foodList" class="service-grid" aria-live="polite" hidden></div>
         </section>
 
-        <div class="services-ad-slot" id="advertisementSlot"></div>
-
         <section class="services-list-form" id="listServiceSection" aria-label="List a service">
             <details class="services-form-panel" id="serviceFormDisclosure">
                 <summary>
@@ -1621,11 +1745,14 @@
         <a href="#listServiceSection" id="mobileMyServiceLink" aria-label="My Service"><span class="services-bottom-nav__icon" aria-hidden="true">＋</span><span>My Service</span></a>
     </nav>
 
-    <script src="js/app.js"></script>
+    <script src="app.js"></script>
     <script>
         let allServices = [];
         let activeServiceCategory = '';
         let serviceSearchTerm = '';
+        let activeServiceLocationMode = '';
+        let preferredCityValue = '';
+        let userCoordinates = null;
 
         const serviceCategoryShortcuts = [
             { key: 'shortcut:home', label: 'Home Services', symbol: '⌂', pattern: /\b(home|house|clean(?:ing)?|domestic|carpenter|carpentry|garden|handyman)\b/i },
@@ -1643,6 +1770,11 @@
             categoryFilters: document.getElementById('categoryFilters'),
             categoryEmpty: document.getElementById('categoryEmpty'),
             popularChips: document.getElementById('popularSearchChips'),
+            nearbyOption: document.getElementById('nearbyServicesOption'),
+            preferredCityOption: document.getElementById('preferredCityOption'),
+            preferredCitySelectWrap: document.getElementById('preferredCitySelectWrap'),
+            preferredCitySelect: document.getElementById('preferredCitySelect'),
+            locationFilterStatus: document.getElementById('locationFilterStatus'),
             list: document.getElementById('serviceList'),
             resultCount: document.getElementById('serviceResultCount'),
             search: document.getElementById('serviceSearch'),
@@ -1732,6 +1864,212 @@
             slot.replaceChildren();
             const banner = createAdvertisementBanner(activeServiceCategory);
             if (banner) slot.appendChild(banner);
+        }
+
+        function getServiceCoordinates(service) {
+            if (!service) return null;
+            const latitudeValue = service.latitude;
+            const longitudeValue = service.longitude;
+            if (!['number', 'string'].includes(typeof latitudeValue) ||
+                !['number', 'string'].includes(typeof longitudeValue) ||
+                (typeof latitudeValue === 'string' && !latitudeValue.trim()) ||
+                (typeof longitudeValue === 'string' && !longitudeValue.trim())) {
+                return null;
+            }
+
+            const latitude = Number(latitudeValue);
+            const longitude = Number(longitudeValue);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                return null;
+            }
+            return { latitude, longitude };
+        }
+
+        function getUniqueServiceLocations() {
+            const locationsByKey = new Map();
+            allServices.forEach(service => {
+                const location = typeof service.location === 'string' ? service.location.trim() : '';
+                if (!location) return;
+                const key = location.toLocaleLowerCase();
+                if (!locationsByKey.has(key)) locationsByKey.set(key, location);
+            });
+            return Array.from(locationsByKey, ([key, label]) => ({ key, label }))
+                .sort((first, second) => first.label.localeCompare(second.label));
+        }
+
+        function updateLocationControlState() {
+            const locations = getUniqueServiceLocations();
+            const coordinateCount = allServices.filter(service => getServiceCoordinates(service)).length;
+            const hasGeolocation = typeof navigator !== 'undefined' && !!navigator.geolocation;
+
+            if (activeServiceLocationMode === 'nearby' && (!coordinateCount || !userCoordinates)) {
+                activeServiceLocationMode = '';
+                userCoordinates = null;
+            }
+            if (activeServiceLocationMode === 'preferred-city' && !locations.length) {
+                activeServiceLocationMode = '';
+                preferredCityValue = '';
+            }
+
+            serviceElements.nearbyOption.disabled = !coordinateCount || !hasGeolocation;
+            serviceElements.preferredCityOption.disabled = !locations.length;
+            serviceElements.nearbyOption.setAttribute(
+                'aria-pressed',
+                String(activeServiceLocationMode === 'nearby')
+            );
+            serviceElements.preferredCityOption.setAttribute(
+                'aria-pressed',
+                String(activeServiceLocationMode === 'preferred-city')
+            );
+            serviceElements.preferredCitySelectWrap.hidden = activeServiceLocationMode !== 'preferred-city';
+            serviceElements.preferredCitySelect.disabled =
+                activeServiceLocationMode !== 'preferred-city' || !locations.length;
+
+            if (activeServiceLocationMode === 'nearby') {
+                const unlocatedCount = allServices.length - coordinateCount;
+                serviceElements.locationFilterStatus.textContent = unlocatedCount
+                    ? `Sorted by distance using your device location. ${unlocatedCount} listing${unlocatedCount === 1 ? ' without coordinates is' : 's without coordinates are'} excluded.`
+                    : 'Sorted by distance using your device location.';
+                return;
+            }
+
+            if (activeServiceLocationMode === 'preferred-city' && preferredCityValue) {
+                const selectedLocation = locations.find(location => location.key === preferredCityValue);
+                serviceElements.locationFilterStatus.textContent = selectedLocation
+                    ? `Filtering listings by the exact location text “${selectedLocation.label}” from the API.`
+                    : 'Choose a city or area from the locations present in service listings.';
+                return;
+            }
+
+            const unavailableOptions = [];
+            if (!coordinateCount) unavailableOptions.push('Nearby Services is unavailable because listings have no numeric latitude/longitude pair');
+            else if (!hasGeolocation) unavailableOptions.push('Nearby Services requires browser geolocation');
+            if (!locations.length) unavailableOptions.push('Preferred City is unavailable because listings have no location text');
+            else unavailableOptions.push('Preferred City choices use the exact city/area text stored on real listings');
+            serviceElements.locationFilterStatus.textContent = unavailableOptions.join('. ') + '.';
+        }
+
+        function refreshPreferredCityOptions() {
+            const selectedValue = preferredCityValue;
+            const select = serviceElements.preferredCitySelect;
+            select.replaceChildren();
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select a listed city / area';
+            select.appendChild(placeholder);
+
+            const locations = getUniqueServiceLocations();
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location.key;
+                option.textContent = location.label;
+                select.appendChild(option);
+            });
+
+            if (locations.some(location => location.key === selectedValue)) {
+                preferredCityValue = selectedValue;
+                select.value = selectedValue;
+            } else {
+                preferredCityValue = '';
+                select.value = '';
+                if (activeServiceLocationMode === 'preferred-city') activeServiceLocationMode = '';
+            }
+            updateLocationControlState();
+        }
+
+        function matchesLocationFilter(service) {
+            if (activeServiceLocationMode === 'preferred-city') {
+                if (!preferredCityValue) return false;
+                const location = typeof service.location === 'string' ? service.location.trim().toLocaleLowerCase() : '';
+                return location === preferredCityValue;
+            }
+
+            if (activeServiceLocationMode === 'nearby') {
+                return !!userCoordinates && !!getServiceCoordinates(service);
+            }
+
+            return true;
+        }
+
+        function calculateDistanceKm(first, second) {
+            const radians = degrees => degrees * Math.PI / 180;
+            const latitudeDelta = radians(second.latitude - first.latitude);
+            const longitudeDelta = radians(second.longitude - first.longitude);
+            const firstLatitude = radians(first.latitude);
+            const secondLatitude = radians(second.latitude);
+            const haversine = Math.min(1, Math.sin(latitudeDelta / 2) ** 2 +
+                Math.cos(firstLatitude) * Math.cos(secondLatitude) *
+                Math.sin(longitudeDelta / 2) ** 2);
+            return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+        }
+
+        function activatePreferredCity() {
+            if (activeServiceLocationMode === 'preferred-city') {
+                activeServiceLocationMode = '';
+                preferredCityValue = '';
+                serviceElements.preferredCitySelect.value = '';
+            } else {
+                activeServiceLocationMode = 'preferred-city';
+                preferredCityValue = '';
+                userCoordinates = null;
+                serviceElements.preferredCitySelect.value = '';
+            }
+            updateLocationControlState();
+            renderServices();
+        }
+
+        async function activateNearbyServices() {
+            if (activeServiceLocationMode === 'nearby') {
+                activeServiceLocationMode = '';
+                userCoordinates = null;
+                updateLocationControlState();
+                renderServices();
+                return;
+            }
+
+            const coordinateCount = allServices.filter(service => getServiceCoordinates(service)).length;
+            if (!coordinateCount || typeof navigator === 'undefined' || !navigator.geolocation) {
+                updateLocationControlState();
+                return;
+            }
+
+            serviceElements.locationFilterStatus.textContent = 'Requesting permission to use your device location…';
+            serviceElements.nearbyOption.disabled = true;
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false,
+                        maximumAge: 60000,
+                        timeout: 12000
+                    });
+                });
+                const latitude = Number(position.coords.latitude);
+                const longitude = Number(position.coords.longitude);
+                if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+                    latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                    throw new Error('The browser returned invalid coordinates.');
+                }
+
+                userCoordinates = { latitude, longitude };
+                preferredCityValue = '';
+                serviceElements.preferredCitySelect.value = '';
+                activeServiceLocationMode = 'nearby';
+                updateLocationControlState();
+                renderServices();
+            } catch (error) {
+                activeServiceLocationMode = '';
+                userCoordinates = null;
+                updateLocationControlState();
+                serviceElements.locationFilterStatus.textContent = error && error.code === 1
+                    ? 'Nearby Services needs location permission. You can allow it in your browser and try again.'
+                    : 'Nearby Services could not get your device location. Try again or choose a Preferred City.';
+                renderServices();
+            } finally {
+                serviceElements.nearbyOption.disabled =
+                    !allServices.some(service => getServiceCoordinates(service)) || !navigator.geolocation;
+            }
         }
 
         function getCategoryName(service) {
@@ -2008,16 +2346,22 @@
 
         function renderFoodSection() {
             const foodListings = allServices.filter(service =>
-                isFoodAndSweetsService(service) && matchesSearchText(service)
+                isFoodAndSweetsService(service) && matchesLocationFilter(service) && matchesSearchText(service)
             );
             serviceElements.foodList.replaceChildren();
 
             if (!foodListings.length) {
                 serviceElements.foodList.hidden = true;
                 serviceElements.foodState.hidden = false;
-                serviceElements.foodState.textContent = serviceSearchTerm
-                    ? 'No matching Local Food & Sweets listings were found.'
-                    : 'No Local Food & Sweets listings are currently available.';
+                if (activeServiceLocationMode === 'preferred-city' && preferredCityValue) {
+                    serviceElements.foodState.textContent = 'No Local Food & Sweets listings match this city / area and service search.';
+                } else if (activeServiceLocationMode === 'nearby') {
+                    serviceElements.foodState.textContent = 'No coordinate-based Local Food & Sweets listings match this service search.';
+                } else {
+                    serviceElements.foodState.textContent = serviceSearchTerm
+                        ? 'No matching Local Food & Sweets listings were found.'
+                        : 'No Local Food & Sweets listings are currently available.';
+                }
                 return;
             }
 
@@ -2028,6 +2372,7 @@
 
         function matchesService(service) {
             if (!matchesCategoryFilter(service)) return false;
+            if (!matchesLocationFilter(service)) return false;
             return matchesSearchText(service);
         }
 
@@ -2048,6 +2393,12 @@
         function renderServices() {
             const list = serviceElements.list;
             const filteredServices = allServices.filter(matchesService);
+            if (activeServiceLocationMode === 'nearby' && userCoordinates) {
+                filteredServices.sort((first, second) =>
+                    calculateDistanceKm(getServiceCoordinates(first), userCoordinates) -
+                    calculateDistanceKm(getServiceCoordinates(second), userCoordinates)
+                );
+            }
             list.replaceChildren();
 
             if (!allServices.length) {
@@ -2063,25 +2414,37 @@
                 return;
             }
 
+            if (activeServiceLocationMode === 'preferred-city' && !preferredCityValue) {
+                serviceElements.resultCount.textContent = 'Choose a city / area';
+                renderFoodSection();
+                showServiceState(
+                    'empty',
+                    'Choose a preferred city',
+                    'Select a city / area that appears in the real service listings to filter results.',
+                    null,
+                    null
+                );
+                return;
+            }
+
             serviceElements.resultCount.textContent = filteredServices.length + ' ' +
                 (filteredServices.length === 1 ? 'service' : 'services');
             renderFoodSection();
 
             if (!filteredServices.length) {
+                const selectedLocation = getUniqueServiceLocations()
+                    .find(location => location.key === preferredCityValue);
+                const emptyMessage = activeServiceLocationMode === 'preferred-city'
+                    ? `No listings in “${selectedLocation ? selectedLocation.label : 'the selected city / area'}” match the current search and category filters.`
+                    : activeServiceLocationMode === 'nearby'
+                        ? 'No coordinate-based nearby listings match the current search and category filters.'
+                        : 'Try another search or choose a different category.';
                 showServiceState(
                     'empty',
                     'No matching services',
-                    'Try another search or choose a different category.',
+                    emptyMessage,
                     'Clear filters',
-                    () => {
-                        serviceElements.search.value = '';
-                        serviceSearchTerm = '';
-                        activeServiceCategory = '';
-                        renderCategoryFilters();
-                        renderPopularSearchChips();
-                        renderAdvertisementBanner();
-                        renderServices();
-                    }
+                    () => resetServiceFilters()
                 );
                 return;
             }
@@ -2113,12 +2476,17 @@
 
                 allServices = data;
                 activeServiceCategory = '';
+                refreshPreferredCityOptions();
                 renderCategoryFilters();
                 renderPopularSearchChips();
                 renderAdvertisementBanner();
                 renderServices();
             } catch (error) {
                 console.error('Error loading services:', error);
+                serviceElements.nearbyOption.disabled = true;
+                serviceElements.preferredCityOption.disabled = true;
+                serviceElements.preferredCitySelect.disabled = true;
+                serviceElements.locationFilterStatus.textContent = 'Location options are unavailable until service listings load.';
                 serviceElements.resultCount.textContent = 'Listings unavailable';
                 serviceElements.categoryFilters.hidden = true;
                 serviceElements.categoryEmpty.textContent = 'Categories are unavailable until the service listings load.';
@@ -2147,6 +2515,11 @@
             serviceElements.search.value = '';
             serviceSearchTerm = '';
             activeServiceCategory = '';
+            activeServiceLocationMode = '';
+            preferredCityValue = '';
+            userCoordinates = null;
+            serviceElements.preferredCitySelect.value = '';
+            updateLocationControlState();
             renderCategoryFilters();
             renderPopularSearchChips();
             renderAdvertisementBanner();
@@ -2222,6 +2595,14 @@
 
             serviceElements.search.addEventListener('input', () => {
                 serviceSearchTerm = serviceElements.search.value.trim().toLocaleLowerCase();
+                renderServices();
+            });
+
+            serviceElements.nearbyOption.addEventListener('click', activateNearbyServices);
+            serviceElements.preferredCityOption.addEventListener('click', activatePreferredCity);
+            serviceElements.preferredCitySelect.addEventListener('change', () => {
+                preferredCityValue = serviceElements.preferredCitySelect.value;
+                updateLocationControlState();
                 renderServices();
             });
 
