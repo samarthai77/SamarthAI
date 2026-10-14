@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Temporary plumbing illustration">
+  <rect width="320" height="180" rx="22" fill="#e5f2ff"/>
+  <circle cx="268" cy="35" r="35" fill="#d1e7ff"/>
+  <path d="M63 52v38a26 26 0 0 0 26 26h47a25 25 0 0 1 25 25v7" fill="none" stroke="#2677c7" stroke-linecap="round" stroke-width="16"/>
+  <path d="M49 52h28M63 38v28M151 148h21M161 137v23" fill="none" stroke="#15589e" stroke-linecap="round" stroke-width="8"/>
+  <path d="M221 49c0 14-21 14-21 0 0-8 10-21 10-21s11 13 11 21Z" fill="#52a8e8"/>
+  <path d="m222 99 16 16m-16 0 16-16" stroke="#f5a623" stroke-linecap="round" stroke-width="7"/>
+  <text x="24" y="165" fill="#416990" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">DEMO ILLUSTRATION</text>
+</svg>
