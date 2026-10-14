@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 190" role="img" aria-label="Generic temporary provider image placeholder">
+  <rect width="160" height="190" rx="18" fill="#eaf2fc"/>
+  <circle cx="80" cy="68" r="31" fill="#b9cde7"/>
+  <path d="M29 158c4-33 23-50 51-50s47 17 51 50" fill="#b9cde7"/>
+  <circle cx="127" cy="29" r="17" fill="#fff"/>
+  <path d="m119 29 5 5 10-11" fill="none" stroke="#527bad" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text x="80" y="180" fill="#627b9d" font-family="Arial,sans-serif" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="1">DEMO PLACEHOLDER</text>
+</svg>

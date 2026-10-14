@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Temporary carpentry illustration">
+  <rect width="320" height="180" rx="22" fill="#f7e9dd"/>
+  <circle cx="269" cy="37" r="35" fill="#eed4bf"/>
+  <path d="M64 51h100v23H64zm0 38h100v23H64zm0 38h100v17H64" fill="#cc8854" stroke="#a85b2b" stroke-width="4"/>
+  <path d="M84 62h25m-25 39h40m-40 38h28" stroke="#f4c39f" stroke-linecap="round" stroke-width="4"/>
+  <path d="m220 49 29 29-12 12-29-29m-7-7 7-7 14 14-7 7m8 34-29 29m17-40-29 29" fill="none" stroke="#9d542d" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <text x="24" y="165" fill="#88694f" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">DEMO ILLUSTRATION</text>
+</svg>

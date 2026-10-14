@@ -640,7 +640,7 @@ const notificationRequestId = urlParams.get('request_id');
             accordion.className = 'category-accordion';
             const button = document.createElement('a');
             button.className = 'category-btn';
-            button.href = `category.html?category=${encodeURIComponent(category.pageId)}`;
+            button.href = `category.html?category=${encodeURIComponent(category.pageId === 'home' ? 'home-services' : category.pageId)}`;
             button.setAttribute('aria-label', `Open the ${category.name} marketplace`);
             button.dataset.category = category.name;
             const icon = document.createElement('span');
@@ -677,7 +677,7 @@ const notificationRequestId = urlParams.get('request_id');
             options.className = 'subcategory-options';
             const categoryPageLink = document.createElement('a');
             categoryPageLink.className = 'category-page-link';
-            categoryPageLink.href = `category.html?category=${encodeURIComponent(category.pageId)}`;
+            categoryPageLink.href = `category.html?category=${encodeURIComponent(category.pageId === 'home' ? 'home-services' : category.pageId)}`;
             categoryPageLink.textContent = `Explore ${category.name} →`;
             options.appendChild(categoryPageLink);
 
