@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Temporary home cleaning illustration">
+  <rect width="320" height="180" rx="22" fill="#e5f6ed"/>
+  <circle cx="269" cy="36" r="34" fill="#d2efdf"/>
+  <path d="m89 48 43 43-46 46-24-24 46-46" fill="#4cae7b" stroke="#27865a" stroke-linejoin="round" stroke-width="5"/>
+  <path d="m70 112 15 15m-23-6 14 14m1-25 15 15" stroke="#fff" stroke-linecap="round" stroke-width="4"/>
+  <path d="m211 49 10 25 27 2-21 16 7 26-23-15-22 15 7-26-21-16 27-2 9-25Z" fill="#ffd25a" stroke="#e6ab28" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M170 118h18m-9-9v18M251 131h12m-6-6v12" stroke="#3b9a68" stroke-linecap="round" stroke-width="4"/>
+  <text x="24" y="165" fill="#4a8064" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">DEMO ILLUSTRATION</text>
+</svg>

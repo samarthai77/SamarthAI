@@ -2160,6 +2160,10 @@
                         : '0 listings'
                 ));
                 button.addEventListener('click', () => {
+                    if (option.key === 'shortcut:home') {
+                        window.location.href = 'category.html?category=home-services';
+                        return;
+                    }
                     activeServiceCategory = option.key;
                     renderCategoryFilters();
                     renderPopularSearchChips();

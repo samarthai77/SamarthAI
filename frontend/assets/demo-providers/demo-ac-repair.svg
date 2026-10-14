@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Temporary air conditioning repair illustration">
+  <rect width="320" height="180" rx="22" fill="#ffebeb"/>
+  <circle cx="266" cy="37" r="35" fill="#ffd7d7"/>
+  <rect x="56" y="43" width="152" height="67" rx="13" fill="#fff" stroke="#d75a55" stroke-width="5"/>
+  <path d="M79 67h106M81 84h6m14 0h6m14 0h6m14 0h6m14 0h6" stroke="#c94b47" stroke-linecap="round" stroke-width="5"/>
+  <path d="M96 123c-7 9 7 11 0 20m39-20c-7 9 7 11 0 20m39-20c-7 9 7 11 0 20" fill="none" stroke="#ec7771" stroke-linecap="round" stroke-width="5"/>
+  <path d="m250 78 8 8 15-18" fill="none" stroke="#b6433f" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <text x="24" y="165" fill="#96605e" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">DEMO ILLUSTRATION</text>
+</svg>
