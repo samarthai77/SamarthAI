@@ -874,37 +874,37 @@
             plumber: {
                 label: 'Plumber',
                 description: 'Tap, pipe and household plumbing services.',
-                image: imageFolder + 'demo-plumber.svg',
+                image: imageFolder + 'service-plumber.png',
                 pattern: /\bplumb(?:er|ing)?\b|\bpipes?\b|\btap\b|\bdrain(?:age)?\b|\bleaks?\b|\bsanitary\b|\bwater\s*(?:tank|line|pump)\b/i
             },
             electrician: {
                 label: 'Electrician',
                 description: 'Wiring, lights, fans and electrical repairs.',
-                image: imageFolder + 'demo-electrician.svg',
+                image: imageFolder + 'service-electrician.png',
                 pattern: /\belectric(?:al|ian|ity)?\b|\bwiring\b|\bwires?\b|\blights?\b|\bfans?\b|\bswitch(?:es)?\b|\bsockets?\b/i
             },
             cleaning: {
                 label: 'Cleaning',
                 description: 'Home cleaning and housekeeping services.',
-                image: imageFolder + 'demo-cleaning.svg',
+                image: imageFolder + 'service-cleaning.png',
                 pattern: /\bclean(?:er|ing)?\b|\bmaid\b|\bhousekeep(?:ing)?\b|\bdomestic\s+(?:help|worker|service)\b|\bdeep\s+clean/i
             },
             'ac-repair': {
                 label: 'AC Repair',
                 description: 'Air conditioning installation and repair services.',
-                image: imageFolder + 'demo-ac-repair.svg',
+                image: imageFolder + 'service-ac-repair.png',
                 pattern: /\b(?:a\.?c\.?|air\s*condition(?:er|ing)?)\b|\bhvac\b|\bcooling\b/i
             },
             'pest-control': {
                 label: 'Pest Control',
                 description: 'Pest inspection and treatment services.',
-                image: imageFolder + 'demo-pest-control.svg',
+                image: imageFolder + 'service-pest-control.png',
                 pattern: /\bpests?\b|\btermites?\b|\bcockroaches?\b|\bmosquitoes?\b|\bfumigat(?:e|ion|or)\b/i
             },
             carpenter: {
                 label: 'Carpenter',
                 description: 'Carpentry, woodwork and furniture repairs.',
-                image: imageFolder + 'demo-carpenter.svg',
+                image: imageFolder + 'service-carpenter.png',
                 pattern: /\bcarpent(?:er|ers|ry)\b|\bwoodwork\b|\bcabinets?\b|\bfurniture\b/i
             }
         };
@@ -918,6 +918,8 @@
         let activeLocationMode = '';
         let preferredCityValue = '';
         let userCoordinates = null;
+        let activeDetailsButton = null;
+        let selectedProviderService = null;
 
         const elements = {
             buttons: document.getElementById('subcategoryButtons'),
@@ -929,22 +931,45 @@
             citySelect: document.getElementById('preferredCitySelect'),
             locationStatus: document.getElementById('locationFilterStatus'),
             selectedImage: document.getElementById('selectedServiceImage'),
+            promoImage: document.getElementById('servicePromoImage'),
             selectedTitle: document.getElementById('selectedServiceTitle'),
             selectedDescription: document.getElementById('selectedServiceDescription'),
             promoText: document.getElementById('servicePromoText'),
             providerHeading: document.getElementById('providerHeading'),
             resultCount: document.getElementById('serviceResultCount'),
             state: document.getElementById('serviceState'),
-            list: document.getElementById('serviceList')
+            list: document.getElementById('serviceList'),
+            providerDetails: document.getElementById('selectedProviderDetails'),
+            providerDetailsTitle: document.getElementById('providerDetailsTitle'),
+            providerDetailsContent: document.getElementById('providerDetailsContent'),
+            providerDetailsActions: document.getElementById('providerDetailsActions'),
+            providerDetailsContactStatus: document.getElementById('providerDetailsContactStatus'),
+            closeProviderDetails: document.getElementById('closeProviderDetails')
         };
 
         function readString(value) {
             return typeof value === 'string' ? value.trim() : '';
         }
 
-        function getProviderName(service) {
+        function getProvider(service) {
             const provider = Array.isArray(service.users) ? service.users[0] : service.users;
-            return provider && typeof provider.name === 'string' ? provider.name.trim() : '';
+            return provider && typeof provider === 'object' ? provider : {};
+        }
+
+        function getProviderName(service) {
+            const provider = getProvider(service);
+            const candidates = [service.provider_name, service.providerName, provider.name]
+                .map(readString)
+                .filter(name => name && name.toLocaleLowerCase() !== 'service provider');
+            return candidates[0] || '';
+        }
+
+        function getProviderPhone(service) {
+            return readString(getProvider(service).phone) || readString(service.phone);
+        }
+
+        function getProviderEmail(service) {
+            return readString(getProvider(service).email) || readString(service.email);
         }
 
         function getServiceCoordinates(service) {
@@ -1143,8 +1168,20 @@
             const rawImage = imageFields
                 .map(field => service[field])
                 .find(value => typeof value === 'string' && value.trim());
-            if (!rawImage) return '';
+            return getSafeServiceImageUrl(rawImage);
+        }
 
+        function getProviderPhotoUrl(service) {
+            const provider = getProvider(service);
+            return getSafeServiceImageUrl(
+                readString(service.provider_photo_url) ||
+                readString(service.profile_photo_url) ||
+                readString(provider.profile_photo_url)
+            );
+        }
+
+        function getSafeServiceImageUrl(rawImage) {
+            if (typeof rawImage !== 'string' || !rawImage.trim()) return '';
             try {
                 const imageUrl = new URL(rawImage.trim(), window.location.href);
                 if (imageUrl.protocol !== 'https:' &&
@@ -1159,8 +1196,10 @@
 
         function getServicePrice(price) {
             if (price === null || price === undefined || price === '') return '';
-            const numericPrice = Number(price);
-            if (!Number.isFinite(numericPrice) || numericPrice < 0) return '';
+            const rawPrice = String(price).trim();
+            if (!rawPrice) return '';
+            const numericPrice = Number(rawPrice.replace(/[₹,\s]/g, ''));
+            if (!Number.isFinite(numericPrice) || numericPrice < 0) return rawPrice;
             return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(numericPrice);
         }
 
@@ -1171,52 +1210,226 @@
             return element;
         }
 
+        function getTelephoneLink(phone) {
+            const digits = phone.replace(/\D/g, '');
+            if (digits.length < 7 || digits.length > 15) return '';
+            return 'tel:' + (phone.trim().startsWith('+') ? '+' : '') + digits;
+        }
+
+        function getEmailLink(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'mailto:' + email : '';
+        }
+
+        function appendProviderDetail(container, label, value, href) {
+            const item = document.createElement('div');
+            item.dataset.detail = label.toLocaleLowerCase();
+            item.appendChild(makeTextElement('dt', '', label));
+            const detail = document.createElement('dd');
+            const text = readString(value) || 'Unavailable';
+            if (href && text !== 'Unavailable') {
+                const link = makeTextElement('a', '', text);
+                link.href = href;
+                detail.appendChild(link);
+            } else {
+                detail.textContent = text;
+            }
+            item.appendChild(detail);
+            container.appendChild(item);
+        }
+
+        function hideSelectedProviderDetails() {
+            if (activeDetailsButton && activeDetailsButton.isConnected) {
+                activeDetailsButton.textContent = 'View Details';
+                activeDetailsButton.setAttribute('aria-expanded', 'false');
+            }
+            activeDetailsButton = null;
+            selectedProviderService = null;
+            elements.providerDetails.hidden = true;
+            elements.providerDetailsContent.replaceChildren();
+            elements.providerDetailsActions.replaceChildren();
+            elements.providerDetailsContactStatus.hidden = true;
+            elements.providerDetailsContactStatus.textContent = '';
+        }
+
+        function addContactAction(service) {
+            const phone = getProviderPhone(service);
+            const phoneLink = getTelephoneLink(phone);
+            const email = getProviderEmail(service);
+            const emailLink = getEmailLink(email);
+
+            if (phoneLink) {
+                const callLink = makeTextElement('a', 'provider-details-panel__action provider-details-panel__action--primary', 'Call provider');
+                callLink.href = phoneLink;
+                elements.providerDetailsActions.appendChild(callLink);
+            } else if (service.id !== undefined && service.id !== null) {
+                const callButton = makeTextElement('button', 'provider-details-panel__action provider-details-panel__action--primary', 'Load phone number');
+                callButton.type = 'button';
+                callButton.addEventListener('click', () => {
+                    const phoneLink = callButton.dataset.phoneLink;
+                    if (phoneLink) {
+                        window.location.href = phoneLink;
+                        return;
+                    }
+                    loadProviderPhone(service, callButton);
+                });
+                elements.providerDetailsActions.appendChild(callButton);
+            } else {
+                const unavailable = makeTextElement('button', 'provider-details-panel__action', 'Contact unavailable');
+                unavailable.type = 'button';
+                unavailable.disabled = true;
+                elements.providerDetailsActions.appendChild(unavailable);
+            }
+
+            if (emailLink) {
+                const emailLinkElement = makeTextElement('a', 'provider-details-panel__action', 'Email provider');
+                emailLinkElement.href = emailLink;
+                elements.providerDetailsActions.appendChild(emailLinkElement);
+            }
+        }
+
+        async function loadProviderPhone(service, button) {
+            let token = '';
+            try {
+                token = window.localStorage.getItem('token') || '';
+            } catch (error) {
+                token = '';
+            }
+            if (!token) {
+                window.alert('Pehle login karein.');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Loading phone…';
+            const requestIsCurrent = () =>
+                button.isConnected && selectedProviderService === service && !elements.providerDetails.hidden;
+            try {
+                const response = await fetch(
+                    SERVICE_API_URL + '/' + encodeURIComponent(service.id) + '/contact',
+                    { headers: { Accept: 'application/json', Authorization: 'Bearer ' + token } }
+                );
+                const data = await response.json();
+                if (!response.ok || !data || typeof data.phone !== 'string' || !data.phone.trim()) {
+                    throw new Error(data && data.error ? data.error : 'Phone number unavailable.');
+                }
+
+                if (!requestIsCurrent()) return;
+                const phone = data.phone.trim();
+                const phoneLink = getTelephoneLink(phone);
+                if (!phoneLink) throw new Error('Phone number unavailable.');
+                const phoneRow = elements.providerDetailsContent.querySelector('[data-detail="phone"] dd');
+                if (phoneRow) {
+                    phoneRow.replaceChildren();
+                    const phoneAnchor = makeTextElement('a', '', phone);
+                    phoneAnchor.href = phoneLink;
+                    phoneRow.appendChild(phoneAnchor);
+                }
+                const providerName = readString(data.name);
+                if (providerName && providerName.toLocaleLowerCase() !== 'service provider') {
+                    elements.providerDetailsTitle.textContent = providerName;
+                    const providerRow = elements.providerDetailsContent.querySelector('[data-detail="provider"] dd');
+                    if (providerRow) providerRow.textContent = providerName;
+                }
+                button.textContent = 'Call provider';
+                button.disabled = false;
+                button.dataset.phoneLink = phoneLink;
+                elements.providerDetailsContactStatus.textContent = 'Provider phone loaded from the contact API.';
+                elements.providerDetailsContactStatus.hidden = false;
+            } catch (error) {
+                if (!requestIsCurrent()) return;
+                button.textContent = 'Phone unavailable';
+                button.disabled = true;
+                elements.providerDetailsContactStatus.textContent = error && error.message
+                    ? error.message
+                    : 'Provider phone is unavailable.';
+                elements.providerDetailsContactStatus.hidden = false;
+            }
+        }
+
+        function toggleSelectedProviderDetails(service, button) {
+            if (!elements.providerDetails.hidden && selectedProviderService === service) {
+                hideSelectedProviderDetails();
+                return;
+            }
+
+            hideSelectedProviderDetails();
+            selectedProviderService = service;
+            activeDetailsButton = button;
+            const providerName = getProviderName(service) || 'Unavailable';
+            const phone = getProviderPhone(service);
+            const email = getProviderEmail(service);
+            const formattedPrice = getServicePrice(service.price);
+            const content = elements.providerDetailsContent;
+            content.replaceChildren();
+
+            elements.providerDetailsTitle.textContent = providerName;
+            appendProviderDetail(content, 'Provider', providerName);
+            appendProviderDetail(content, 'Service', readString(service.title));
+            appendProviderDetail(content, 'Description', readString(service.description));
+            appendProviderDetail(content, 'City', readString(service.location));
+            appendProviderDetail(content, 'Price', formattedPrice);
+            appendProviderDetail(content, 'Category', readString(service.category));
+            appendProviderDetail(content, 'Phone', phone, getTelephoneLink(phone));
+            appendProviderDetail(content, 'Email', email, getEmailLink(email));
+            addContactAction(service);
+
+            elements.providerDetails.hidden = false;
+            button.textContent = 'Hide Details';
+            button.setAttribute('aria-expanded', 'true');
+            elements.providerDetails.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
         function createProviderCard(service) {
             const card = document.createElement('article');
             card.className = 'provider-card';
             if (service.id !== undefined && service.id !== null) card.dataset.serviceId = String(service.id);
 
+            const providerName = getProviderName(service) || 'Provider name unavailable';
+            const serviceTitle = readString(service.title) || 'Service title unavailable';
+            const serviceLocation = readString(service.location) || 'City unavailable';
+            const providerPhotoUrl = getProviderPhotoUrl(service);
+            const serviceImageUrl = getServiceImageUrl(service);
+            const categoryImageUrl = subcategories[activeSubcategory].image;
+            const imageOptions = [
+                providerPhotoUrl && { url: providerPhotoUrl, alt: 'Provider profile photo from the service listing.' },
+                serviceImageUrl && { url: serviceImageUrl, alt: 'Photo attached to this service listing.' },
+                { url: categoryImageUrl, alt: 'Illustrative ' + subcategories[activeSubcategory].label.toLocaleLowerCase() + ' service scene; not a provider photo.' },
+                { url: imageFolder + 'demo-provider-placeholder.svg', alt: 'Generic service image placeholder; not a provider photo.' }
+            ].filter(Boolean).filter((option, index, options) =>
+                options.findIndex(candidate => candidate.url === option.url) === index
+            );
+            let imageOptionIndex = 0;
             const image = document.createElement('img');
             image.className = 'provider-card__image';
-            image.src = getServiceImageUrl(service) || imageFolder + 'demo-provider-placeholder.svg';
-            image.alt = getServiceImageUrl(service) ? readString(service.title) : 'Temporary demo image placeholder';
+            image.src = imageOptions[imageOptionIndex].url;
+            image.alt = imageOptions[imageOptionIndex].alt;
             image.loading = 'lazy';
-            image.addEventListener('error', () => {
-                image.src = imageFolder + 'demo-provider-placeholder.svg';
-                image.alt = 'Temporary demo image placeholder';
-            }, { once: true });
+            image.addEventListener('error', function useNextServiceImage() {
+                imageOptionIndex += 1;
+                if (imageOptionIndex >= imageOptions.length) return;
+                image.src = imageOptions[imageOptionIndex].url;
+                image.alt = imageOptions[imageOptionIndex].alt;
+            });
             card.appendChild(image);
 
             const main = document.createElement('div');
             main.className = 'provider-card__main';
-            main.appendChild(makeTextElement('h3', 'provider-card__provider', getProviderName(service) || 'Provider name unavailable'));
-            main.appendChild(makeTextElement('p', 'provider-card__service', readString(service.title) || 'Service title unavailable'));
-            main.appendChild(makeTextElement('p', 'provider-card__city', readString(service.location) || 'City not provided'));
+            main.appendChild(makeTextElement('h3', 'provider-card__provider', providerName));
+            main.appendChild(makeTextElement('p', 'provider-card__service', serviceTitle));
+            main.appendChild(makeTextElement('p', 'provider-card__city', serviceLocation));
             const formattedPrice = getServicePrice(service.price);
-            if (formattedPrice) main.appendChild(makeTextElement('p', 'provider-card__price', formattedPrice));
-            card.appendChild(main);
-
-            const details = document.createElement('div');
-            details.className = 'provider-card__details';
-            details.hidden = true;
-            details.appendChild(makeTextElement(
+            main.appendChild(makeTextElement(
                 'p',
-                '',
-                readString(service.description) || 'No description was provided for this listing.'
+                'provider-card__price' + (formattedPrice ? '' : ' is-unavailable'),
+                formattedPrice || 'Price unavailable'
             ));
-            const category = readString(service.category);
-            if (category) details.appendChild(makeTextElement('p', '', 'Category: ' + category));
-            card.appendChild(details);
+            card.appendChild(main);
 
             const detailsButton = makeTextElement('button', 'provider-card__details-button', 'View Details');
             detailsButton.type = 'button';
             detailsButton.setAttribute('aria-expanded', 'false');
-            detailsButton.addEventListener('click', () => {
-                const willExpand = details.hidden;
-                details.hidden = !willExpand;
-                detailsButton.textContent = willExpand ? 'Hide Details' : 'View Details';
-                detailsButton.setAttribute('aria-expanded', String(willExpand));
-            });
+            detailsButton.setAttribute('aria-controls', 'selectedProviderDetails');
+            detailsButton.addEventListener('click', () => toggleSelectedProviderDetails(service, detailsButton));
             card.appendChild(detailsButton);
             return card;
         }
@@ -1241,6 +1454,7 @@
         function renderServices() {
             const definition = subcategories[activeSubcategory];
             const filteredServices = getHomeServices().filter(matchesService);
+            hideSelectedProviderDetails();
             if (activeLocationMode === 'nearby' && userCoordinates) {
                 filteredServices.sort((first, second) =>
                     calculateDistanceKm(getServiceCoordinates(first), userCoordinates) -
@@ -1282,7 +1496,8 @@
                 button.setAttribute('aria-pressed', String(button.dataset.subcategory === key));
             });
             elements.selectedImage.src = definition.image;
-            elements.selectedImage.alt = '';
+            elements.selectedImage.alt = 'Illustrative ' + definition.label.toLocaleLowerCase() + ' service scene; not a provider photo.';
+            elements.promoImage.src = definition.image;
             elements.selectedTitle.textContent = definition.label;
             elements.selectedDescription.textContent = definition.description;
             elements.promoText.textContent = 'Browse real ' + definition.label.toLocaleLowerCase() + ' listings shared by local providers.';
@@ -1338,6 +1553,7 @@
         document.getElementById('promoBrowseButton').addEventListener('click', () => {
             document.getElementById('serviceListings').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
+        elements.closeProviderDetails.addEventListener('click', hideSelectedProviderDetails);
 
         loadServices();
     }

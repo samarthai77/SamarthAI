@@ -1519,11 +1519,25 @@ body.home-services-page {
 #homeServicesRoot .provider-card__service { display: -webkit-box; overflow: hidden; min-height: 31px; margin: 0 0 5px; color: #425571; font-size: .71rem; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 #homeServicesRoot .provider-card__city { overflow: hidden; margin: 0 0 4px; color: var(--home-muted); font-size: .67rem; text-overflow: ellipsis; white-space: nowrap; }
 #homeServicesRoot .provider-card__price { margin: 0; color: #176b45; font-size: .75rem; font-weight: 750; }
-#homeServicesRoot .provider-card__details-button { grid-column: 1 / -1; min-height: 31px; align-self: end; border: 1px solid #cbd9ed; border-radius: 9px; background: #f5f9ff; color: #194b8d; font-size: .72rem; font-weight: 750; }
+#homeServicesRoot .provider-card__price.is-unavailable { color: var(--home-muted); font-size: .69rem; font-weight: 600; }
+#homeServicesRoot .provider-card__details-button { grid-column: 1 / -1; min-height: 44px; margin-top: 6px; align-self: end; border: 1px solid #cbd9ed; border-radius: 10px; background: #f5f9ff; color: #194b8d; font-size: .74rem; font-weight: 750; touch-action: manipulation; }
 #homeServicesRoot .provider-card__details-button:hover { border-color: #83a9dc; background: #ebf3ff; }
-#homeServicesRoot .provider-card__details { grid-column: 1 / -1; padding: 8px 1px 0; border-top: 1px solid #edf1f7; color: #53627a; font-size: .69rem; line-height: 1.4; }
-#homeServicesRoot .provider-card__details p { margin: 0 0 4px; }
-#homeServicesRoot .provider-card__details[hidden] { display: none; }
+#homeServicesRoot .provider-details-panel { margin: 3px 2px 14px; padding: 13px; border: 1px solid #d6e3f4; border-radius: 15px; background: #fff; box-shadow: 0 6px 18px rgba(18, 38, 70, .07); }
+#homeServicesRoot .provider-details-panel[hidden] { display: none; }
+#homeServicesRoot .provider-details-panel__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#homeServicesRoot .provider-details-panel__eyebrow { color: #a07816; font-size: .59rem; font-weight: 850; letter-spacing: .1em; }
+#homeServicesRoot .provider-details-panel__heading h3 { margin: 2px 0 0; color: var(--home-ink); font-size: .94rem; }
+#homeServicesRoot .provider-details-panel__close { min-height: 44px; padding: 7px 13px; border: 1px solid #d4dfed; border-radius: 10px; background: #f5f8fd; color: #29496f; font-size: .73rem; font-weight: 750; touch-action: manipulation; }
+#homeServicesRoot .provider-details-panel__content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 11px 0 0; }
+#homeServicesRoot .provider-details-panel__content > div { min-width: 0; padding: 8px 10px; border: 1px solid #e7edf5; border-radius: 10px; background: #f8faff; overflow-wrap: anywhere; }
+#homeServicesRoot .provider-details-panel__content dt { color: var(--home-muted); font-size: .63rem; font-weight: 650; }
+#homeServicesRoot .provider-details-panel__content dd { margin: 2px 0 0; color: #233b5e; font-size: .75rem; font-weight: 700; white-space: pre-line; }
+#homeServicesRoot .provider-details-panel__content a { color: #155cb4; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+#homeServicesRoot .provider-details-panel__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+#homeServicesRoot .provider-details-panel__action { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 8px 13px; border: 1px solid #cbd9ed; border-radius: 10px; background: #f5f9ff; color: #194b8d; font-size: .74rem; font-weight: 750; text-decoration: none; touch-action: manipulation; }
+#homeServicesRoot .provider-details-panel__action--primary { border-color: var(--home-blue); background: var(--home-blue); color: #fff; }
+#homeServicesRoot .provider-details-panel__action:disabled { color: #8793a5; background: #f3f5f8; }
+#homeServicesRoot .provider-details-panel__status { margin: 8px 0 0; color: var(--home-muted); font-size: .72rem; }
 #homeServicesRoot .provider-state { padding: 20px 14px; border: 1px dashed #cbd8e8; border-radius: 12px; background: rgba(255,255,255,.75); color: var(--home-muted); font-size: .79rem; text-align: center; }
 
 @media (max-width: 720px) {
@@ -1531,12 +1545,14 @@ body.home-services-page {
     #homeServicesRoot .home-services-intro { margin: 10px 0 12px; }
     #homeServicesRoot .subcategory-section { margin-right: -14px; margin-left: -14px; }
     #homeServicesRoot .subcategory-section .section-heading { padding: 0 14px; }
-    #homeServicesRoot .subcategory-strip { flex-wrap: nowrap; overflow-x: auto; gap: 7px; padding: 2px 14px 8px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: #c3d1e3 transparent; }
-    #homeServicesRoot .subcategory-pill { flex: 0 0 auto; min-height: 40px; padding: 6px 11px 6px 9px; scroll-snap-align: start; font-size: .75rem; }
+    #homeServicesRoot .subcategory-strip { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 3px 14px 10px; scroll-behavior: smooth; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: #c3d1e3 transparent; }
+    #homeServicesRoot .subcategory-pill { flex: 0 0 auto; min-height: 48px; padding: 8px 13px 8px 11px; scroll-snap-align: start; font-size: .78rem; touch-action: manipulation; }
     #homeServicesRoot .subcategory-pill svg { width: 18px; height: 18px; }
     #homeServicesRoot .selected-service-card { grid-template-columns: 86px minmax(0, 1fr) 32px; min-height: 94px; gap: 10px; padding: 7px 8px 7px 7px; border-radius: 14px; }
     #homeServicesRoot .selected-service-card__image { width: 86px; height: 78px; border-radius: 10px; }
     #homeServicesRoot .selected-service-card__arrow { width: 30px; height: 30px; }
+    #homeServicesRoot .provider-details-panel { margin-right: 0; margin-left: 0; padding: 10px; }
+    #homeServicesRoot .provider-details-panel__content { grid-template-columns: 1fr; gap: 6px; margin-top: 8px; }
     #homeServicesRoot .service-controls { grid-template-columns: 1fr; gap: 7px; margin-bottom: 8px; }
     #homeServicesRoot .service-search { min-height: 40px; }
     #homeServicesRoot .location-controls__buttons button { min-height: 34px; }
