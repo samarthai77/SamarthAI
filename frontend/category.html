@@ -188,7 +188,7 @@
                 </section>
 
                 <section class="selected-service-card" aria-live="polite" aria-labelledby="selectedServiceTitle">
-                    <img class="selected-service-card__image" id="selectedServiceImage" src="assets/demo-providers/demo-plumber.svg" alt="" />
+                    <img class="selected-service-card__image" id="selectedServiceImage" src="assets/demo-providers/service-plumber.png" alt="Illustrative plumber service scene; not a provider photo." />
                     <div class="selected-service-card__copy">
                         <span class="selected-service-card__eyebrow">SELECTED SERVICE</span>
                         <h2 id="selectedServiceTitle">Plumber</h2>
@@ -222,7 +222,7 @@
                 </aside>
 
                 <section class="service-promo" aria-label="Home service listings">
-                    <img id="servicePromoImage" src="assets/demo-providers/home-services-promo.svg" alt="" />
+                    <img id="servicePromoImage" src="assets/demo-providers/service-plumber.png" alt="" />
                     <div class="service-promo__copy">
                         <span>HOME SERVICES</span>
                         <p id="servicePromoText">Browse real plumber listings shared by local providers.</p>
@@ -240,6 +240,15 @@
                     </div>
                     <div class="provider-state" id="serviceState" role="status" aria-live="polite">Loading home service listings…</div>
                     <div class="provider-slider" id="serviceList" aria-live="polite" hidden></div>
+                    <section class="provider-details-panel" id="selectedProviderDetails" aria-labelledby="providerDetailsTitle" aria-live="polite" hidden>
+                        <div class="provider-details-panel__heading">
+                            <div><span class="provider-details-panel__eyebrow">SELECTED LISTING</span><h3 id="providerDetailsTitle">Provider details</h3></div>
+                            <button class="provider-details-panel__close" id="closeProviderDetails" type="button">Close</button>
+                        </div>
+                        <dl class="provider-details-panel__content" id="providerDetailsContent"></dl>
+                        <div class="provider-details-panel__actions" id="providerDetailsActions"></div>
+                        <p class="provider-details-panel__status" id="providerDetailsContactStatus" role="status" aria-live="polite" hidden></p>
+                    </section>
                 </section>
             </main>
     </div>
