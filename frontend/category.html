@@ -146,10 +146,15 @@
                     <a href="services.html">Services</a><span aria-hidden="true">›</span><span>Home Services</span>
                 </nav>
 
-                <section class="home-services-intro" aria-labelledby="homeServicesTitle">
-                    <p class="home-services-eyebrow">SERVICES</p>
-                    <h1 id="homeServicesTitle">Home Services</h1>
-                    <p>Choose a service to see matching local listings.</p>
+                <section class="home-services-intro home-services-hero" aria-labelledby="homeServicesTitle">
+                    <div class="home-services-hero__copy">
+                        <p class="home-services-eyebrow">SERVICES · MARKETPLACE</p>
+                        <h1 id="homeServicesTitle">Home Services</h1>
+                        <p>Verified local help for repairs, maintenance & everyday home needs.</p>
+                    </div>
+                    <div class="home-services-hero__image-wrap">
+                        <img class="home-services-hero__image" src="assets/category-images/home-640.jpg" srcset="assets/category-images/home-640.jpg 640w, assets/category-images/home-1280.jpg 1280w" sizes="(max-width: 720px) 72px, 150px" alt="Professional home repair and maintenance" width="150" height="95" />
+                    </div>
                 </section>
 
                 <section class="subcategory-section" aria-labelledby="subcategoryHeading">
@@ -222,7 +227,7 @@
                 </aside>
 
                 <section class="service-promo" aria-label="Home service listings">
-                    <img id="servicePromoImage" src="assets/demo-providers/service-plumber.png" alt="" />
+                    <img id="servicePromoImage" src="assets/demo-providers/home-services-promo.svg" alt="SamarthAI Home Services marketplace promotion" width="240" height="150" loading="lazy" />
                     <div class="service-promo__copy">
                         <span>HOME SERVICES</span>
                         <p id="servicePromoText">Browse real plumber listings shared by local providers.</p>
@@ -259,7 +264,9 @@
             if (homeTemplate) {
                 const homeMarkup = homeTemplate.content.cloneNode(true);
                 Array.from(document.body.children).forEach(child => {
-                    if (child !== homeTemplate && child.tagName !== 'SCRIPT' && child.tagName !== 'TEMPLATE') child.hidden = true;
+                    if (child !== homeTemplate && child.tagName !== 'SCRIPT' && child.tagName !== 'TEMPLATE' && !child.classList.contains('category-bottom-nav')) {
+                        child.hidden = true;
+                    }
                 });
                 document.body.classList.add('home-services-page');
                 document.body.insertBefore(homeMarkup, homeTemplate);
@@ -267,7 +274,6 @@
             }
         }
     </script>
-    <script src="app.js"></script>
     <script src="category-page.js"></script>
 </body>
 </html>

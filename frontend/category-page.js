@@ -1376,7 +1376,11 @@
             elements.providerDetails.hidden = false;
             button.textContent = 'Hide Details';
             button.setAttribute('aria-expanded', 'true');
-            elements.providerDetails.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const panelRect = elements.providerDetails.getBoundingClientRect();
+            const isInView = panelRect.top >= 0 && panelRect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+            if (!isInView) {
+                elements.providerDetails.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function createProviderCard(service) {
@@ -1406,9 +1410,12 @@
             image.loading = 'lazy';
             image.addEventListener('error', function useNextServiceImage() {
                 imageOptionIndex += 1;
-                if (imageOptionIndex >= imageOptions.length) return;
-                image.src = imageOptions[imageOptionIndex].url;
-                image.alt = imageOptions[imageOptionIndex].alt;
+                if (imageOptionIndex < imageOptions.length) {
+                    image.src = imageOptions[imageOptionIndex].url;
+                    image.alt = imageOptions[imageOptionIndex].alt;
+                } else {
+                    image.hidden = true;
+                }
             });
             card.appendChild(image);
 
@@ -1497,7 +1504,8 @@
             });
             elements.selectedImage.src = definition.image;
             elements.selectedImage.alt = 'Illustrative ' + definition.label.toLocaleLowerCase() + ' service scene; not a provider photo.';
-            elements.promoImage.src = definition.image;
+            elements.promoImage.src = imageFolder + 'home-services-promo.svg';
+            elements.promoImage.alt = 'SamarthAI Home Services marketplace promotion';
             elements.selectedTitle.textContent = definition.label;
             elements.selectedDescription.textContent = definition.description;
             elements.promoText.textContent = 'Browse real ' + definition.label.toLocaleLowerCase() + ' listings shared by local providers.';
@@ -1517,12 +1525,17 @@
                 renderServices();
             } catch (error) {
                 console.error('Error loading Home Services listings:', error);
-                elements.nearbyOption.disabled = true;
-                elements.preferredCityOption.disabled = true;
-                elements.citySelect.disabled = true;
-                elements.locationStatus.textContent = 'Location options are unavailable until service listings load.';
-                elements.resultCount.textContent = 'Listings unavailable';
-                showState(error && error.message ? error.message : 'Home service listings could not be loaded.');
+                const hasExistingServices = allServices && allServices.length > 0;
+                if (!hasExistingServices) {
+                    elements.nearbyOption.disabled = true;
+                    elements.preferredCityOption.disabled = true;
+                    elements.citySelect.disabled = true;
+                    elements.locationStatus.textContent = 'Location options are unavailable until service listings load.';
+                    elements.resultCount.textContent = 'Listings unavailable';
+                    showState(error && error.message ? error.message : 'Home service listings could not be loaded.');
+                } else {
+                    updateLocationControlState();
+                }
             }
         }
 
