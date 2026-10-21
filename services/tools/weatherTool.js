@@ -11,6 +11,7 @@ function validCoordinate(
   min,
   max
 ) {
+  if (value === null || value === undefined || value === '') return false;
   const number =
     Number(value);
 
@@ -68,7 +69,7 @@ function normalizeType(
 // =====================================================
 
 async function geocodePlace(
-  locationName
+  locationName, signal
 ) {
   const name =
     String(
@@ -89,7 +90,7 @@ async function geocodePlace(
     '&format=json';
 
   const response =
-    await fetch(url);
+    await fetch(url, {signal:signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000)});
 
   const data =
     await response.json();
@@ -138,7 +139,7 @@ async function googleWeather(
   endpoint,
   latitude,
   longitude,
-  extraParams = ''
+  extraParams = '', signal
 ) {
   if (
     !GOOGLE_WEATHER_API_KEY
@@ -163,7 +164,7 @@ async function googleWeather(
     extraParams;
 
   const response =
-    await fetch(url);
+    await fetch(url, {signal:signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000)});
 
   const data =
     await response.json();
@@ -187,7 +188,7 @@ async function getWeather({
   latitude,
   longitude,
   locationName,
-  type = 'current'
+  type = 'current', signal
 } = {}) {
 
   let resolved =
@@ -203,7 +204,7 @@ async function getWeather({
   ) {
     resolved =
       await geocodePlace(
-        locationName
+        locationName, signal
       );
 
     latitude =
@@ -258,7 +259,7 @@ async function getWeather({
         'forecast/hours:lookup',
         latitude,
         longitude,
-        '&hours=24'
+        '&hours=24', signal
       );
   }
 
@@ -276,7 +277,7 @@ async function getWeather({
         'forecast/days:lookup',
         latitude,
         longitude,
-        '&days=7'
+        '&days=7', signal
       );
   }
 
@@ -290,7 +291,7 @@ async function getWeather({
       await googleWeather(
         'currentConditions:lookup',
         latitude,
-        longitude
+        longitude, '', signal
       );
   }
 

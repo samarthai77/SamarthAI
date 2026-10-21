@@ -31,7 +31,8 @@ const supabase = createClient(
  * - Backend only validates permissions, arguments and tool boundaries.
  */
 
-const GROQ_MODEL = 'openai/gpt-oss-20b';
+const {completeChat, ProviderError} = require('./chatCompletion');
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
 const ALLOWED_TOOLS = new Set([
   'none',
@@ -93,7 +94,7 @@ function normalize(value) {
 }
 
 function safeString(value, max = 5000) {
-  return normalize(value).slice(0, max);
+  return String(value ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max);
 }
 
 function isValidUUID(value) {
@@ -102,6 +103,7 @@ function isValidUUID(value) {
 }
 
 function safeNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -1291,6 +1293,7 @@ actually required.
 async function planConversation({
   message,
   context,
+  signal,
   location
 }) {
   const prompt = buildPlannerPrompt({
@@ -1300,7 +1303,8 @@ async function planConversation({
   });
 
   try {
-    const result = await callGroq({
+    const result = await completeChat({
+      signal,
       model: GROQ_MODEL,
       messages: [
         {
@@ -1375,15 +1379,17 @@ async function planConversation({
   } catch (error) {
     console.error(
       'Conversation planner error:',
-      error.message
+      error.code || 'planner_failure'
     );
+    if (signal?.aborted) throw error;
 
     /*
      * Never invent an intent when planner fails.
      */
     return {
       ...emptyPlan(),
-      planner_error: true
+      planner_error: true,
+      provider_error: error.code || 'planner_failure'
     };
   }
 }
@@ -1703,8 +1709,10 @@ function buildWeatherArgs({
       ''
     );
 
+  if (locationName) { latitude = null; longitude = null; }
+
   if (
-    !validLatitude(latitude) &&
+    !locationName && !validLatitude(latitude) &&
     validLatitude(normalizedLocation?.latitude)
   ) {
     latitude =
@@ -1712,7 +1720,7 @@ function buildWeatherArgs({
   }
 
   if (
-    !validLongitude(longitude) &&
+    !locationName && !validLongitude(longitude) &&
     validLongitude(normalizedLocation?.longitude)
   ) {
     longitude =
@@ -1851,8 +1859,9 @@ async function executeTool({
   userId,
   plan,
   location,
-  context
+  context, signal
 }) {
+  signal?.throwIfAborted();
   const toolName =
     normalize(plan?.tool);
 
@@ -2090,7 +2099,7 @@ if(!place){
       }
 
       const raw =
-        await tool.execute(args);
+        await tool.execute({...args, signal});
 
       return {
         ok: true,
@@ -2517,7 +2526,17 @@ if (tool === 'web') {
       .join('\n\n');
   }
   if (tool === 'weather') {
-    return 'Mausam ki jankari mil gayi hai.';
+    const weather = data?.data || {};
+    const place = data?.location?.name || 'मौसम';
+    const temperature = weather.temperature?.degrees;
+    const condition = weather.weatherCondition?.description?.text;
+    if (Number.isFinite(temperature)) return '## ' + place + '\n\nतापमान: **' + temperature + '°C**' + (condition ? '\n\n' + condition : '');
+    const days = weather.forecastDays;
+    if (Array.isArray(days) && days.length) return '## ' + place + '\n\n' + days.slice(0,5).map(day => {
+      const date = day.displayDate || {};
+      return '- ' + [date.day,date.month,date.year].filter(Boolean).join('/') + ': ' + (day.maxTemperature?.degrees ?? '—') + '°C / ' + (day.minTemperature?.degrees ?? '—') + '°C';
+    }).join('\n');
+    return 'मौसम का जवाब पूरा नहीं बन पाया। कृपया फिर कोशिश करें।';
   }
 
   return null;
@@ -2531,6 +2550,8 @@ async function finalToolAnswer({
   plan,
   toolResult,
   context,
+  signal,
+  onDelta,
   responseLanguage = 'hi-IN'
 }) {
   const safeResult =
@@ -2540,6 +2561,7 @@ async function finalToolAnswer({
    * If the tool failed, prefer a deterministic response.
    * This prevents the model from inventing a successful result.
    */
+  if (!safeResult.ok && !['current_location_unavailable','weather_location_required','family_member_not_resolved'].includes(safeResult.error)) throw new ProviderError('tool_unavailable');
   if (!safeResult.ok) {
     return deterministicToolFallback({
       toolResult: safeResult,
@@ -2614,7 +2636,8 @@ Return only the final answer text.
 
   try {
     const result =
-      await callGroq({
+      await completeChat({
+      signal, onDelta,
         model: GROQ_MODEL,
         messages: [
           {
@@ -2628,7 +2651,7 @@ Return only the final answer text.
           }
         ],
         temperature: 0.2,
-        max_completion_tokens: 450,
+        max_completion_tokens: 2048,
         reasoning_effort: 'low',
         include_reasoning: false
       });
@@ -2665,6 +2688,7 @@ Return only the final answer text.
       return answer;
     }
   } catch (error) {
+    if (signal?.aborted || error.partial) throw error;
     console.error(
       'Final answer generation error:',
       error.message
@@ -2690,6 +2714,8 @@ Return only the final answer text.
 async function answerWithoutTool({
   message,
   context,
+  signal,
+  onDelta,
   responseLanguage = 'hi-IN'
 }) {
   const prompt = `
@@ -2800,7 +2826,8 @@ EMOTIONAL CONVERSATION STYLE:
 
   try {
     const result =
-      await callGroq({
+      await completeChat({
+      signal, onDelta,
         model: GROQ_MODEL,
         messages: [
           {
@@ -2814,7 +2841,7 @@ EMOTIONAL CONVERSATION STYLE:
           }
         ],
         temperature: 0.3,
-        max_completion_tokens: 500,
+        max_completion_tokens: 2048,
         reasoning_effort: 'low',
         include_reasoning: false
       });
@@ -2849,13 +2876,14 @@ EMOTIONAL CONVERSATION STYLE:
       return answer.trim();
     }
   } catch (error) {
+    if (signal?.aborted || onDelta) throw error;
     console.error(
       'Conversation answer error:',
       error.message
     );
   }
 
-  return 'Abhi AI response service busy hai. Thodi der baad dobara try kijiye.';
+  throw new ProviderError('provider_unavailable');
 }
 
 
@@ -2867,8 +2895,10 @@ async function runConversation({
   message,
   location = null,
   conversationId = null,
-  responseLanguage = 'hi-IN'
+  responseLanguage = 'hi-IN',
+  signal, onDelta
 }) {
+  signal?.throwIfAborted();
   const cleanMessage =
     safeString(message, 5000);
 
@@ -2918,10 +2948,11 @@ if (
   /*
    * AI decides what the user means and which tool is required.
    */
- const plan =
+ let plan =
     await planConversation({
         message: cleanMessage,
         context,
+        signal,
         location: normalizedLocation,
         responseLanguage
     });
@@ -2968,75 +2999,10 @@ context.timezone =
    * and go directly to Tavily.
    */
   if (plan.planner_error) {
-
-    const lowerMessage =
-      cleanMessage.toLowerCase();
-
-    const explicitWebRequest =
-      /internet|web search|web par|internet par|online search|online check|google par|google pe|search karke|search karo|search kar ke|internet se|online se|latest news|taza khabar|taaza khabar|current price|current rate|live price|live rate/.test(
-        lowerMessage
-      );
-
-    if (explicitWebRequest) {
-
-      const webPlan = {
-        ...emptyPlan(),
-        mode: 'tool',
-        target: 'unknown',
-        tool: 'web',
-        tool_args: {
-          query: cleanMessage
-        },
-        needs_web: true,
-        needs_history: true,
-        response_language: 'hi',
-        reason:
-          'Explicit internet search requested; using direct web fallback.'
-      };
-
-      toolResult =
-        await executeTool({
-          userId,
-          plan: webPlan,
-          location: normalizedLocation,
-          context
-        });
-
- response =
-  await finalToolAnswer({
-    message: cleanMessage,
-    plan: webPlan,
-    toolResult,
-    context,
-    responseLanguage
-  });l
-
-      const memoryResult =
-        await saveMemory({
-          userId,
-          message: cleanMessage,
-          plan: webPlan
-        });
-
-      return {
-        response,
-        intent: 'web',
-        tool: 'web',
-        web_used:
-          toolResult?.ok === true,
-        memory_saved:
-          memoryResult?.saved === true
-      };
-    }
-
-    return {
-      response:
-        'Abhi AI planning service busy hai. Thodi der baad dobara try kijiye.',
-      intent: 'conversation',
-      tool: 'none',
-      web_used: false,
-      memory_saved: false
-    };
+    signal?.throwIfAborted();
+    const fallback = require('./weatherIntent')(cleanMessage) || (/internet|web search|web par|internet par|online search|online check|google par|google pe|search karke|search karo|search kar ke|internet se|online se|latest news|taza khabar|taaza khabar|current price|current rate|live price|live rate/i.test(cleanMessage) ? {mode:'tool',tool:'web',tool_args:{query:cleanMessage},needs_web:true} : null);
+    if (fallback) plan = {...emptyPlan(), ...fallback, response_language:responseLanguage};
+    else throw new ProviderError(plan.provider_error || 'planner_unavailable');
   }
 
   let toolResult = null;
@@ -3053,7 +3019,7 @@ context.timezone =
         userId,
         plan,
         location: normalizedLocation,
-        context
+        context, signal
       });
 
   response =
@@ -3062,7 +3028,7 @@ context.timezone =
         plan,
         toolResult,
         context,
-        responseLanguage
+        responseLanguage, signal, onDelta
     });
   }
 
@@ -3076,7 +3042,7 @@ context.timezone =
     await answerWithoutTool({
         message: cleanMessage,
         context,
-        responseLanguage
+        responseLanguage, signal, onDelta
     }); 
   }
 
@@ -3085,6 +3051,7 @@ context.timezone =
    * MEMORY
    * -------------------------------------------------------
    */
+  signal?.throwIfAborted();
   const memoryResult =
     await saveMemory({
       userId,
@@ -3094,7 +3061,7 @@ context.timezone =
 
   return {
     response:
-      safeString(response, 10000),
+      String(response ?? '').trim(),
 
     intent:
       plan.tool !== 'none'

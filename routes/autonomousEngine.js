@@ -4,6 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
+const streamResponse = require('../services/streamResponse');
 
 const autonomousEngine = require('../services/autonomousEngine');
 
@@ -194,18 +195,11 @@ router.post(
         });
       }
 
-      const result =
-        await autonomousEngine.run({
-          userId: req.user.id,
-          conversationId,
-          message: message.trim(),
-          mode: mode || 'conversation',
-          metadata:
-            metadata &&
-            typeof metadata === 'object'
-              ? metadata
-              : {}
-        });
+      const options = {userId:req.user.id, conversationId, message:message.trim(), mode:mode || 'conversation',
+        metadata:metadata && typeof metadata === 'object' ? metadata : {}};
+      if (message.length > 10000) return res.status(400).json({success:false,error:'Message too long'});
+      if (req.body.stream === true && req.accepts('text/event-stream')) return streamResponse(req,res,autonomousEngine.run,options);
+      const result = await autonomousEngine.run(options);
 
       return res.json(result);
 
@@ -213,15 +207,15 @@ router.post(
 
       console.error(
         '❌ Autonomous run error:',
-        error
+        error.code || 'chat_unavailable'
       );
 
-      return res.status(500).json({
+      return res.status(error.status === 403 ? 403 : 503).json({
         success: false,
         autonomous: true,
-        error:
-          error.message ||
-          'Autonomous engine execution failed'
+        code:error.code || 'chat_unavailable',
+        retryable:true,
+        error:'AI service abhi available nahi hai. Dobara try karein.'
       });
     }
   }

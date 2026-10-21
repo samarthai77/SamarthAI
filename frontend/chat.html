@@ -2284,12 +2284,12 @@ body{
         class="typing-indicator"
         id="typingIndicator" role="status" aria-live="polite">
 
-        <span></span>
-        <span></span>
-        <span></span>
+        <span class="thinking-ring" aria-label="Thinking"></span>
 
     </div>
 
+
+    <button class="jump-latest" id="jumpLatest" type="button" onclick="jumpToLatest()" hidden>↓ नया जवाब / Latest</button>
 
     <!-- FEATURES -->
 
@@ -2516,6 +2516,7 @@ body{
     <!-- CHAT INPUT -->
 
     <div class="input-area">
+        <div class="composer-context"><button id="shareChatLocation" type="button" title="Share your current location for the next 5 minutes">Share location</button></div>
 
         <div class="chat-input-box">
 
@@ -2564,7 +2565,10 @@ body{
 </div>
 
 
+<script src="vendor/markdown-it.min.js"></script>
+<script src="vendor/purify.min.js"></script>
 <script src="chat-reading.js"></script>
+<script src="chat-interaction.js"></script>
 <script src="app.js"></script>
 <script src="languages.js"></script>
 
@@ -2890,7 +2894,7 @@ async function loadConversations(){
 
 /* ===== CREATE NEW CONVERSATION ===== */
 
-async function createNewConversation(forSend = false){
+async function createNewConversation(forSend = false, signal = null){
     if (sendInFlight && !forSend) return null;
 
     const token =
@@ -2904,7 +2908,7 @@ async function createNewConversation(forSend = false){
             await fetch(
                 CHAT_API + '/conversations',
                 {
-                    method:'POST',
+                    method:'POST', signal,
 
                     headers:{
                         'Content-Type':
@@ -2938,6 +2942,7 @@ async function createNewConversation(forSend = false){
 
         }
 
+        if (signal?.aborted) return null;
         currentConversationId =
             data.conversation.id;
 
@@ -3227,227 +3232,13 @@ msg.appendChild(content);
     msg.appendChild(time);
 /* ===== AI MESSAGE ACTIONS ===== */
 
-if(!isUser){
-
-    const actions =
-        document.createElement('div');
-
-    actions.className =
-        'msg-actions';
-
-    const copyBtn =
-        document.createElement('button');
-
-    copyBtn.className =
-        'msg-action-btn';
-
-    copyBtn.type = 'button';
-    copyBtn.title = 'Copy';
-    copyBtn.textContent = '⧉';
-
-    copyBtn.onclick = async () => {
-
-        try{
-
-            await navigator.clipboard.writeText(
-                content.innerText
-            );
-
-            copyBtn.textContent = '✓';
-
-            setTimeout(() => {
-                copyBtn.textContent = '⧉';
-            },1200);
-
-        }catch(error){
-
-            console.warn(
-                '[COPY]',
-                error
-            );
-
-        }
-
-    };
-
-
-    const likeBtn =
-        document.createElement('button');
-
-    likeBtn.className =
-        'msg-action-btn';
-
-    likeBtn.type = 'button';
-    likeBtn.title = 'Like';
-    likeBtn.textContent = '👍';
-
- likeBtn.onclick = () => {
-
-    likeBtn.classList.add('active');
-
-    dislikeBtn.classList.remove(
-        'active'
-    );
-
-    showFeedbackMessage(
-        '👍 धन्यवाद! आपका feedback मिल गया।'
-    );
-
-}; 
-
-
-    const dislikeBtn =
-        document.createElement('button');
-
-    dislikeBtn.className =
-        'msg-action-btn';
-
-    dislikeBtn.type = 'button';
-    dislikeBtn.title = 'Dislike';
-    dislikeBtn.textContent = '👎';
-
-dislikeBtn.onclick = () => {
-
-    dislikeBtn.classList.add('active');
-
-    likeBtn.classList.remove(
-        'active'
-    );
-
-    showFeedbackMessage(
-        '👎 धन्यवाद! हम इस response को बेहतर बनाने की कोशिश करेंगे।'
-    );
-
-};  
-
-
-    const listenBtn =
-        document.createElement('button');
-
-    listenBtn.className =
-        'msg-action-btn';
-
-    listenBtn.type = 'button';
-    listenBtn.title = 'Listen';
-   listenBtn.innerHTML = `
-<svg width="15" height="15"
-     viewBox="0 0 24 24"
-     fill="none"
-     stroke="currentColor"
-     stroke-width="2"
-     stroke-linecap="round"
-     stroke-linejoin="round">
-    <path d="M11 5L6 9H3v6h3l8 4V5z"/>
-    <path d="M15 9a4 4 0 0 1 0 6"/>
-    <path d="M18 6a8 8 0 0 1 0 12"/>
-</svg>
-`;
-
-    listenBtn.onclick = () => {
-
-        if(!('speechSynthesis' in window)){
-            return;
-        }
-
-        window.speechSynthesis.cancel();
-
-        const utterance =
-            new SpeechSynthesisUtterance(
-                content.innerText
-            );
-
-       const selectedLanguage =
-    localStorage.getItem(
-        'samarthai_language'
-    ) || 'hi-IN';
-
-utterance.lang =
-    selectedLanguage;
-        window.speechSynthesis.speak(
-            utterance
-        );
-
-    };
-
-
-    const shareBtn =
-        document.createElement('button');
-
-    shareBtn.className =
-        'msg-action-btn';
-
-    shareBtn.type = 'button';
-    shareBtn.title = 'Share';
-    shareBtn.textContent = '↗';
-
-    shareBtn.onclick = async () => {
-
-        const shareText =
-            content.innerText;
-
-        if(navigator.share){
-
-            try{
-
-                await navigator.share({
-                    title:'SamarthAI Kavach',
-                    text:shareText
-                });
-
-            }catch(error){
-
-                if(error.name !== 'AbortError'){
-                    console.warn(
-                        '[SHARE]',
-                        error
-                    );
-                }
-
-            }
-
-        }else{
-
-            try{
-
-                await navigator.clipboard.writeText(
-                    shareText
-                );
-
-                shareBtn.textContent = '✓';
-
-                setTimeout(() => {
-                    shareBtn.textContent = '↗';
-                },1200);
-
-            }catch(error){
-
-                console.warn(
-                    '[SHARE]',
-                    error
-                );
-
-            }
-
-        }
-
-    };
-
-
-    actions.appendChild(copyBtn);
-    actions.appendChild(likeBtn);
-    actions.appendChild(dislikeBtn);
-    actions.appendChild(listenBtn);
-    actions.appendChild(shareBtn);
-
-    msg.appendChild(actions);
-}
+if(!isUser) createChatActions(msg, content);
     wrap.appendChild(msg);
 
     box.appendChild(wrap);
     document.querySelector('.chat-container').classList.add('has-messages');
 
-    box.scrollTop =
-        box.scrollHeight;
+    chatMessageAdded(wrap, isUser);
 
     return wrap;
 
@@ -3547,95 +3338,6 @@ async function getClientLocation(){
 /* =====================================================
    SEND MESSAGE — CONVERSATION AWARE
 ===================================================== */
-
-let sendInFlight = false;
-let conversationReady = Promise.resolve();
-let locationPending = null;
-function refreshChatLocation() {
-    // Only an explicit location-related question requests browser location.
-    // No page-load acquisition, persistent cache, or reuse after consent changes.
-    if (!locationPending) locationPending = getClientLocation().finally(() => { locationPending = null; });
-    return locationPending;
-}
-
-async function sendMessage(retry = null) {
-    const input = document.getElementById('chatInput');
-    const btn = document.getElementById('sendBtn');
-    if (!input || !btn || sendInFlight) return;
-    const message = retry ? retry.message : input.value.trim();
-    if (!message) return;
-    if (retry && retry.conversationId !== currentConversationId) {
-        showFeedbackMessage('इस संदेश की मूल बातचीत खोलकर फिर कोशिश करें।');
-        return;
-    }
-    let requestConversationId = retry?.conversationId ?? null;
-    sendInFlight = true; btn.disabled = true;
-    const timing = {start:performance.now(), retry:!!retry};
-    let wrap = retry?.wrap;
-    if (!wrap) wrap = addMessage(message, true);
-    wrap.querySelector('.send-error')?.remove();
-    if (!retry) { input.value = ''; resizeChatInput(); }
-    showTyping(true);
-    timing.optimisticMs = performance.now() - timing.start;
-    try {
-        await chatReady;
-        await conversationReady;
-        if (!wrap.isConnected) document.getElementById('chatMessages').append(wrap);
-        document.querySelector('.chat-container').classList.add('has-messages');
-        showTyping(true);
-        if (!currentConversationId) {
-            const conversation = await createNewConversation(true);
-            if (!conversation?.id) throw new Error('Conversation unavailable');
-        }
-        requestConversationId = currentConversationId;
-        // GPS remains available for location-dependent questions; ordinary chat never waits for it.
-        const needsLocation = /\b(weather|mausam|nearby|nearest|gps|location|where am i|near me|aaspaas|nazdik|najdik)\b|मौसम|नज़दीक|नजदीक|आसपास|लोकेशन|स्थान|कहाँ हूँ|कहां हूं/i.test(message);
-        const clientLocation = needsLocation ? await refreshChatLocation() : {
-            latitude:null, longitude:null,
-            timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
-            locationUnavailable:true
-        };
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 90000);
-        let res, data;
-        timing.requestMs = performance.now() - timing.start;
-        try {
-            res = await fetch(AUTONOMOUS_API, {
-                method:'POST', signal:controller.signal,
-                headers:{'Content-Type':'application/json','Authorization':'Bearer ' + localStorage.getItem('token')},
-                body:JSON.stringify({message,conversationId:requestConversationId,mode:'conversation',metadata:{
-                    location:clientLocation,language:localStorage.getItem('samarthai_language') || 'hi-IN'
-                }})
-            });
-            timing.headersMs = performance.now() - timing.start;
-            data = await res.json();
-        } finally { clearTimeout(timeout); }
-        if (!res.ok) throw new Error('Chat request failed');
-        const reply = data?.result?.response || data?.response;
-        if (typeof reply !== 'string' || !reply.trim()) throw new Error('Empty response');
-        addMessage(reply, false);
-        timing.renderMs = performance.now() - timing.start;
-        timing.ok = true;
-        speakAIResponse(reply);
-        // History refresh does not hold the composer lock.
-        loadConversations().then(renderConversationList);
-    } catch (error) {
-        timing.ok = false;
-        const status = document.createElement('div'); status.className = 'send-error'; status.role = 'alert';
-        status.append(document.createTextNode('जवाब नहीं मिला। आपका संदेश सुरक्षित है।'));
-        const retryBtn = document.createElement('button'); retryBtn.type = 'button'; retryBtn.textContent = 'Retry / फिर भेजें';
-        retryBtn.onclick = () => sendMessage({message,wrap,conversationId:requestConversationId}); status.append(retryBtn);
-        wrap.querySelector('.msg').append(status);
-        const messages = document.getElementById('chatMessages');
-        messages.scrollTop = messages.scrollHeight;
-    } finally {
-        showTyping(false); sendInFlight = false; btn.disabled = false;
-        // No text, credentials, coordinates or server errors are recorded.
-        window.samarthChatTiming = timing;
-        document.dispatchEvent(new CustomEvent('samarth:chat-timing',{detail:timing}));
-    }
-}
-
 
 /* ===== VOICE RECOGNITION ===== */
 
@@ -4487,7 +4189,8 @@ if(menuButton){
 
 /* ===== CREATE PANEL ON LOAD ===== */
 
-createConversationPanel();   
+createConversationPanel();
+initializeChatExperience();
 </script>
 
 </body>

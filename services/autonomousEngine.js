@@ -285,7 +285,8 @@ async function run(options = {}) {
     conversationId,
     message,
     mode = 'conversation',
-    metadata = {}
+    metadata = {},
+    signal, onDelta
   } = options;
 
   const normalizedMessage = normalizeMessage(message);
@@ -316,18 +317,20 @@ async function run(options = {}) {
      EXECUTE EXISTING ENGINE
      ------------------------- */
 
-const result =
-    await runConversation({
-      userId,
-      conversationId,
-      message:
-        normalizedMessage,
-      location:
-        metadata &&
-        typeof metadata === 'object'
-          ? metadata.location || null
-          : null
+// Verify thread ownership before loading memory, generating or writing any chat.
+  const {data:thread, error:threadError} = await supabase.from('conversations').select('id').eq('id',conversationId).eq('user_id',userId).single();
+  signal?.throwIfAborted();
+  if (threadError || !thread) { const error = new Error('Conversation unavailable'); error.code='conversation_forbidden'; error.status=403; throw error; }
+  let partial = '', result;
+  try {
+    result = await runConversation({userId, conversationId, message:normalizedMessage,
+      location:metadata?.location || null, responseLanguage:metadata?.language || 'hi-IN', signal,
+      onDelta:onDelta ? text => { partial += text; onDelta(text); } : undefined
     });
+  } catch (error) {
+    if (!signal?.aborted || !partial) throw error;
+    result = {response:partial, stopped:true, tool:'none', memory_saved:false};
+  }
 
   const agent =
     getAgentForResult(result);
