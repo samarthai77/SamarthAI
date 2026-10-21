@@ -2128,6 +2128,7 @@ body{
     }
 }
 </style>
+<link rel="stylesheet" href="chat-premium.css">
 </head>
 
 <body>
@@ -2259,11 +2260,11 @@ body{
         </div>
 
         <h1>
-            Aapka perasnol assistant
+            आपका अपना AI सहायक
         </h1>
 
         <p>
-            Jo bhi poochna ho, yahin se baat kijiye.
+            सोचें, पूछें, आगे बढ़ें। Hindi या English में बात करें।
         </p>
 
     </div>
@@ -2273,7 +2274,7 @@ body{
 
     <div
         class="messages"
-        id="chatMessages">
+        id="chatMessages" role="log" aria-label="Conversation" aria-live="polite">
     </div>
 
 
@@ -2281,7 +2282,7 @@ body{
 
     <div
         class="typing-indicator"
-        id="typingIndicator">
+        id="typingIndicator" role="status" aria-live="polite">
 
         <span></span>
         <span></span>
@@ -2533,7 +2534,7 @@ body{
                 hidden>
 <textarea
     id="chatInput"
-    placeholder="Kuch bhi puchiye..."
+    placeholder="SamarthAI से पूछें…" aria-label="Message SamarthAI" enterkeyhint="enter"
     autocomplete="off"
     rows="1"></textarea>
           
@@ -2552,7 +2553,7 @@ body{
                 id="sendBtn"
                 type="button"
                 onclick="sendMessage()"
-                title="Send">
+                title="Send" aria-label="Send message">
                 ➤
             </button>
 
@@ -2563,6 +2564,7 @@ body{
 </div>
 
 
+<script src="chat-reading.js"></script>
 <script src="app.js"></script>
 <script src="languages.js"></script>
 
@@ -2888,7 +2890,8 @@ async function loadConversations(){
 
 /* ===== CREATE NEW CONVERSATION ===== */
 
-async function createNewConversation(){
+async function createNewConversation(forSend = false){
+    if (sendInFlight && !forSend) return null;
 
     const token =
         localStorage.getItem('token');
@@ -2942,15 +2945,13 @@ async function createNewConversation(){
             data.conversation
         );
 
-        clearChatScreen();
+        if (!sendInFlight) clearChatScreen();
 
         renderConversationList();
 
         closeConversationPanel();
 
-        document
-            .getElementById('chatInput')
-            ?.focus();
+        if (!sendInFlight) document.getElementById('chatInput')?.focus();
 
         return data.conversation;
 
@@ -2970,9 +2971,13 @@ async function createNewConversation(){
 
 /* ===== OPEN EXISTING CONVERSATION ===== */
 
-async function openConversation(
-    conversationId
-){
+function openConversation(conversationId) {
+    if (sendInFlight) return Promise.resolve();
+    conversationReady = conversationReady.then(() => loadConversation(conversationId));
+    return conversationReady;
+}
+
+async function loadConversation(conversationId){
 
     if(!conversationId) return;
 
@@ -3094,6 +3099,7 @@ function clearChatScreen(){
     if(box){
 
         box.innerHTML = '';
+        document.querySelector('.chat-container').classList.remove('has-messages');
 
     }
 
@@ -3205,312 +3211,7 @@ function addMessage(
 content.className =
     'msg-content';
 
-const normalizedText =
-    String(text ?? '')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
-        .trim();
-const formattedText =
-    normalizedText
-        .replace(/\s+(#{1,6})\s+/g, '\n$1 ')
-        .replace(/\s+(\d+\.)\s+/g, '\n$1 ')
-        .replace(/\s+([-*•])\s+/g, '\n$1 ');
-const lines =
-    formattedText.split('\n');
-
-let currentList = null;
-let currentListType = null;
-
-function finishList(){
-
-    if(currentList){
-        content.appendChild(currentList);
-        currentList = null;
-        currentListType = null;
-    }
-}
-
-function inlineFormat(text){
-
-    const span =
-        document.createElement('span');
-
-    const parts =
-        String(text).split(
-            /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g
-        );
-
-    parts.forEach(part => {
-
-        if(
-            part.startsWith('**') &&
-            part.endsWith('**')
-        ){
-
-            const strong =
-                document.createElement('strong');
-
-            strong.textContent =
-                part.slice(2,-2);
-
-            span.appendChild(strong);
-
-        }else if(
-            part.startsWith('`') &&
-            part.endsWith('`')
-        ){
-
-            const code =
-                document.createElement('code');
-
-            code.textContent =
-                part.slice(1,-1);
-
-            span.appendChild(code);
-
-        }else if(
-            part.startsWith('*') &&
-            part.endsWith('*')
-        ){
-
-            const em =
-                document.createElement('em');
-
-            em.textContent =
-                part.slice(1,-1);
-
-            span.appendChild(em);
-
-        }else{
-
-            span.appendChild(
-                document.createTextNode(part)
-            );
-        }
-    });
-
-    return span;
-}
-
-function isTableLine(line){
-
-    return (
-        line.includes('|') &&
-        line.trim().startsWith('|')
-    );
-}
-
-function tableCells(line){
-
-    return line
-        .trim()
-        .replace(/^\|/,'')
-        .replace(/\|$/,'')
-        .split('|')
-        .map(cell => cell.trim());
-}
-
-for(let i = 0; i < lines.length; i++){
-
-    const line =
-        lines[i];
-
-    const trimmed =
-        line.trim();
-
-    if(!trimmed){
-
-        finishList();
-
-        continue;
-    }
-
-    /* TABLE */
-
-    if(
-        isTableLine(trimmed) &&
-        i + 1 < lines.length &&
-        /^\|?[\s|:-]+\|/.test(
-            lines[i + 1].trim()
-        )
-    ){
-
-        finishList();
-
-        const table =
-            document.createElement('table');
-
-        const tbody =
-            document.createElement('tbody');
-
-        const headerCells =
-            tableCells(trimmed);
-
-        const header =
-            document.createElement('thead');
-
-        const headerRow =
-            document.createElement('tr');
-
-        headerCells.forEach(cell => {
-
-            const th =
-                document.createElement('th');
-
-            th.appendChild(
-                inlineFormat(cell)
-            );
-
-            headerRow.appendChild(th);
-        });
-
-        header.appendChild(headerRow);
-
-        table.appendChild(header);
-
-        i++;
-
-        i++;
-
-        while(
-            i < lines.length &&
-            isTableLine(lines[i])
-        ){
-
-            const row =
-                document.createElement('tr');
-
-            tableCells(lines[i]).forEach(cell => {
-
-                const td =
-                    document.createElement('td');
-
-                td.appendChild(
-                    inlineFormat(cell)
-                );
-
-                row.appendChild(td);
-            });
-
-            tbody.appendChild(row);
-
-            i++;
-        }
-
-        table.appendChild(tbody);
-
-        content.appendChild(table);
-
-        i--;
-
-        continue;
-    }
-
-    /* HEADING */
-
-    const heading =
-        trimmed.match(/^(#{1,6})\s+(.+)$/);
-
-    if(heading){
-
-        finishList();
-
-        const h =
-            document.createElement(
-                'h' + Math.min(
-                    heading[1].length,
-                    4
-                )
-            );
-
-        h.appendChild(
-            inlineFormat(heading[2])
-        );
-
-        content.appendChild(h);
-
-        continue;
-    }
-
-    /* NUMBERED LIST */
-
-    const numbered =
-        trimmed.match(/^\d+\.\s+(.+)$/);
-
-    if(numbered){
-
-        if(
-            currentListType !== 'ol'
-        ){
-
-            finishList();
-
-            currentList =
-                document.createElement('ol');
-
-            currentListType =
-                'ol';
-        }
-
-        const li =
-            document.createElement('li');
-
-        li.appendChild(
-            inlineFormat(numbered[1])
-        );
-
-        currentList.appendChild(li);
-
-        continue;
-    }
-
-    /* BULLET LIST */
-
-    const bullet =
-        trimmed.match(/^[-*•]\s+(.+)$/);
-
-    if(bullet){
-
-        if(
-            currentListType !== 'ul'
-        ){
-
-            finishList();
-
-            currentList =
-                document.createElement('ul');
-
-            currentListType =
-                'ul';
-        }
-
-        const li =
-            document.createElement('li');
-
-        li.appendChild(
-            inlineFormat(bullet[1])
-        );
-
-        currentList.appendChild(li);
-
-        continue;
-    }
-
-    /* NORMAL PARAGRAPH */
-
-    finishList();
-
-    const p =
-        document.createElement('p');
-
-    p.appendChild(
-        inlineFormat(trimmed)
-    );
-
-    content.appendChild(p);
-}
-
-finishList();
+renderChatMarkdown(content, String(text ?? ''), isUser);
 
 msg.appendChild(content);
 
@@ -3743,9 +3444,12 @@ utterance.lang =
     wrap.appendChild(msg);
 
     box.appendChild(wrap);
+    document.querySelector('.chat-container').classList.add('has-messages');
 
     box.scrollTop =
         box.scrollHeight;
+
+    return wrap;
 
 }
 
@@ -3844,190 +3548,94 @@ async function getClientLocation(){
    SEND MESSAGE — CONVERSATION AWARE
 ===================================================== */
 
-async function sendMessage(){
-
-    const input =
-        document.getElementById(
-            'chatInput'
-        );
-
-    const btn =
-        document.getElementById(
-            'sendBtn'
-        );
-
-    if(!input || !btn) return;
-
-    if(btn.disabled) return;
-
-    const message =
-        input.value.trim();
-
-    if(!message) return;
-
-    /*
-     * IMPORTANT:
-     * Lock immediately, before ANY await.
-     * This prevents double click / double Enter.
-     */
-    btn.disabled = true;
-
-    const clientLocation =
-        await getClientLocation();
-
-    /*
-     * Safety:
-     * Message bhejne se pehle conversation
-     * hona zaroori hai.
-     */
-
-    if(!currentConversationId){
-
-        const newConversation =
-            await createNewConversation();
-
-        if(
-            !newConversation ||
-            !newConversation.id
-        ){
-
-            addMessage(
-                'Chat start nahi ho paayi. Dobara try karein. 🙏',
-                false
-            );
-
-            return;
-
-        }
-
-    }
-
-
-    addMessage(
-        message,
-        true
-    );
-
-    input.value = '';
-
-  
-
-    showTyping(true);
-
-
-    try{
-
-        const token =
-            localStorage.getItem('token');
-
-        const res =
-            await fetch(
-                AUTONOMOUS_API,
-                {
-                    method:'POST',
-
-                    headers:{
-                        'Content-Type':
-                            'application/json',
-
-                        'Authorization':
-                            'Bearer ' + token
-                    },
-
-   body: JSON.stringify({
-
-    message:
-        message,
-
-    conversationId:
-        currentConversationId,
-
-    mode:
-        'conversation',
-
- metadata: {
-    location:
-        clientLocation,
-
-    language:
-        localStorage.getItem(
-            'samarthai_language'
-        ) || 'hi-IN'
-} 
-
-})
-                }
-            );
-
-
-        const data =
-            await res.json();
-
-
-        if(!res.ok){
-
-            console.error(
-                '[CHAT API]',
-                data
-            );
-
-            throw new Error(
-                data.error ||
-                'Chat request failed'
-            );
-
-        }
-
-
-       const reply =
-    data?.result?.response ||
-    data?.response ||
-    'Maafi chahta hoon, abhi samajh nahi paya. Dobara puchiye! 🙏';
-        addMessage(
-            reply,
-            false
-        );
-
-
-        speakAIResponse(
-            reply
-        );
-
-
-        /*
-         * Conversation list ko refresh karo,
-         * taki updated_at change ke according
-         * conversation upar aa jaye.
-         */
-
-        await loadConversations();
-
-        renderConversationList();
-
-
-    }catch(error){
-
-        console.error(
-            '[SEND MESSAGE]',
-            error
-        );
-
-        addMessage(
-            'Arre! Kuch gadbad ho gayi. Thodi der baad try karein. 🙏',
-            false
-        );
-
-    }finally{
-
-        showTyping(false);
-
-        btn.disabled = false;
-
-        input.focus();
-
-    }
-
+let sendInFlight = false;
+let conversationReady = Promise.resolve();
+let locationPending = null;
+function refreshChatLocation() {
+    // Only an explicit location-related question requests browser location.
+    // No page-load acquisition, persistent cache, or reuse after consent changes.
+    if (!locationPending) locationPending = getClientLocation().finally(() => { locationPending = null; });
+    return locationPending;
 }
+
+async function sendMessage(retry = null) {
+    const input = document.getElementById('chatInput');
+    const btn = document.getElementById('sendBtn');
+    if (!input || !btn || sendInFlight) return;
+    const message = retry ? retry.message : input.value.trim();
+    if (!message) return;
+    if (retry && retry.conversationId !== currentConversationId) {
+        showFeedbackMessage('इस संदेश की मूल बातचीत खोलकर फिर कोशिश करें।');
+        return;
+    }
+    let requestConversationId = retry?.conversationId ?? null;
+    sendInFlight = true; btn.disabled = true;
+    const timing = {start:performance.now(), retry:!!retry};
+    let wrap = retry?.wrap;
+    if (!wrap) wrap = addMessage(message, true);
+    wrap.querySelector('.send-error')?.remove();
+    if (!retry) { input.value = ''; resizeChatInput(); }
+    showTyping(true);
+    timing.optimisticMs = performance.now() - timing.start;
+    try {
+        await chatReady;
+        await conversationReady;
+        if (!wrap.isConnected) document.getElementById('chatMessages').append(wrap);
+        document.querySelector('.chat-container').classList.add('has-messages');
+        showTyping(true);
+        if (!currentConversationId) {
+            const conversation = await createNewConversation(true);
+            if (!conversation?.id) throw new Error('Conversation unavailable');
+        }
+        requestConversationId = currentConversationId;
+        // GPS remains available for location-dependent questions; ordinary chat never waits for it.
+        const needsLocation = /\b(weather|mausam|nearby|nearest|gps|location|where am i|near me|aaspaas|nazdik|najdik)\b|मौसम|नज़दीक|नजदीक|आसपास|लोकेशन|स्थान|कहाँ हूँ|कहां हूं/i.test(message);
+        const clientLocation = needsLocation ? await refreshChatLocation() : {
+            latitude:null, longitude:null,
+            timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
+            locationUnavailable:true
+        };
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        let res, data;
+        timing.requestMs = performance.now() - timing.start;
+        try {
+            res = await fetch(AUTONOMOUS_API, {
+                method:'POST', signal:controller.signal,
+                headers:{'Content-Type':'application/json','Authorization':'Bearer ' + localStorage.getItem('token')},
+                body:JSON.stringify({message,conversationId:requestConversationId,mode:'conversation',metadata:{
+                    location:clientLocation,language:localStorage.getItem('samarthai_language') || 'hi-IN'
+                }})
+            });
+            timing.headersMs = performance.now() - timing.start;
+            data = await res.json();
+        } finally { clearTimeout(timeout); }
+        if (!res.ok) throw new Error('Chat request failed');
+        const reply = data?.result?.response || data?.response;
+        if (typeof reply !== 'string' || !reply.trim()) throw new Error('Empty response');
+        addMessage(reply, false);
+        timing.renderMs = performance.now() - timing.start;
+        timing.ok = true;
+        speakAIResponse(reply);
+        // History refresh does not hold the composer lock.
+        loadConversations().then(renderConversationList);
+    } catch (error) {
+        timing.ok = false;
+        const status = document.createElement('div'); status.className = 'send-error'; status.role = 'alert';
+        status.append(document.createTextNode('जवाब नहीं मिला। आपका संदेश सुरक्षित है।'));
+        const retryBtn = document.createElement('button'); retryBtn.type = 'button'; retryBtn.textContent = 'Retry / फिर भेजें';
+        retryBtn.onclick = () => sendMessage({message,wrap,conversationId:requestConversationId}); status.append(retryBtn);
+        wrap.querySelector('.msg').append(status);
+        const messages = document.getElementById('chatMessages');
+        messages.scrollTop = messages.scrollHeight;
+    } finally {
+        showTyping(false); sendInFlight = false; btn.disabled = false;
+        // No text, credentials, coordinates or server errors are recorded.
+        window.samarthChatTiming = timing;
+        document.dispatchEvent(new CustomEvent('samarth:chat-timing',{detail:timing}));
+    }
+}
+
 
 /* ===== VOICE RECOGNITION ===== */
 
@@ -4409,138 +4017,20 @@ document
 /* ===== INIT ===== */
 
 loadChatProfile();
- loadChatHistory();   
+const chatReady = loadChatHistory();
 /* ===== MOBILE KEYBOARD FIX ===== */
 
-if(chatInput && window.visualViewport){
 
-    const viewport = window.visualViewport;
-
-    const messages =
-        document.querySelector('.messages');
-
-    const inputArea =
-        document.querySelector('.input-area');
-
-
-    function syncChatViewport(){
-
-        if(!messages) return;
-
-
-        const viewportHeight =
-            viewport.height;
-const header =
-    document.querySelector('.samarth-topbar');
-
-const chatContainer =
-    document.querySelector('.chat-container');
-
-if(header){
-
-    header.style.position = 'fixed';
-
-    header.style.top = '0px';
-
-    header.style.left = '0px';
-
-    header.style.right = '0px';
-
-    header.style.width = '100%';
-
-    header.style.transform =
-        'translate3d(0,0,0)';
-
-    header.style.webkitTransform =
-        'translate3d(0,0,0)';
-
-    header.style.zIndex =
-        '999999';
-
+if (window.visualViewport) {
+    const sync = () => document.documentElement.style.setProperty('--chat-viewport', window.visualViewport.height + 'px');
+    window.visualViewport.addEventListener('resize', sync);
+    sync();
 }
-
-if(chatContainer){
-
-    chatContainer.style.top =
-        '58px';
-
-}
-window.scrollTo(0, 0);
-
-document.documentElement.scrollTop = 0;
-document.body.scrollTop = 0;
-        /*
-         * Header ~58px
-         * Input area ~72px
-         * Remaining space = chat messages
-         */
-
-        const availableHeight =
-            Math.max(
-                180,
-                viewportHeight - 130
-            );
-
-
-        messages.style.maxHeight =
-            availableHeight + 'px';
-
-
-        /*
-         * Keyboard open hone par
-         * latest message visible rahe.
-         */
-
-        if(
-            document.activeElement ===
-            chatInput
-        ){
-
-            requestAnimationFrame(() => {
-
-                messages.scrollTop =
-                    messages.scrollHeight;
-
-            });
-
-        }
-
+chatInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229 && !matchMedia('(pointer: coarse)').matches) {
+        event.preventDefault(); sendMessage();
     }
-
-
-    viewport.addEventListener(
-        'resize',
-        syncChatViewport
-    );
-
-
-    viewport.addEventListener(
-        'scroll',
-        syncChatViewport
-    );
-
-
-    chatInput.addEventListener(
-        'focus',
-        () => {
-
-            setTimeout(
-                syncChatViewport,
-                100
-            );
-
-            setTimeout(
-                syncChatViewport,
-                350
-            );
-
-        }
-    );
-
-
-    syncChatViewport();
-
-}
+});
  /* =====================================================
    CONVERSATION PANEL
 ===================================================== */
