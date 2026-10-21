@@ -20,7 +20,7 @@ function renderChatMarkdown(container, source, plain=false) {
     container.querySelectorAll('table').forEach(table=>{const scroll=document.createElement('div');scroll.className='table-scroll';scroll.tabIndex=0;scroll.setAttribute('aria-label','Scrollable table');table.replaceWith(scroll);scroll.append(table);});
     container.querySelectorAll('pre > code').forEach(code=>{
         const pre=code.parentElement, block=document.createElement('section'), header=document.createElement('div');
-        block.className='code-block';header.className='code-header';
+        block.className='code-block';header.className='code-header';pre.tabIndex=0;pre.setAttribute('aria-label','Scrollable code block');
         const label=document.createElement('span');label.textContent=code.className.replace(/^language-/,'') || 'Code';
         const copy=document.createElement('button');copy.type='button';copy.textContent='Copy Code';copy.setAttribute('aria-label','Copy code');
         copy.onclick=()=>copyChatText(code.textContent,copy);header.append(label,copy);pre.replaceWith(block);block.append(header,pre);
