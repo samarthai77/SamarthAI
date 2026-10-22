@@ -49,6 +49,11 @@ dd { margin: 5px 0 0; font-size: 18px; font-weight: 700; overflow-wrap: anywhere
 .readings > div:last-child dd { font-size: 15px; }
 .notice { border-left: 3px solid #d9ad45; }
 .notice p { margin-bottom: 0; }
+.destination-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin: 18px 0; }
+.destination-fields label { display: flex; flex-direction: column; gap: 7px; font-size: 14px; min-width: 0; }
+.destination-fields input, .destination-fields select { font: inherit; width: 100%; min-height: 46px; min-width: 0; padding: 10px; border: 1px solid #cbd6e7; border-radius: 10px; background: #fff; color: #172d49; }
+#destinationStatus { white-space: pre-wrap; overflow-wrap: anywhere; }
+#destinationStatus.error { color: #9c302d; }
 footer { padding: 12px 16px max(24px, env(safe-area-inset-bottom)); color: #6b7d93; font-size: 12px; text-align: center; }
 @media (max-width: 600px) {
     .topbar { padding: 12px 16px; gap: 8px; }
@@ -56,5 +61,6 @@ footer { padding: 12px 16px max(24px, env(safe-area-inset-bottom)); color: #6b7d
     main { padding-top: 22px; }
     .card { padding: 16px; border-radius: 14px; }
     .actions > button { flex: 1 1 130px; }
+    .destination-fields { grid-template-columns: 1fr; }
 }
 @media (max-width: 380px) { .readings { grid-template-columns: 1fr; } }

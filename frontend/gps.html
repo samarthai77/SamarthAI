@@ -7,6 +7,7 @@
     <title>Device GPS — SamarthAI Kavach</title>
     <link rel="stylesheet" href="gps.css">
     <script src="gps.js" defer></script>
+    <script src="gps-navigation.js" defer></script>
 </head>
 <body>
     <header class="topbar">
@@ -37,6 +38,18 @@
             </dl>
             <p id="readingAge" class="hint">अभी location प्राप्त नहीं हुई है। कोई default coordinates या अनुमानित timestamp नहीं दिखाया गया है।</p>
             <p class="hint">Accuracy browser का estimate है। Location का स्रोत GPS, Wi-Fi या mobile network हो सकता है; यह browser / OS तय करता है। Stop के बाद दिखाई देने वाली reading live नहीं होगी।</p>
+        </section>
+
+        <section class="card" aria-labelledby="navigationTitle">
+            <div class="section-title"><h2 id="navigationTitle">Navigation की तैयारी</h2><span class="badge">Route अभी उपलब्ध नहीं</span></div>
+            <p>स्थान का नाम या पता केवल इस device पर draft कर सकते हैं। अभी search, geocoding या रास्ता निकालने की कोई request नहीं भेजी जाएगी।</p>
+            <div class="destination-fields">
+                <label for="destinationDraft">Destination का नाम / पता <input id="destinationDraft" type="text" maxlength="200" autocomplete="off" spellcheck="false" placeholder="स्थान या पता लिखें · केवल local draft" aria-describedby="navigationPrivacy"></label>
+                <label for="travelPreference">यात्रा की पसंद <select id="travelPreference"><option value="driving">Driving</option><option value="walking">Walking</option></select></label>
+            </div>
+            <div class="actions"><button id="prepareDestination" type="button">Local draft तैयार करें</button><button id="clearDestination" type="button" disabled>Draft मिटाएँ</button><button type="button" disabled aria-describedby="navigationPrivacy">Start Navigation · उपलब्ध नहीं</button></div>
+            <p id="destinationStatus" class="hint" role="status" aria-live="polite">कोई destination draft नहीं है। कोई route, distance या ETA नहीं निकाला गया है।</p>
+            <p id="navigationPrivacy" class="hint">भारत में processing और data residency की पुष्टि वाली navigation service अभी configure नहीं है। तब तक Search, map, Driving/Walking route, directions, ETA और navigation updates उपलब्ध नहीं हैं। Draft कोई सत्यापित पता या route नहीं है; page छोड़ने या refresh पर मिट जाता है।</p>
         </section>
 
         <section class="card notice" aria-labelledby="privacyTitle">
