@@ -21,26 +21,49 @@ function createChatActions(msg,content) {
     buttons.Share.onclick=async()=>{try{if(navigator.share)await navigator.share({title:'SamarthAI',text:content.chatText});else{const icon=buttons.Share.innerHTML;await copyChatText(content.chatText,buttons.Share);setTimeout(()=>buttons.Share.innerHTML=icon,1300);}}catch(error){if(error.name!=='AbortError')showFeedbackMessage('Share नहीं हो पाया।');}};
     msg.append(row);
 }
-let latestChatUser=null, followChatLatest=false;
-function chatNearBottom(){const box=document.getElementById('chatMessages');return box.scrollHeight-box.scrollTop-box.clientHeight<24;}
+let latestChatUser=null, followChatLatest=false, alignChatTurn=false;
+function latestChatMessage(){const messages=document.getElementById('chatMessages').getElementsByClassName('msg-wrapper');return messages[messages.length-1];}
+function chatNearBottom(){
+    const box=document.getElementById('chatMessages'),last=latestChatMessage();
+    // The turn spacer is blank layout space, not unread reply content.
+    return !last || last.getBoundingClientRect().bottom<=box.getBoundingClientRect().bottom-parseFloat(getComputedStyle(box).paddingBottom)+4;
+}
 function updateChatLatest(){document.getElementById('jumpLatest').hidden=chatNearBottom();}
-function chatTurnTop(){const box=document.getElementById('chatMessages');return latestChatUser.getBoundingClientRect().top-box.getBoundingClientRect().top+box.scrollTop-parseFloat(getComputedStyle(box).paddingTop);}
+function setChatScrollTop(top){document.getElementById('chatMessages').scrollTop=top;}
+function chatTurnTop(){
+    const box=document.getElementById('chatMessages'),style=getComputedStyle(box);
+    const user=latestChatUser.getBoundingClientRect(),top=box.getBoundingClientRect().top;
+    const start=user.top-top+box.scrollTop-parseFloat(style.paddingTop);
+    // For a tall prompt, leave room for the reply's first lines as well.
+    const replyStart=user.bottom-top+box.scrollTop+parseFloat(getComputedStyle(latestChatUser).marginBottom);
+    const replyRoom=Math.min(96,box.clientHeight/3);
+    return Math.max(start,replyStart-box.clientHeight+parseFloat(style.paddingBottom)+replyRoom);
+}
 function updateChatReplySpace(){
     const box=document.getElementById('chatMessages');
-    if(!latestChatUser?.isConnected){box.style.setProperty('--reply-space','0px');updateChatLatest();return;}
+    if(!latestChatUser || !box.contains(latestChatUser)){box.style.setProperty('--reply-space','0px');updateChatLatest();return;}
     const last=box.lastElementChild;
     const end=last.getBoundingClientRect().bottom-box.getBoundingClientRect().top+box.scrollTop+parseFloat(getComputedStyle(last).marginBottom);
     const space=Math.max(0,box.clientHeight+chatTurnTop()-end-parseFloat(getComputedStyle(box).paddingBottom));
     box.style.setProperty('--reply-space',space+'px');updateChatLatest();
 }
-function beginChatTurn(wrap){
-    latestChatUser=wrap;followChatLatest=false;updateChatReplySpace();
-    document.getElementById('chatMessages').scrollTop=chatTurnTop();updateChatLatest();
+function layoutChatReply(){
+    const box=document.getElementById('chatMessages'),readingTop=box.scrollTop;
+    updateChatReplySpace();
+    if(alignChatTurn && latestChatUser && box.contains(latestChatUser))setChatScrollTop(chatTurnTop());
+    else if(followChatLatest)jumpToLatest();
+    else if(Math.abs(box.scrollTop-readingTop)>1)setChatScrollTop(readingTop);
+    updateChatLatest();
 }
-function resetChatTurn(){latestChatUser=null;followChatLatest=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');document.getElementById('jumpLatest').hidden=true;}
-function jumpToLatest(){const box=document.getElementById('chatMessages');box.scrollTop=box.scrollHeight;updateChatLatest();}
-function followLatestReply(){followChatLatest=true;jumpToLatest();}
-function chatMessageAdded(wrap,isUser){if(isUser)beginChatTurn(wrap);else updateChatReplySpace();}
+function beginChatTurn(wrap){latestChatUser=wrap;followChatLatest=false;alignChatTurn=true;layoutChatReply();}
+function resetChatTurn(){latestChatUser=null;followChatLatest=false;alignChatTurn=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');document.getElementById('jumpLatest').hidden=true;}
+function jumpToLatest(){
+    const box=document.getElementById('chatMessages'),last=latestChatMessage();
+    if(last)setChatScrollTop(box.scrollTop+last.getBoundingClientRect().bottom-box.getBoundingClientRect().bottom+parseFloat(getComputedStyle(box).paddingBottom));
+    updateChatLatest();
+}
+function followLatestReply(){alignChatTurn=false;followChatLatest=true;layoutChatReply();}
+function chatMessageAdded(wrap,isUser){if(isUser)beginChatTurn(wrap);else layoutChatReply();}
 function setChatBusy(busy){
     const button=document.getElementById('sendBtn');button.disabled=false;button.classList.toggle('is-stop',busy);
     button.setAttribute('aria-label',busy?'Stop generating':'Send message');button.title=busy?'Stop generating':'Send';button.textContent=busy?'■':'➤';
@@ -73,7 +96,7 @@ async function sendMessage(retry=null){
     if(!retry){input.value='';resizeChatInput();if(matchMedia('(pointer:coarse)').matches)input.blur();}
     const timing={start:started,optimisticMs:performance.now()-started};let paintTimer,finished=false;
     const stillCurrent=()=>activeChatRequest===request&&!request.stopped;
-    const paint=()=>{paintTimer=null;if(!stillCurrent())return;const follow=followChatLatest;renderChatMarkdown(request.ai.querySelector('.msg-content'),request.text);updateChatReplySpace();if(follow)jumpToLatest();else updateChatLatest();};
+    const paint=()=>{paintTimer=null;if(!stillCurrent())return;renderChatMarkdown(request.ai.querySelector('.msg-content'),request.text);layoutChatReply();};
     const delta=text=>{
         if(!stillCurrent()||typeof text!=='string')return;
         if(!request.ai){showTyping(false);request.ai=addMessage('',false);timing.firstTextMs=performance.now()-timing.start;}
@@ -109,10 +132,15 @@ async function sendMessage(retry=null){
 }
 function initializeChatExperience(){
     const box=document.getElementById('chatMessages');
-    box.addEventListener('scroll',()=>{if(!chatNearBottom())followChatLatest=false;updateChatLatest();},{passive:true});
-    // Composer growth and visualViewport keyboard changes resize the scroll area.
-    new ResizeObserver(()=>{updateChatReplySpace();if(followChatLatest)jumpToLatest();}).observe(box);
-    new MutationObserver(()=>{updateChatReplySpace();if(followChatLatest)jumpToLatest();}).observe(box,{childList:true,subtree:true});
+    const stopAutoScroll=()=>{alignChatTurn=false;followChatLatest=false;};
+    // Cancel alignment before the next stream paint when the reader takes control.
+    for(const type of ['wheel','touchmove','pointerdown'])box.addEventListener(type,stopAutoScroll,{passive:true});
+    box.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))stopAutoScroll();});
+    // Keyboard resize can also emit scroll events; only reader input cancels alignment.
+    box.addEventListener('scroll',updateChatLatest,{passive:true});
+    // Re-align only an untouched new turn; preserve the reader's position otherwise.
+    new ResizeObserver(layoutChatReply).observe(box);
+    new MutationObserver(layoutChatReply).observe(box,{childList:true,subtree:true});
     document.getElementById('shareChatLocation').onclick=async()=>{
         const button=document.getElementById('shareChatLocation');button.disabled=true;
         try{const value=await getClientLocation();if(Number.isFinite(value.latitude)&&Number.isFinite(value.longitude)){sharedChatLocation=value;sharedLocationAt=Date.now();button.textContent='Location shared · 5 min';}else{sharedChatLocation=null;showFeedbackMessage('Location उपलब्ध नहीं है। शहर का नाम लिख सकते हैं।');}}

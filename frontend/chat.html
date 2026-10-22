@@ -3723,11 +3723,17 @@ const chatReady = loadChatHistory();
 /* ===== MOBILE KEYBOARD FIX ===== */
 
 
-if (window.visualViewport) {
-    const sync = () => document.documentElement.style.setProperty('--chat-viewport', window.visualViewport.height + 'px');
-    window.visualViewport.addEventListener('resize', sync);
-    sync();
+function syncChatViewport(){
+    const viewport=window.visualViewport;
+    const root=document.documentElement;
+    root.style.setProperty('--chat-viewport',(viewport?.height || window.innerHeight)+'px');
+    root.style.setProperty('--chat-viewport-top',(viewport?.offsetTop || 0)+'px');
+    layoutChatReply();
 }
+window.visualViewport?.addEventListener('resize',syncChatViewport);
+window.visualViewport?.addEventListener('scroll',syncChatViewport);
+window.addEventListener('resize',syncChatViewport);
+syncChatViewport();
 chatInput.addEventListener('keydown', event => {
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229 && !matchMedia('(pointer: coarse)').matches) {
         event.preventDefault(); sendMessage();
