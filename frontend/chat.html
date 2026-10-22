@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>Chat — SamarthAI</title>
 <link rel="stylesheet" href="style.css">
 
@@ -2284,12 +2284,12 @@ body{
         class="typing-indicator"
         id="typingIndicator" role="status" aria-live="polite">
 
-        <span class="thinking-ring" aria-label="Thinking"></span>
+        <span class="thinking-orb" aria-hidden="true"><i style="--dot:0"></i><i style="--dot:1"></i><i style="--dot:2"></i><i style="--dot:3"></i><i style="--dot:4"></i><i style="--dot:5"></i><i style="--dot:6"></i><i style="--dot:7"></i><i style="--dot:8"></i><i style="--dot:9"></i><i style="--dot:10"></i><i style="--dot:11"></i></span>
 
     </div>
 
 
-    <button class="jump-latest" id="jumpLatest" type="button" onclick="jumpToLatest()" hidden>↓ नया जवाब / Latest</button>
+    <div class="jump-latest-rail"><button class="jump-latest" id="jumpLatest" type="button" onclick="followLatestReply()" aria-label="सबसे नए जवाब पर जाएँ" title="Latest" hidden>↓</button></div>
 
     <!-- FEATURES -->
 
@@ -3103,6 +3103,8 @@ function clearChatScreen(){
 
     if(box){
 
+        showTyping(false);
+        resetChatTurn();
         box.innerHTML = '';
         document.querySelector('.chat-container').classList.remove('has-messages');
 
@@ -3247,16 +3249,14 @@ if(!isUser) createChatActions(msg, content);
 
 /* ===== TYPING ===== */
 
+const chatTypingIndicator = document.getElementById('typingIndicator');
 function showTyping(show){
-
-    document
-        .getElementById(
-            'typingIndicator'
-        )
-        .style.display =
-            show
-                ? 'block'
-                : 'none';
+    const box = document.getElementById('chatMessages');
+    // Keep the pending orb in the same scroll flow as its user message.
+    if(show && activeChatRequest) box.append(chatTypingIndicator);
+    else document.querySelector('.jump-latest-rail').before(chatTypingIndicator);
+    chatTypingIndicator.style.display = show ? 'block' : 'none';
+    updateChatReplySpace();
 }
   /* =====================================================
    CLIENT LOCATION
@@ -4194,4 +4194,4 @@ initializeChatExperience();
 </script>
 
 </body>
-</html>    
+</html>

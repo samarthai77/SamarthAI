@@ -63,14 +63,14 @@ button:focus-visible,a:focus-visible,.table-scroll:focus-visible,.code-block pre
 /* Reading, streaming and composer refinements */
 :root { --navy:#071a3d; --royal:#174ea6; --gold:#d9ad45; }
 html,body,.chat-container,.input-area { background:#f8fafc!important; color:#152238!important; }
-.msg .msg-content { font-size:17px!important; line-height:1.6!important; }
+.msg .msg-content { font-size:17px!important; line-height:1.5!important; }
 .msg .msg-content.plain-text { white-space:pre-wrap!important; }
 .msg .msg-content > :last-child { margin-bottom:0!important; }
 .msg .msg-content hr { border:0; border-top:1px solid #dce4ee; margin:22px 0; }
 .msg .msg-content h1 { font-size:1.35em!important; }
 .msg .msg-content h2 { font-size:1.2em!important; }
 .msg .msg-content h3,.msg .msg-content h4 { font-size:1.08em!important; }
-.msg .msg-content p { margin-bottom:12px!important; }
+.msg .msg-content p { margin-bottom:8px!important; }
 .ai-msg .msg-actions { display:flex!important; justify-content:flex-start!important; gap:7px!important; width:max-content!important; max-width:100%; height:auto!important; padding:0!important; margin:6px 0 0!important; }
 .ai-msg .msg-action-btn { flex:0 0 36px!important; width:36px!important; height:36px!important; min-width:36px; color:#94a3b8!important; background:transparent!important; border:0!important; border-radius:9px; padding:8px!important; }
 .ai-msg .msg-action-btn svg { flex:none; width:19px;height:19px; }
@@ -100,3 +100,19 @@ html,body,.chat-container,.input-area { background:#f8fafc!important; color:#152
 
 .input-area { display:block!important; }
 .composer-context { width:100%; }
+
+/* New turns remain in normal scroll flow, with room to start near the top. */
+.messages { display:flex!important; flex-direction:column!important; overflow-anchor:none; overscroll-behavior-y:contain; }
+.messages > .msg-wrapper { flex-shrink:0; position:static!important; }
+.messages::after { content:''; display:block; flex:0 0 var(--reply-space,0px); }
+.messages:empty::after { display:none; }
+.jump-latest-rail { flex:0 0 38px; display:flex; align-items:center; justify-content:center; }
+.jump-latest { width:30px; height:30px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.typing-indicator { flex:none; min-height:36px; }
+.messages > .typing-indicator { width:100%; margin:0!important; padding:0 0 8px!important; border:0; box-shadow:none; background:transparent!important; }
+.typing-indicator .thinking-orb { position:relative; display:block; width:28px; height:28px; margin:0; border:0; background:transparent!important; animation:orb-rotate 12s linear infinite; }
+.thinking-orb i { position:absolute; inset:0; transform:rotate(calc(var(--dot) * 30deg)); }
+.thinking-orb i::before { content:''; display:block; width:3px; height:3px; margin:1px auto; border-radius:50%; background:#2478da; animation:orb-breathe 2.8s ease-in-out infinite; }
+@keyframes orb-rotate { to { transform:rotate(360deg); } }
+@keyframes orb-breathe { 0%,100% { transform:translateY(3px); opacity:.55; } 50% { transform:translateY(0); opacity:1; } }
+@media(prefers-reduced-motion:reduce) { .thinking-orb,.thinking-orb i::before { animation:none!important; } }

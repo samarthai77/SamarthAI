@@ -21,9 +21,26 @@ function createChatActions(msg,content) {
     buttons.Share.onclick=async()=>{try{if(navigator.share)await navigator.share({title:'SamarthAI',text:content.chatText});else{const icon=buttons.Share.innerHTML;await copyChatText(content.chatText,buttons.Share);setTimeout(()=>buttons.Share.innerHTML=icon,1300);}}catch(error){if(error.name!=='AbortError')showFeedbackMessage('Share नहीं हो पाया।');}};
     msg.append(row);
 }
-function chatNearBottom(){const box=document.getElementById('chatMessages');return box.scrollHeight-box.scrollTop-box.clientHeight<90;}
-function jumpToLatest(){const box=document.getElementById('chatMessages');box.scrollTop=box.scrollHeight;document.getElementById('jumpLatest').hidden=true;}
-function chatMessageAdded(wrap,isUser){if(isUser)jumpToLatest();}
+let latestChatUser=null, followChatLatest=false;
+function chatNearBottom(){const box=document.getElementById('chatMessages');return box.scrollHeight-box.scrollTop-box.clientHeight<24;}
+function updateChatLatest(){document.getElementById('jumpLatest').hidden=chatNearBottom();}
+function chatTurnTop(){const box=document.getElementById('chatMessages');return latestChatUser.getBoundingClientRect().top-box.getBoundingClientRect().top+box.scrollTop-parseFloat(getComputedStyle(box).paddingTop);}
+function updateChatReplySpace(){
+    const box=document.getElementById('chatMessages');
+    if(!latestChatUser?.isConnected){box.style.setProperty('--reply-space','0px');updateChatLatest();return;}
+    const last=box.lastElementChild;
+    const end=last.getBoundingClientRect().bottom-box.getBoundingClientRect().top+box.scrollTop+parseFloat(getComputedStyle(last).marginBottom);
+    const space=Math.max(0,box.clientHeight+chatTurnTop()-end-parseFloat(getComputedStyle(box).paddingBottom));
+    box.style.setProperty('--reply-space',space+'px');updateChatLatest();
+}
+function beginChatTurn(wrap){
+    latestChatUser=wrap;followChatLatest=false;updateChatReplySpace();
+    document.getElementById('chatMessages').scrollTop=chatTurnTop();updateChatLatest();
+}
+function resetChatTurn(){latestChatUser=null;followChatLatest=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');document.getElementById('jumpLatest').hidden=true;}
+function jumpToLatest(){const box=document.getElementById('chatMessages');box.scrollTop=box.scrollHeight;updateChatLatest();}
+function followLatestReply(){followChatLatest=true;jumpToLatest();}
+function chatMessageAdded(wrap,isUser){if(isUser)beginChatTurn(wrap);else updateChatReplySpace();}
 function setChatBusy(busy){
     const button=document.getElementById('sendBtn');button.disabled=false;button.classList.toggle('is-stop',busy);
     button.setAttribute('aria-label',busy?'Stop generating':'Send message');button.title=busy?'Stop generating':'Send';button.textContent=busy?'■':'➤';
@@ -52,11 +69,11 @@ async function sendMessage(retry=null){
     if(retry && retry.conversationId!==currentConversationId){showFeedbackMessage('मूल बातचीत खोलकर फिर कोशिश करें।');return;}
     const request={message,wrap:retry?.wrap||addMessage(message,true),conversationId:currentConversationId,controller:new AbortController(),text:'',ai:null,stopped:false};
     request.wrap.querySelector('.send-error')?.remove();if(retry?.oldAI)retry.oldAI.remove();
-    activeChatRequest=request;sendInFlight=true;setChatBusy(true);showTyping(true);jumpToLatest();
+    activeChatRequest=request;sendInFlight=true;setChatBusy(true);showTyping(true);beginChatTurn(request.wrap);
     if(!retry){input.value='';resizeChatInput();if(matchMedia('(pointer:coarse)').matches)input.blur();}
     const timing={start:started,optimisticMs:performance.now()-started};let paintTimer,finished=false;
     const stillCurrent=()=>activeChatRequest===request&&!request.stopped;
-    const paint=()=>{paintTimer=null;if(!stillCurrent())return;const follow=chatNearBottom();renderChatMarkdown(request.ai.querySelector('.msg-content'),request.text);if(follow)jumpToLatest();else document.getElementById('jumpLatest').hidden=false;};
+    const paint=()=>{paintTimer=null;if(!stillCurrent())return;const follow=followChatLatest;renderChatMarkdown(request.ai.querySelector('.msg-content'),request.text);updateChatReplySpace();if(follow)jumpToLatest();else updateChatLatest();};
     const delta=text=>{
         if(!stillCurrent()||typeof text!=='string')return;
         if(!request.ai){showTyping(false);request.ai=addMessage('',false);timing.firstTextMs=performance.now()-timing.start;}
@@ -65,7 +82,7 @@ async function sendMessage(retry=null){
     const timeout=setTimeout(()=>{request.timedOut=true;request.controller.abort();},125000);
     try{
         await chatReady;await conversationReady;if(!stillCurrent())return;
-        if(!request.wrap.isConnected)document.getElementById('chatMessages').append(request.wrap);
+        if(!request.wrap.isConnected){document.getElementById('chatMessages').append(request.wrap);showTyping(true);beginChatTurn(request.wrap);}
         if(!currentConversationId){const thread=await createNewConversation(true,request.controller.signal);if(!thread?.id)throw new Error('Conversation unavailable');}
         if(!stillCurrent())return;request.conversationId=currentConversationId;
         // No GPS await in the send path. Location is shared only by an explicit composer action.
@@ -92,7 +109,10 @@ async function sendMessage(retry=null){
 }
 function initializeChatExperience(){
     const box=document.getElementById('chatMessages');
-    box.addEventListener('scroll',()=>{document.getElementById('jumpLatest').hidden=chatNearBottom();},{passive:true});
+    box.addEventListener('scroll',()=>{if(!chatNearBottom())followChatLatest=false;updateChatLatest();},{passive:true});
+    // Composer growth and visualViewport keyboard changes resize the scroll area.
+    new ResizeObserver(()=>{updateChatReplySpace();if(followChatLatest)jumpToLatest();}).observe(box);
+    new MutationObserver(()=>{updateChatReplySpace();if(followChatLatest)jumpToLatest();}).observe(box,{childList:true,subtree:true});
     document.getElementById('shareChatLocation').onclick=async()=>{
         const button=document.getElementById('shareChatLocation');button.disabled=true;
         try{const value=await getClientLocation();if(Number.isFinite(value.latitude)&&Number.isFinite(value.longitude)){sharedChatLocation=value;sharedLocationAt=Date.now();button.textContent='Location shared · 5 min';}else{sharedChatLocation=null;showFeedbackMessage('Location उपलब्ध नहीं है। शहर का नाम लिख सकते हैं।');}}
