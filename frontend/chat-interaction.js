@@ -21,13 +21,7 @@ function createChatActions(msg,content) {
     buttons.Share.onclick=async()=>{try{if(navigator.share)await navigator.share({title:'SamarthAI',text:content.chatText});else{const icon=buttons.Share.innerHTML;await copyChatText(content.chatText,buttons.Share);setTimeout(()=>buttons.Share.innerHTML=icon,1300);}}catch(error){if(error.name!=='AbortError')showFeedbackMessage('Share नहीं हो पाया।');}};
     msg.append(row);
 }
-let latestChatUser=null, followChatLatest=false, alignChatTurn=false;
-function chatNearBottom(){
-    const box=document.getElementById('chatMessages');
-    // Allow one pixel for fractional scrollTop values and browser rounding.
-    return box.scrollHeight-box.clientHeight-Math.max(0,box.scrollTop)<=1;
-}
-function updateChatLatest(){document.getElementById('jumpLatest').hidden=chatNearBottom();}
+let latestChatUser=null, alignChatTurn=false;
 function setChatScrollTop(top){document.getElementById('chatMessages').scrollTop=top;}
 function chatTurnTop(){
     const box=document.getElementById('chatMessages'),style=getComputedStyle(box);
@@ -40,28 +34,21 @@ function chatTurnTop(){
 }
 function updateChatReplySpace(){
     const box=document.getElementById('chatMessages');
-    if(!latestChatUser || !box.contains(latestChatUser)){box.style.setProperty('--reply-space','0px');updateChatLatest();return;}
+    if(!latestChatUser || !box.contains(latestChatUser)){box.style.setProperty('--reply-space','0px');return;}
     const last=box.lastElementChild;
     const end=last.getBoundingClientRect().bottom-box.getBoundingClientRect().top+box.scrollTop+parseFloat(getComputedStyle(last).marginBottom);
     const space=Math.max(0,box.clientHeight+chatTurnTop()-end-parseFloat(getComputedStyle(box).paddingBottom));
-    box.style.setProperty('--reply-space',space+'px');updateChatLatest();
+    box.style.setProperty('--reply-space',space+'px');
 }
 function layoutChatReply(){
     const box=document.getElementById('chatMessages'),readingTop=box.scrollTop;
     updateChatReplySpace();
     if(alignChatTurn && latestChatUser && box.contains(latestChatUser))setChatScrollTop(chatTurnTop());
-    else if(followChatLatest)jumpToLatest();
     else if(Math.abs(box.scrollTop-readingTop)>1)setChatScrollTop(readingTop);
-    updateChatLatest();
+
 }
-function beginChatTurn(wrap){latestChatUser=wrap;followChatLatest=false;alignChatTurn=true;layoutChatReply();}
-function resetChatTurn(){latestChatUser=null;followChatLatest=false;alignChatTurn=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');document.getElementById('jumpLatest').hidden=true;}
-function jumpToLatest(){
-    const box=document.getElementById('chatMessages');
-    setChatScrollTop(box.scrollHeight);
-    updateChatLatest();
-}
-function followLatestReply(){alignChatTurn=false;followChatLatest=true;layoutChatReply();}
+function beginChatTurn(wrap){latestChatUser=wrap;alignChatTurn=true;layoutChatReply();}
+function resetChatTurn(){latestChatUser=null;alignChatTurn=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');}
 function chatMessageAdded(wrap,isUser){if(isUser)beginChatTurn(wrap);else layoutChatReply();}
 function setChatBusy(busy){
     const button=document.getElementById('sendBtn');button.disabled=false;button.classList.toggle('is-stop',busy);
@@ -131,12 +118,10 @@ async function sendMessage(retry=null){
 }
 function initializeChatExperience(){
     const box=document.getElementById('chatMessages');
-    const stopAutoScroll=()=>{alignChatTurn=false;followChatLatest=false;};
+    const stopAutoScroll=()=>{alignChatTurn=false;};
     // Cancel alignment before the next stream paint when the reader takes control.
     for(const type of ['wheel','touchmove','pointerdown'])box.addEventListener(type,stopAutoScroll,{passive:true});
     box.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key))stopAutoScroll();});
-    // Keyboard resize can also emit scroll events; only reader input cancels alignment.
-    box.addEventListener('scroll',updateChatLatest,{passive:true});
     // Re-align only an untouched new turn; preserve the reader's position otherwise.
     new ResizeObserver(layoutChatReply).observe(box);
     new MutationObserver(layoutChatReply).observe(box,{childList:true,subtree:true});

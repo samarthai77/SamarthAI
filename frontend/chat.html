@@ -2289,7 +2289,6 @@ body{
     </div>
 
 
-    <div class="jump-latest-rail"><button class="jump-latest" id="jumpLatest" type="button" onclick="followLatestReply()" aria-label="सबसे नए जवाब पर जाएँ" title="Latest" hidden>↓</button></div>
 
     <!-- FEATURES -->
 
@@ -3254,7 +3253,7 @@ function showTyping(show){
     const box = document.getElementById('chatMessages');
     // Keep the pending orb in the same scroll flow as its user message.
     if(show && activeChatRequest) box.append(chatTypingIndicator);
-    else document.querySelector('.jump-latest-rail').before(chatTypingIndicator);
+    else document.querySelector('.input-area').before(chatTypingIndicator);
     chatTypingIndicator.style.display = show ? 'block' : 'none';
     updateChatReplySpace();
 }
