@@ -1,3 +1,4 @@
+const { denyFamilyLocationRead } = require('../services/familyLocationPrivacy');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -69,6 +70,8 @@ router.patch('/location-sharing', async (req, res) => {
             });
         }
 
+        if (enabled) return res.status(503).json({ success: false, error: 'Family sharing requires verified time-limited consent; enabling is unavailable' });
+
         const { data: member, error: memberError } = await supabase
             .from('family_members')
             .select('id')
@@ -96,7 +99,9 @@ router.patch('/location-sharing', async (req, res) => {
         const { error: updateError } = await supabase
             .from('family_members')
             .update({
-                location_sharing_enabled: enabled
+                location_sharing_enabled: enabled,
+                location: null,
+                last_updated: null
             })
             .eq('id', member.id)
             .eq('user_id', userId)
@@ -122,7 +127,7 @@ router.patch('/location-sharing', async (req, res) => {
     } catch (error) {
         console.error('Location sharing error:', error);
 
-        return res.status(500).json({
+        return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
             error: 'Location sharing request failed'
         });
@@ -199,6 +204,8 @@ if (member.location_sharing_enabled !== true) {
                 error: 'Enable Family Location Sharing before updating your location'
             });
         }
+        denyFamilyLocationRead();
+
         // Update location
         const { data: updatedMember, error: updateError } = await supabase
             .from('family_members')
@@ -228,7 +235,7 @@ if (member.location_sharing_enabled !== true) {
     } catch (error) {
         console.error('GPS location error:', error);
 
-        return res.status(500).json({
+        return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
             error: 'GPS service failed'
         });
@@ -301,6 +308,8 @@ if (member.location_sharing_enabled !== true) {
                 error: 'This family member has not enabled location sharing'
             });
         }
+        denyFamilyLocationRead();
+
         return res.json({
             success: true,
             member
@@ -309,7 +318,7 @@ if (member.location_sharing_enabled !== true) {
     } catch (error) {
         console.error('GPS member location error:', error);
 
-        return res.status(500).json({
+        return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
             error: 'Family GPS service failed'
         });

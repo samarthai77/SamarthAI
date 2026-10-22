@@ -1,3 +1,4 @@
+const { denyFamilyLocationRead } = require('../familyLocationPrivacy');
 const {
   createClient
 } = require('@supabase/supabase-js');
@@ -69,6 +70,8 @@ async function getMemberLocation({
       'Family member not found'
     );
   }
+
+  denyFamilyLocationRead();
 
   return {
     memberId: member.id,

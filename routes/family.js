@@ -1,3 +1,4 @@
+const { redactFamilyLocation, denyFamilyLocationRead } = require('../services/familyLocationPrivacy');
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -406,7 +407,7 @@ if (!membership?.family_id) {
 
         const familyMembers =
             (members || []).map(member => ({
-                ...member,
+                ...redactFamilyLocation(member),
                 profile_photo_url:
                     member.user_id
                         ? (
@@ -1753,6 +1754,8 @@ if (member.location_sharing_enabled !== true) {
                 });
             }
 
+            denyFamilyLocationRead();
+
             return res.json({
                 memberId:
                     member.id,
@@ -1777,7 +1780,7 @@ if (member.location_sharing_enabled !== true) {
                 });
             }
 
-            return res.status(500).json({
+            return res.status(err.status === 403 ? 403 : 500).json({
                 error:
                     "Could not fetch GPS location"
             });

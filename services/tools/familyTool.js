@@ -1,3 +1,4 @@
+const { redactFamilyLocation } = require('../familyLocationPrivacy');
 const {
   createClient
 } = require('@supabase/supabase-js');
@@ -114,7 +115,7 @@ async function getFamily(userId) {
 
   return {
     family: family || null,
-    members: members || [],
+    members: (members || []).map(redactFamilyLocation),
     currentUserRole:
       membership.role || 'member'
   };
