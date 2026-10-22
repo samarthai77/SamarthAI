@@ -1,165 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Camera — SamarthAI</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <style>
-        .camera-container { max-width:600px; margin:2rem auto; background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); text-align:center; }
-        video { width:100%; border-radius:12px; background:#000; margin-bottom:1rem; }
-        .cam-btn { background:#ff6b00; color:white; padding:0.7rem 1.5rem; border:none; border-radius:30px; cursor:pointer; font-weight:bold; margin:0.5rem; }
-        .cam-btn:hover { background:#e55a00; }
-        .result-box { background:#f0f0f0; padding:1rem; border-radius:12px; margin-top:1rem; text-align:left; }
-        .result-box h3 { margin:0; color:#003366; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <title>Scanner — SamarthAI Kavach</title>
+    <link rel="stylesheet" href="scanner.css">
+    <script src="scanner.js" defer></script>
 </head>
 <body>
-    <header>
-        <div class="logo">SamarthAI</div>
-        <nav>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="chat.html">Chat</a>
-            <a href="camera.html">Camera</a>
-            <a href="services.html">Services</a>
-            <a href="profile.html">Profile</a>
-        </nav>
+    <header class="topbar">
+        <a class="brand" href="dashboard.html">Samarth<span>AI</span> <small>KAVACH</small></a>
+        <nav aria-label="Navigation"><a href="dashboard.html">Dashboard</a><a href="chat.html">Chat</a><a href="services.html">Services</a><a href="profile.html">Profile</a></nav>
     </header>
-
-    <div class="camera-container">
-        <h1>📷 Camera + Analysis</h1>
-        <video id="video" autoplay playsinline muted></video>
-        <div>
-            <button class="cam-btn" id="startBtn">📷 Start Camera</button>
-            <button class="cam-btn" id="captureBtn">📸 Click + Analyze</button>
+    <main class="scanner">
+        <div class="heading"><p class="eyebrow">YOUR EVERYDAY TOOLS</p><h1>Scanner</h1><p>दस्तावेज़ से PDF बनाएँ या QR / Barcode पढ़ें।</p></div>
+        <p class="privacy">🔒 Processing आपके device पर होती है। फोटो और scan data अपने-आप upload या store नहीं होते। Refresh करने पर session मिट जाएगा।</p>
+        <div class="mode-tabs" role="tablist" aria-label="Scanner type">
+            <button id="documentTab" type="button" role="tab" aria-selected="true" aria-controls="documentPanel">▤ Document</button>
+            <button id="qrTab" type="button" role="tab" aria-selected="false" aria-controls="qrPanel" tabindex="-1">▦ QR / Barcode</button>
         </div>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <div id="photoPreview"></div>
-        <div class="result-box" id="analysisResult">
-            <h3>🤖 Analysis Result</h3>
-            <p id="analysisText">Take a photo to analyze...</p>
-        </div>
-    </div>
-
-    <footer><p>&copy; 2026 SamarthAI</p></footer>
+        <p id="status" class="status" role="status" aria-live="polite">शुरू करने के लिए कैमरा या Gallery चुनें।</p>
+        <section id="cameraPanel" class="card camera-panel" aria-label="Live camera" hidden>
+            <video id="scannerVideo" autoplay playsinline muted aria-label="Camera preview"></video>
+            <div class="toolbar"><button id="captureDocument" type="button" class="primary" disabled>फोटो लें</button><button id="stopCamera" type="button">कैमरा बंद करें</button></div>
+            <p id="cameraHint" class="hint"></p>
+        </section>
+        <section id="documentPanel" role="tabpanel" aria-labelledby="documentTab">
+            <div class="card">
+                <h2>Document scanner</h2><p>अच्छी रोशनी में फोटो लें। हर पेज crop और rotate करके PDF में जोड़ सकते हैं।</p>
+                <div class="toolbar">
+                    <button id="startDocumentCamera" type="button" class="primary">Live Camera</button>
+                    <label class="button" for="documentCamera">फोन Camera</label>
+                    <label class="button" for="documentGallery">Gallery से जोड़ें</label>
+                </div>
+                <input id="documentCamera" class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment">
+                <input id="documentGallery" class="file-input" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple>
+                <p class="hint">JPEG, PNG, WebP; HEIC केवल browser support होने पर। अधिकतम 20 पेज, 20 MB प्रति फोटो। बड़े फोटो 2400 px तक छोटे किए जाते हैं।</p>
+            </div>
+            <section id="editorPanel" class="card" aria-labelledby="editorTitle" hidden>
+                <div class="section-title"><h2 id="editorTitle">पेज तैयार करें</h2><button id="cancelEdit" type="button">रद्द करें</button></div>
+                <p class="hint">Crop करने के लिए फोटो पर rectangle खींचें या नीचे के sliders इस्तेमाल करें। यह rectangular crop है; perspective correction नहीं।</p>
+                <canvas id="editorCanvas" aria-label="Document crop preview"></canvas>
+                <div class="crop-controls">
+                    <label>बायाँ <input id="cropLeft" type="range" min="0" max="95" value="0"></label>
+                    <label>ऊपर <input id="cropTop" type="range" min="0" max="95" value="0"></label>
+                    <label>दायाँ <input id="cropRight" type="range" min="5" max="100" value="100"></label>
+                    <label>नीचे <input id="cropBottom" type="range" min="5" max="100" value="100"></label>
+                </div>
+                <div class="toolbar"><button id="rotatePage" type="button">↻ Rotate 90°</button><button id="resetCrop" type="button">Crop reset</button><label>Enhancement <select id="enhancement"><option value="original">Original</option><option value="clear">Clear / Contrast</option><option value="bw">Black &amp; White</option></select></label><button id="savePage" type="button" class="primary">पेज जोड़ें</button></div>
+            </section>
+            <section class="card" aria-labelledby="pagesTitle">
+                <div class="section-title"><h2 id="pagesTitle">PDF के पेज <span id="pageCount">0 / 20</span></h2><button id="clearPages" type="button" disabled>सभी हटाएँ</button></div>
+                <p id="emptyPages" class="empty">अभी कोई पेज नहीं है। फोटो लें या Gallery से चुनें।</p>
+                <ol id="pageList" class="page-list" aria-label="Pages in PDF order"></ol>
+                <div class="toolbar"><button id="createPdf" type="button" class="primary" disabled>PDF बनाएँ / Preview</button></div>
+            </section>
+            <section id="pdfPanel" class="card" aria-labelledby="pdfTitle" hidden>
+                <h2 id="pdfTitle">आपका PDF तैयार है</h2>
+                <div class="toolbar"><a id="downloadPdf" class="button primary" download="SamarthAI-Scan.pdf">Download PDF</a><a id="openPdf" class="button" target="_blank" rel="noopener noreferrer">PDF Preview खोलें</a><button id="sharePdf" type="button">Share PDF</button></div>
+                <p class="hint">यदि browser के अंदर preview न दिखे तो “PDF Preview खोलें” या Download चुनें। Share device/browser support पर निर्भर है। PDF में फोटो हैं; searchable OCR text नहीं।</p>
+                <iframe id="pdfFrame" title="Scanned PDF preview" referrerpolicy="no-referrer"></iframe>
+            </section>
+        </section>
+        <section id="qrPanel" role="tabpanel" aria-labelledby="qrTab" hidden>
+            <div class="card"><h2>QR / Barcode scanner</h2><p>Code पूरा frame में रखें। Barcode के लिए कैमरा सीधा रखें और पास की रोशनी से glare हटाएँ।</p><div class="toolbar"><button id="startQrCamera" type="button" class="primary">QR / Barcode Camera</button><label class="button" for="qrGallery">Gallery से पढ़ें</label></div><input id="qrGallery" class="file-input" type="file" accept="image/jpeg,image/png,image/webp"><p class="hint">QR, Code 128 / 39 / 93, EAN / UPC, ITF और अन्य supported formats। छोटे, धुँधले या damaged codes नहीं पढ़े जा सकते।</p></div>
+            <section id="qrResultPanel" class="card" hidden><h2>Scan result</h2><p id="qrFormat" class="hint"></p><label for="qrResult">Decoded data</label><textarea id="qrResult" rows="6" readonly spellcheck="false"></textarea><div class="toolbar"><button id="copyQr" type="button">Copy data</button><button id="openQr" type="button" disabled>Open Link…</button><button id="clearQr" type="button">Result हटाएँ</button></div><p class="hint">कोई link / payment / Wi-Fi action अपने-आप नहीं खुलेगा। केवल HTTP(S) link आपकी पुष्टि के बाद खोला जा सकता है।</p></section>
+        </section>
+    </main>
+    <footer>SamarthAI Kavach · Camera तभी खुलेगा जब आप उसे शुरू करेंगे।</footer>
     <script src="js/app.js"></script>
-    <script>
-        
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const preview = document.getElementById('photoPreview');
-        const analysisText = document.getElementById('analysisText');
-
-        let stream = null;
-
-        document.getElementById('startBtn').addEventListener('click', startCamera);
-        document.getElementById('captureBtn').addEventListener('click', captureAndAnalyze);
-
- async function startCamera() {
-    try {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-
-        // Prefer the rear/back camera on mobile
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: {
-                        ideal: "environment"
-                    }
-                },
-                audio: false
-            });
-        } catch (environmentError) {
-            console.warn(
-                "Back camera unavailable. Trying default camera.",
-                environmentError
-            );
-
-            // Fallback for laptops/desktops or devices
-            // that do not expose a rear camera.
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false
-            });
-        }
-
-        video.srcObject = stream;
-
-        await video.play();
-
-    } catch (error) {
-        console.error("Camera error:", error);
-
-        alert(
-            "Camera start nahi ho paya: " +
-            (error.message || "Camera unavailable")
-        );
-    }
-}    
-
-        async function captureAndAnalyze() {
-            if (!stream) {
-                alert('Please start camera first!');
-                return;
-            }
-
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0);
-            const dataURL = canvas.toDataURL('image/png');
-            preview.innerHTML = `<img src="${dataURL}" style="width:100%; border-radius:12px; margin-top:1rem;" />`;
-
-            analysisText.textContent = '⏳ Analyzing...';
-
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    analysisText.textContent = '❌ Please login first!';
-                    return;
-                }
-
-          const res = await fetch(`${API_BASE}/scanner/analyze`, {  
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-     body: JSON.stringify({
-    image: dataURL
-})             
-                });
-               
-           const data = await res.json();
-
-if (!res.ok) {
-    analysisText.textContent =
-        '❌ ' +
-        (data.error || `Scanner failed (${res.status})`);
-
-    console.error(
-        'Scanner API error:',
-        res.status,
-        data
-    );
-
-    return;
-}
-
-const reply =
-    typeof data.response === 'string' &&
-    data.response.trim()
-        ? data.response.trim()
-        : '❌ Scanner ne koi result nahi diya.';
-
-analysisText.textContent = reply;   
-            } catch (error) {
-                analysisText.textContent = 'Error analyzing image: ' + error.message;
-            }
-        }
-    </script>
 </body>
 </html>
