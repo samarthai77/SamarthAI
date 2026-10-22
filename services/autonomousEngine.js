@@ -1,4 +1,5 @@
 'use strict';
+const chatIdempotency = require('./chatIdempotency');
 
 /**
  * SamarthAI Autonomous Engine
@@ -122,7 +123,8 @@ async function saveAutonomousChat({
   conversationId,
   message,
   response,
-  agentId
+  agentId,
+  chatId
 }) {
   try {
 
@@ -133,6 +135,7 @@ async function saveAutonomousChat({
       .from('chats')
       .insert([
         {
+          ...(chatId ? {id:chatId} : {}),
           user_id:
             userId,
 
@@ -149,6 +152,10 @@ async function saveAutonomousChat({
       .select('id')
       .single();
 
+    if (error?.code === '23505' && chatId) {
+      const existing = await supabase.from('chats').select('id,message,response').eq('id',chatId).eq('user_id',userId).eq('conversation_id',conversationId).single();
+      return !existing.error && existing.data?.message === message && existing.data?.response === response ? existing.data.id : null;
+    }
     if(error){
       console.error(
         '❌ Autonomous chat save error:',
@@ -279,7 +286,7 @@ function getStatus() {
    MAIN AUTONOMOUS RUNNER
    ========================================================= */
 
-async function run(options = {}) {
+async function runOnce(options = {}) {
   const {
     userId,
     conversationId,
@@ -336,7 +343,7 @@ async function run(options = {}) {
     getAgentForResult(result);
 
   const savedChatId =
-    await saveAutonomousChat({
+    options._skipHistory ? null : await saveAutonomousChat({
       userId,
       conversationId,
       message:
@@ -381,6 +388,17 @@ return {
 /* =========================================================
    EXPORTS
    ========================================================= */
+
+async function run(options = {}) {
+  // Cached responses must pass the same ownership check as fresh generation.
+  const {data:thread,error} = await supabase.from('conversations').select('id').eq('id',options.conversationId).eq('user_id',options.userId).single();
+  if (error || !thread) throw Object.assign(new Error('Conversation unavailable'), {code:'conversation_forbidden',status:403});
+  const requestId = options.requestId ?? createRunId(); // Compatibility for legacy callers.
+  return chatIdempotency.execute({db:supabase,options:{...options,requestId},
+    generate:()=>runOnce({...options,_skipHistory:true}),
+    persist:(response,chatId)=>saveAutonomousChat({userId:options.userId,conversationId:options.conversationId,
+      message:normalizeMessage(options.message),response:response.result?.response || '',agentId:response.agent?.id,chatId})});
+}
 
 module.exports = {
   run,

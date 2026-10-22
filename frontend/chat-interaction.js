@@ -1,4 +1,10 @@
 let sendInFlight=false, conversationReady=Promise.resolve(), activeChatRequest=null;
+function createChatRequestId(){
+    if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
+    const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+    const hex=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
 let sharedChatLocation=null, sharedLocationAt=0, chatLocationTimer=null, chatLocationVersion=0;
 function stopChatLocation(){
     chatLocationVersion++;clearTimeout(chatLocationTimer);sharedChatLocation=null;sharedLocationAt=0;
@@ -70,7 +76,7 @@ function stopGenerating(){
 }
 function chatStatus(request,text,retryable=true){
     const status=document.createElement('div');status.className='send-error';status.role='alert';status.append(document.createTextNode(text));
-    if(retryable){const button=document.createElement('button');button.type='button';button.textContent='Retry / फिर भेजें';button.onclick=()=>sendMessage({message:request.message,wrap:request.wrap,conversationId:request.conversationId,oldAI:request.ai});status.append(button);}
+    if(retryable){const button=document.createElement('button');button.type='button';button.textContent='Retry / फिर भेजें';button.onclick=()=>sendMessage({message:request.message,wrap:request.wrap,conversationId:request.conversationId,oldAI:request.ai,requestId:request.requestId,language:request.language});status.append(button);}
     request.wrap.querySelector('.msg').append(status);
 }
 async function consumeChatEvents(response,receive,signal){
@@ -84,7 +90,7 @@ async function sendMessage(retry=null){
     const input=document.getElementById('chatInput');if(sendInFlight)return;
     const message=retry?retry.message:input.value.trim();if(!message)return;
     if(retry && retry.conversationId!==currentConversationId){showFeedbackMessage('मूल बातचीत खोलकर फिर कोशिश करें।');return;}
-    const request={message,wrap:retry?.wrap||addMessage(message,true),conversationId:currentConversationId,controller:new AbortController(),text:'',ai:null,stopped:false};
+    const request={requestId:retry?.requestId||createChatRequestId(),language:retry?.language||localStorage.getItem('samarthai_language')||'hi-IN',message,wrap:retry?.wrap||addMessage(message,true),conversationId:currentConversationId,controller:new AbortController(),text:'',ai:null,stopped:false};
     request.wrap.querySelector('.send-error')?.remove();if(retry?.oldAI)retry.oldAI.remove();
     activeChatRequest=request;sendInFlight=true;setChatBusy(true);showTyping(true);beginChatTurn(request.wrap);
     if(!retry){input.value='';resizeChatInput();if(matchMedia('(pointer:coarse)').matches)input.blur();}
@@ -103,9 +109,9 @@ async function sendMessage(retry=null){
         if(!currentConversationId){const thread=await createNewConversation(true,request.controller.signal);if(!thread?.id)throw new Error('Conversation unavailable');}
         if(!stillCurrent())return;request.conversationId=currentConversationId;
         // No GPS await in the send path. Location is shared only by an explicit composer action.
-        const location=currentChatLocation() ||{latitude:null,longitude:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,locationUnavailable:true};
+        const location=(!retry && currentChatLocation()) ||{latitude:null,longitude:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,locationUnavailable:true};
         timing.requestMs=performance.now()-timing.start;
-        const res=await fetch(AUTONOMOUS_API,{method:'POST',signal:request.controller.signal,headers:{'Content-Type':'application/json','Accept':'text/event-stream','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify({message,conversationId:request.conversationId,mode:'conversation',stream:true,metadata:{location,language:localStorage.getItem('samarthai_language')||'hi-IN'}})});
+        const res=await fetch(AUTONOMOUS_API,{method:'POST',signal:request.controller.signal,headers:{'Content-Type':'application/json','Accept':'text/event-stream','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify({requestId:request.requestId,message,conversationId:request.conversationId,mode:'conversation',stream:true,metadata:{location,language:request.language}})});
         if(!res.ok){const problem=await res.json().catch(()=>({}));const error=new Error('Chat unavailable');error.code=problem.code || (res.status===401?'login_required':res.status===429?'provider_rate_limit':'network_error');throw error;}
         if(res.headers.get('content-type')?.includes('text/event-stream')){
             await consumeChatEvents(res,(event,data)=>{
@@ -121,7 +127,7 @@ async function sendMessage(retry=null){
         }
         if(!stillCurrent())return;clearTimeout(paintTimer);paint();showTyping(false);timing.ok=true;speakAIResponse(request.text);
         loadConversations().then(renderConversationList);
-    }catch(error){if(stillCurrent()){clearTimeout(paintTimer);if(request.ai)paint();const statusText=request.timedOut?'जवाब में अधिक समय लग रहा है।':error.code==='login_required'?'सत्र समाप्त हो गया है। फिर login करें।':error.code==='provider_rate_limit'?'अधिक अनुरोध आ रहे हैं। थोड़ी देर बाद फिर कोशिश करें।':['provider_auth','provider_configuration','provider_not_configured'].includes(error.code)?'AI सेवा फिलहाल उपलब्ध नहीं है। कुछ देर बाद फिर कोशिश करें।':'जवाब पूरा नहीं हो पाया। आपका संदेश सुरक्षित है।';chatStatus(request,statusText);timing.ok=false;}}
+    }catch(error){if(stillCurrent()){clearTimeout(paintTimer);if(request.ai)paint();const statusText=request.timedOut?'जवाब में अधिक समय लग रहा है।':error.code==='login_required'?'सत्र समाप्त हो गया है। फिर login करें।':error.code==='provider_rate_limit'?'अधिक अनुरोध आ रहे हैं। थोड़ी देर बाद फिर कोशिश करें।':['provider_auth','provider_configuration','provider_not_configured'].includes(error.code)?'AI सेवा फिलहाल उपलब्ध नहीं है। कुछ देर बाद फिर कोशिश करें।':'जवाब पूरा नहीं हो पाया। आपका संदेश सुरक्षित है।';const requestMessages={request_in_progress:'यह request अभी चल रही है। थोड़ी देर बाद Retry से स्थिति जाँचें; दोबारा generation नहीं चलेगी।',request_failed:'यह request विफल होकर बंद हो गई है। फिर generate कराने के लिए संदेश नया भेजें।',request_id_conflict:'Request ID दूसरे संदेश के लिए इस्तेमाल हुई है। संदेश नया भेजें।',request_replay_expired:'इस request का replay समय समाप्त है। इसे दोबारा generate नहीं किया गया।',history_save_pending:'जवाब तैयार है; history की पुष्टि बाकी है। Retry से सुरक्षित recovery करें।',idempotency_unavailable:'सुरक्षित request tracking उपलब्ध नहीं है। थोड़ी देर बाद Retry करें।'};chatStatus(request,requestMessages[error.code]||statusText,!['request_failed','request_id_conflict','request_replay_expired'].includes(error.code));timing.ok=false;}}
     finally{clearTimeout(timeout);clearTimeout(paintTimer);if(stillCurrent()){activeChatRequest=null;sendInFlight=false;showTyping(false);setChatBusy(false);window.samarthChatTiming=timing;}}
 }
 function initializeChatExperience(){

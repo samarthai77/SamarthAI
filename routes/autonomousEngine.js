@@ -195,7 +195,7 @@ router.post(
         });
       }
 
-      const options = {userId:req.user.id, conversationId, message:message.trim(), mode:mode || 'conversation',
+      const options = {userId:req.user.id, conversationId, requestId:req.body.requestId, message:message.trim(), mode:mode || 'conversation',
         metadata:metadata && typeof metadata === 'object' ? metadata : {}};
       if (message.length > 10000) return res.status(400).json({success:false,error:'Message too long'});
       if (req.body.stream === true && req.accepts('text/event-stream')) return streamResponse(req,res,autonomousEngine.run,options);
@@ -210,11 +210,11 @@ router.post(
         error.code || 'chat_unavailable'
       );
 
-      return res.status(error.status === 403 ? 403 : 503).json({
+      return res.status([400,403,409].includes(error.status) ? error.status : 503).json({
         success: false,
         autonomous: true,
         code:error.code || 'chat_unavailable',
-        retryable:true,
+        retryable:!['request_failed','request_id_conflict','request_replay_expired','invalid_request_id'].includes(error.code),
         error:'AI service abhi available nahi hai. Dobara try karein.'
       });
     }
