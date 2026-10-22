@@ -118,3 +118,7 @@ html,body,.chat-container,.input-area { background:#f8fafc!important; color:#152
 .chat-container { top:calc(var(--chat-viewport-top,0px) + 64px)!important; height:max(0px,calc(var(--chat-viewport,100dvh) - 64px))!important; min-height:0!important; }
 .input-area { height:auto!important; min-height:0!important; max-height:none!important; }
 .chat-input-box textarea { max-height:min(140px,max(42px,calc(var(--chat-viewport,100dvh) * .25)))!important; }
+
+/* Padding stays inside the keyboard-sized flex layout. */
+.chat-container,.messages,.input-area { box-sizing:border-box!important; }
+.messages { height:0!important; padding-bottom:max(20px,env(safe-area-inset-bottom))!important; scroll-padding-bottom:20px; }

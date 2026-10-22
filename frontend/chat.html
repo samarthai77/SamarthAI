@@ -2515,7 +2515,7 @@ body{
     <!-- CHAT INPUT -->
 
     <div class="input-area">
-        <div class="composer-context"><button id="shareChatLocation" type="button" title="Share your current location for the next 5 minutes">Share location</button></div>
+        <div class="composer-context"><button id="shareChatLocation" type="button" aria-pressed="false" title="Allow this location snapshot in chat messages for 5 minutes. Click again to stop. Already sent messages cannot be recalled.">Share location</button></div>
 
         <div class="chat-input-box">
 
@@ -3724,10 +3724,13 @@ const chatReady = loadChatHistory();
 
 function syncChatViewport(){
     const viewport=window.visualViewport;
-    const root=document.documentElement;
+    const root=document.documentElement,box=document.getElementById('chatMessages');
+    const top=box.scrollTop,atBottom=box.scrollHeight-box.clientHeight-top<=2;
+    alignChatTurn=false;
     root.style.setProperty('--chat-viewport',(viewport?.height || window.innerHeight)+'px');
     root.style.setProperty('--chat-viewport-top',(viewport?.offsetTop || 0)+'px');
     layoutChatReply();
+    requestAnimationFrame(()=>{layoutChatReply();box.scrollTop=atBottom?box.scrollHeight:top;});
 }
 window.visualViewport?.addEventListener('resize',syncChatViewport);
 window.visualViewport?.addEventListener('scroll',syncChatViewport);

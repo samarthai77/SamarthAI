@@ -1,5 +1,13 @@
 let sendInFlight=false, conversationReady=Promise.resolve(), activeChatRequest=null;
-let sharedChatLocation=null, sharedLocationAt=0;
+let sharedChatLocation=null, sharedLocationAt=0, chatLocationTimer=null, chatLocationVersion=0;
+function stopChatLocation(){
+    chatLocationVersion++;clearTimeout(chatLocationTimer);sharedChatLocation=null;sharedLocationAt=0;
+    const button=document.getElementById('shareChatLocation');button.disabled=false;button.textContent='Share location';button.setAttribute('aria-pressed','false');
+}
+function currentChatLocation(){
+    if(sharedChatLocation && Date.now()-sharedLocationAt>=300000)stopChatLocation();
+    return sharedChatLocation;
+}
 const actionIcons={
     Copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
     Like:'<path d="M8 10l4-7c3 0 2 4 2 6h5l-2 11H8zM3 10h5v10H3z"/>',
@@ -95,7 +103,7 @@ async function sendMessage(retry=null){
         if(!currentConversationId){const thread=await createNewConversation(true,request.controller.signal);if(!thread?.id)throw new Error('Conversation unavailable');}
         if(!stillCurrent())return;request.conversationId=currentConversationId;
         // No GPS await in the send path. Location is shared only by an explicit composer action.
-        const location=sharedChatLocation && Date.now()-sharedLocationAt<300000?sharedChatLocation:{latitude:null,longitude:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,locationUnavailable:true};
+        const location=currentChatLocation() ||{latitude:null,longitude:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,locationUnavailable:true};
         timing.requestMs=performance.now()-timing.start;
         const res=await fetch(AUTONOMOUS_API,{method:'POST',signal:request.controller.signal,headers:{'Content-Type':'application/json','Accept':'text/event-stream','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify({message,conversationId:request.conversationId,mode:'conversation',stream:true,metadata:{location,language:localStorage.getItem('samarthai_language')||'hi-IN'}})});
         if(!res.ok){const problem=await res.json().catch(()=>({}));const error=new Error('Chat unavailable');error.code=problem.code || (res.status===401?'login_required':res.status===429?'provider_rate_limit':'network_error');throw error;}
@@ -126,10 +134,19 @@ function initializeChatExperience(){
     new ResizeObserver(layoutChatReply).observe(box);
     new MutationObserver(layoutChatReply).observe(box,{childList:true,subtree:true});
     document.getElementById('shareChatLocation').onclick=async()=>{
-        const button=document.getElementById('shareChatLocation');button.disabled=true;
-        try{const value=await getClientLocation();if(Number.isFinite(value.latitude)&&Number.isFinite(value.longitude)){sharedChatLocation=value;sharedLocationAt=Date.now();button.textContent='Location shared · 5 min';}else{sharedChatLocation=null;showFeedbackMessage('Location उपलब्ध नहीं है। शहर का नाम लिख सकते हैं।');}}
-        finally{button.disabled=false;}
+        if(currentChatLocation()){stopChatLocation();return;}
+        if(!window.confirm('Allow your current location snapshot in chat messages you send for 5 minutes? Use Stop to end this sooner. Already sent messages cannot be recalled.'))return;
+        const button=document.getElementById('shareChatLocation'),version=++chatLocationVersion;
+        button.disabled=true;button.textContent='Requesting permission…';
+        try{
+            const value=await getClientLocation();if(version!==chatLocationVersion)return;
+            if(Number.isFinite(value.latitude)&&Number.isFinite(value.longitude)){
+                sharedChatLocation=value;sharedLocationAt=Date.now();button.textContent='Location enabled · Stop';button.setAttribute('aria-pressed','true');
+                chatLocationTimer=setTimeout(stopChatLocation,300000);
+            }else{stopChatLocation();showFeedbackMessage('Location उपलब्ध नहीं है। शहर का नाम लिख सकते हैं।');}
+        }finally{if(version===chatLocationVersion)button.disabled=false;}
     };
-    navigator.permissions?.query({name:'geolocation'}).then(permission=>{permission.onchange=()=>{if(permission.state!=='granted'){sharedChatLocation=null;sharedLocationAt=0;document.getElementById('shareChatLocation').textContent='Share location';}};}).catch(()=>{});
+    navigator.permissions?.query({name:'geolocation'}).then(permission=>{permission.onchange=()=>{if(permission.state!=='granted')stopChatLocation();};}).catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)currentChatLocation();});
     setChatBusy(false);
 }
