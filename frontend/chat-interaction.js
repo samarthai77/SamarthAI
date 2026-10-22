@@ -22,11 +22,10 @@ function createChatActions(msg,content) {
     msg.append(row);
 }
 let latestChatUser=null, followChatLatest=false, alignChatTurn=false;
-function latestChatMessage(){const messages=document.getElementById('chatMessages').getElementsByClassName('msg-wrapper');return messages[messages.length-1];}
 function chatNearBottom(){
-    const box=document.getElementById('chatMessages'),last=latestChatMessage();
-    // The turn spacer is blank layout space, not unread reply content.
-    return !last || last.getBoundingClientRect().bottom<=box.getBoundingClientRect().bottom-parseFloat(getComputedStyle(box).paddingBottom)+4;
+    const box=document.getElementById('chatMessages');
+    // Allow one pixel for fractional scrollTop values and browser rounding.
+    return box.scrollHeight-box.clientHeight-Math.max(0,box.scrollTop)<=1;
 }
 function updateChatLatest(){document.getElementById('jumpLatest').hidden=chatNearBottom();}
 function setChatScrollTop(top){document.getElementById('chatMessages').scrollTop=top;}
@@ -58,8 +57,8 @@ function layoutChatReply(){
 function beginChatTurn(wrap){latestChatUser=wrap;followChatLatest=false;alignChatTurn=true;layoutChatReply();}
 function resetChatTurn(){latestChatUser=null;followChatLatest=false;alignChatTurn=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');document.getElementById('jumpLatest').hidden=true;}
 function jumpToLatest(){
-    const box=document.getElementById('chatMessages'),last=latestChatMessage();
-    if(last)setChatScrollTop(box.scrollTop+last.getBoundingClientRect().bottom-box.getBoundingClientRect().bottom+parseFloat(getComputedStyle(box).paddingBottom));
+    const box=document.getElementById('chatMessages');
+    setChatScrollTop(box.scrollHeight);
     updateChatLatest();
 }
 function followLatestReply(){alignChatTurn=false;followChatLatest=true;layoutChatReply();}
