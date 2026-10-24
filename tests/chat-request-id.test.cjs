@@ -25,9 +25,23 @@ test('frontend simultaneous Send is guarded and SSE completed replay renders nor
 });
 test('terminal failed request does not offer an automatic paid Retry',async()=>{
  const app=frontend(async()=>new Response('event: error\ndata: {"code":"request_failed"}\n\n',{headers:{'content-type':'text/event-stream'}}));await app.context.sendMessage();
- const status=app.wraps[0].msg.children.at(-1);assert.equal(status.children.length,1);assert.match(status.children[0].text,/नया भेजें/);
+ const status=app.wraps[0].msg.children.at(-1);assert.equal(status.children.length,2);assert.match(status.children[1].textContent,/नया अनुरोध/);
 });
 test('older mobile browsers generate secure UUIDs without randomUUID support',()=>{
  const app=frontend(()=>{});app.context.crypto={getRandomValues:require('crypto').webcrypto.getRandomValues.bind(require('crypto').webcrypto)};
  assert.match(app.context.createChatRequestId(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
+
+test('new paid attempt requires confirmation and a different request ID',async()=>{
+ const bodies=[];const app=frontend(async(url,options)=>{bodies.push(JSON.parse(options.body));return bodies.length===1?new Response('event: error\ndata: {"code":"request_failed","retryable":false,"recovery":"confirm_new_request"}\n\n',{headers:{'content-type':'text/event-stream'}}):Response.json({success:true,result:{response:'new answer'}});});
+ await app.context.sendMessage();const button=app.wraps[0].msg.children.at(-1).children.at(-1);app.context.confirm=()=>false;await button.onclick();assert.equal(bodies.length,1);app.context.confirm=()=>true;await button.onclick();assert.equal(bodies.length,2);assert.notEqual(bodies[0].requestId,bodies[1].requestId);assert.equal(app.userCount,1);
+});
+test('server cooldown blocks Send and preserves the draft',async()=>{
+ let calls=0;const app=frontend(async()=>{calls++;return Response.json({code:'server_rate_limit',retryAfter:1},{status:429,headers:{'retry-after':'1'}});});await app.context.sendMessage();app.elements.chatInput.value='draft';await app.context.sendMessage();assert.equal(calls,1);assert.equal(app.elements.chatInput.value,'draft');assert.equal(app.elements.sendBtn.disabled,true);
+});
+test('malformed SSE is a protocol failure, not an empty successful reply',async()=>{
+ const app=frontend(async()=>new Response('event: delta\ndata: {broken}\n\n',{headers:{'content-type':'text/event-stream'}}));await app.context.sendMessage();assert.equal(app.context.samarthChatTiming.ok,false);assert.match(app.wraps[0].msg.children.at(-1).children[0].text,/अमान्य/);
+});
+
+test('Stop remains usable during an active request and stops only that request',async()=>{let aborted=false;const app=frontend(async(url,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>{aborted=true;reject(options.signal.reason);})));const running=app.context.sendMessage();await new Promise(r=>setImmediate(r));assert.equal(app.elements.sendBtn.disabled,false);app.context.stopGenerating();await running;assert.equal(aborted,true);});
+test('Stop cancels a pending prerequisite without issuing a request',async()=>{let calls=0;const app=frontend(async()=>{calls++;});app.context.chatReady=new Promise(()=>{});const running=app.context.sendMessage();await new Promise(r=>setImmediate(r));app.context.stopGenerating();await running;assert.equal(calls,0);});

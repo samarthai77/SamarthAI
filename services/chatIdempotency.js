@@ -1,4 +1,5 @@
 'use strict';
+const runtime=require('./chatRuntime');
 const {createHash, randomUUID} = require('crypto');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const problem = (code, status=503) => Object.assign(new Error(code), {code, status});
@@ -13,10 +14,7 @@ function historyId(userId, requestId) {
   const hex=bytes.subarray(0,16).toString('hex');
   return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
-async function query(value) {
-  const result=await (value.abortSignal ? value.abortSignal(AbortSignal.timeout(15000)) : value);
-  return result;
-}
+async function query(value) { return runtime.database(value); }
 async function execute({db, options, generate, persist}) {
   const {userId,conversationId,message,mode='conversation',metadata={}}=options;
   if (![userId,conversationId,options.requestId].every(value=>typeof value==='string'&&UUID.test(value))) throw problem('invalid_request_id',400);
@@ -33,16 +31,17 @@ async function execute({db, options, generate, persist}) {
     const {data:row,error}=await query(owned());
     if (error||!row) throw problem('idempotency_unavailable');
     if (row.conversation_id.toLowerCase()!==conversationId.toLowerCase()||row.fingerprint!==fingerprint) throw problem('request_id_conflict',409);
-    if (row.state==='in_progress') throw problem('request_in_progress',409);
-    if (row.state==='failed') throw problem('request_failed',409);
+    if (row.state==='in_progress') {const uncertain=!Number.isFinite(Date.parse(row.created_at))||Date.now()-Date.parse(row.created_at)>180000;runtime.diagnostic({stage:'ledger',ledgerState:uncertain?'uncertain':'in_progress'});throw problem(uncertain?'request_uncertain':'request_in_progress',409);}
+    if (row.state==='failed') {runtime.diagnostic({stage:'ledger',ledgerState:'failed'});throw Object.assign(problem('request_failed',409),{retryAfter:row.failure_code==='provider_rate_limit'?30:0});}
     if (row.state!=='completed'||!row.result||!Number.isFinite(Date.parse(row.replay_expires_at))||Date.parse(row.replay_expires_at)<=Date.now()) {
       // Remove the expired response copy, retain the unique-key tombstone.
       await query(db.from('chat_idempotency').update({result:null}).eq('user_id',userId).eq('request_id',requestId).eq('state','completed'));
       throw problem('request_replay_expired',409);
     }
-    result=row.result; replayed=true;
+    result=row.result; replayed=true;runtime.diagnostic({stage:'ledger',ledgerState:'replay'});
   } else {
     if (!claim.data) throw problem('idempotency_unavailable');
+    runtime.diagnostic({stage:'ledger',ledgerState:'claimed'});
     try {
       result=await generate();
       result={...result,requestId};
@@ -50,10 +49,11 @@ async function execute({db, options, generate, persist}) {
       // Persist generation BEFORE history. Recovery uses this response, never AI again.
       const done=await query(write({state:'completed',result,finished_at:finished.toISOString(),replay_expires_at:expires.toISOString()}));
       if (done.error||!done.data) throw problem('idempotency_unavailable');
+      runtime.diagnostic({stage:'ledger',ledgerState:'completed'});
     } catch (error) {
       // A completion may already have committed despite a network error. The
       // in_progress condition prevents this write from overwriting it.
-      try { await query(write({state:'failed',failure_code:'generation_or_commit_failed',finished_at:new Date().toISOString()})); } catch {}
+      try { const failed=await query(write({state:'failed',failure_code:runtime.envelope(error).code,finished_at:new Date().toISOString()})); if(!failed.error&&failed.data){error.recovery='confirm_new_request';error.retryable=false;runtime.diagnostic({stage:'ledger',ledgerState:'failed'});} } catch {}
       throw error;
     }
   }

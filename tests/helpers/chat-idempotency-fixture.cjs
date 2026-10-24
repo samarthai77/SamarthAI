@@ -19,6 +19,6 @@ function database() {
  return db;
 }
 function engine(db,runConversation){const module={exports:{}};const source=fs.readFileSync(path.join(root,'services/autonomousEngine.js'),'utf8');
- vm.runInThisContext('(function(require,module,exports){'+source+'\n})')(name=>name==='@supabase/supabase-js'?{createClient:()=>db}:name==='./conversationEngine'?{runConversation}:name==='./chatIdempotency'?require(path.join(root,'services/chatIdempotency')):require(name),module,module.exports);return module.exports;}
+ vm.runInThisContext('(function(require,module,exports){'+source+'\n})')(name=>name==='@supabase/supabase-js'?{createClient:()=>db}:name==='./conversationEngine'?{runConversation}:name==='./chatIdempotency'?require(path.join(root,'services/chatIdempotency')):require(name.startsWith('.')?path.resolve(root,'services',name):name),module,module.exports);return module.exports;}
 
 module.exports={database,engine};

@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const {limited:apiRateLimitHandler}=require('./middleware/chatRateLimit');
 dotenv.config();
 
 // ===== SUPABASE DIAGNOSTIC START =====
@@ -141,12 +142,10 @@ const globalLimiter = rateLimit({
 
   legacyHeaders: false,
 
-  message: {
-    error: 'Too many requests. Please try again later.'
-  },
+  handler: apiRateLimitHandler,
 
   skip: (req) => {
-    return req.path === '/';
+    return !req.path.startsWith('/api/') || req.path === '/api/autonomous/health';
   }
 });
 
@@ -220,9 +219,17 @@ app.get('/', (req, res) => {
     res.json({ message: 'SamarthAI Backend Live!', status: 'success' });
 });
 
+app.use((error,req,res,next)=>{
+  if(req.path.replace(/\/$/,'') !== '/api/autonomous/run')return next(error);
+  const runtime=require('./services/chatRuntime');
+  const invalid=error.type==='entity.parse.failed'||error.type==='entity.too.large';
+  const issue=runtime.error(invalid?'invalid_request':'chat_unavailable',invalid?400:503);
+  runtime.diagnostic({stage:'request',code:issue.code,status:issue.status});
+  if(!res.headersSent)return res.status(issue.status).json(runtime.envelope(issue));
+  if(!res.writableEnded)res.end();
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`SamarthAI server running on port ${PORT}`);
-});    
-
+});

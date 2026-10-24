@@ -18,7 +18,7 @@ test('new server/module instance replays completed durable state; current owners
 });
 test('orphan claim after restart never takes over or calls AI',async()=>{
  const db=database();db.rows.set(user+':'+id,{user_id:user,request_id:id,conversation_id:thread,fingerprint:require('crypto').createHash('sha256').update(JSON.stringify({conversationId:thread,language:'hi-IN',message:'hello',mode:'conversation'})).digest('hex'),state:'in_progress',created_at:'2000-01-01T00:00:00Z'});
- let calls=0;await assert.rejects(engine(db,async()=>calls++).run(options),e=>e.code==='request_in_progress');assert.equal(calls,0);
+ let calls=0;await assert.rejects(engine(db,async()=>calls++).run(options),e=>e.code==='request_uncertain');assert.equal(calls,0);
 });
 test('failed request is terminal on retry and remains terminal after restart',async()=>{
  const db=database();let calls=0;await assert.rejects(engine(db,async()=>{calls++;throw Error('provider unavailable');}).run(options));
@@ -71,7 +71,7 @@ test('fresh Node process replays DB snapshot with zero provider calls and one hi
  const snapshot=path.join(dir,'fixture.json');fs.writeFileSync(snapshot,JSON.stringify({rows:[...db.rows],chats:[...db.chats],options}));
  const child=`const fs=require('fs');const {database,engine}=require(process.argv[1]);const saved=JSON.parse(fs.readFileSync(process.argv[2]));const db=database();for(const [k,v] of saved.rows)db.rows.set(k,v);for(const [k,v] of saved.chats)db.chats.set(k,v);let calls=0;engine(db,async()=>{calls++;throw Error('Unexpected generation');}).run(saved.options).then(r=>console.log(JSON.stringify({calls,history:db.chats.size,response:r.result.response,replayed:r.replayed}))).catch(e=>{console.error(e);process.exitCode=1});`;
  try {const output=require('child_process').execFileSync(process.execPath,['-e',child,path.join(__dirname,'helpers/chat-idempotency-fixture.cjs'),snapshot],{encoding:'utf8'});
-  assert.deepEqual(JSON.parse(output),{calls:0,history:1,response:'durable answer',replayed:true});
+  assert.deepEqual(JSON.parse(output.trim().split(/\r?\n/).at(-1)),{calls:0,history:1,response:'durable answer',replayed:true});
  } finally {fs.unlinkSync(snapshot);fs.rmdirSync(dir);}
 });
 test('lost completion acknowledgement cannot overwrite committed completion or regenerate',async()=>{

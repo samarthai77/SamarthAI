@@ -1,3 +1,4 @@
+const runtime=require('./chatRuntime');
 const { createClient } = require('@supabase/supabase-js');
 
 const {
@@ -11,7 +12,8 @@ const {
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  {global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(Math.max(1,Math.min(15000,runtime.remaining())))]):AbortSignal.timeout(Math.max(1,Math.min(15000,runtime.remaining())))})}}
 );
 
 /*
@@ -205,13 +207,13 @@ async function getPersonalMemory(userId) {
       .limit(MAX_MEMORY);
 
     if (error) {
-      console.error('Personal memory read error:', error.message);
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
       return [];
     }
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Personal memory exception:', error.message);
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
     return [];
   }
 }
@@ -247,13 +249,13 @@ async function getFamilyMemory(userId) {
       .limit(MAX_MEMORY);
 
     if (error) {
-      console.error('Family memory read error:', error.message);
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
       return [];
     }
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Family memory exception:', error.message);
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
     return [];
   }
 }
@@ -308,7 +310,7 @@ async function getFamilyDirectory(userId) {
       .limit(MAX_DIRECTORY);
 
     if (error) {
-      console.error('Family directory error:', error.message);
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
       return [];
     }
 
@@ -323,7 +325,7 @@ async function getFamilyDirectory(userId) {
       is_active: member.is_active === true
     }));
   } catch (error) {
-    console.error('Family directory exception:', error.message);
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
     return [];
   }
 }
@@ -390,10 +392,7 @@ async function getConversationHistory(
       .limit(100);
 
     if (error) {
-      console.error(
-        'Conversation history error:',
-        error.message
-      );
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
       return [];
     }
@@ -436,10 +435,7 @@ async function getConversationHistory(
 
   } catch (error) {
 
-    console.error(
-      'Conversation history exception:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
     return [];
   }
@@ -726,10 +722,7 @@ async function getDateScopedHistory({
       );
 
     if (error) {
-      console.error(
-        'Date history error:',
-        error.message
-      );
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
       return [];
     }
@@ -767,10 +760,7 @@ async function getDateScopedHistory({
       );
 
   } catch (error) {
-    console.error(
-      'Date history exception:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
     return [];
   }
@@ -1377,10 +1367,7 @@ async function planConversation({
 
     return normalizePlan(raw);
   } catch (error) {
-    console.error(
-      'Conversation planner error:',
-      error.code || 'planner_failure'
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
     if (signal?.aborted) throw error;
 
     /*
@@ -1447,10 +1434,7 @@ async function saveMemory({
       .maybeSingle();
 
     if (error) {
-      console.error(
-        'Memory save error:',
-        error.message
-      );
+      runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
       return {
         saved: false,
@@ -1463,10 +1447,7 @@ async function saveMemory({
       memory: data || null
     };
   } catch (error) {
-    console.error(
-      'Memory save exception:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
     return {
       saved: false,
@@ -1634,10 +1615,7 @@ function getCurrentTime({
       iso: now.toISOString()
     };
   } catch (error) {
-    console.error(
-      'Time calculation error:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
     return {
       available: false,
@@ -2223,10 +2201,7 @@ if(!place){
       error: 'Unsupported tool.'
     };
   } catch (error) {
-    console.error(
-      `Tool execution error [${toolName}]:`,
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
 
     return {
       ok: false,
@@ -2689,10 +2664,7 @@ Return only the final answer text.
     }
   } catch (error) {
     if (signal?.aborted || error.partial) throw error;
-    console.error(
-      'Final answer generation error:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
   }
 
   /*
@@ -2877,10 +2849,7 @@ EMOTIONAL CONVERSATION STYLE:
     }
   } catch (error) {
     if (signal?.aborted || onDelta) throw error;
-    console.error(
-      'Conversation answer error:',
-      error.message
-    );
+    runtime.diagnostic({stage:'conversation',code:'operation_failed'});
   }
 
   throw new ProviderError('provider_unavailable');

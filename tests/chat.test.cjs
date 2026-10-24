@@ -1,10 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
 const root=process.env.SAMARTH_TEST_ROOT || path.resolve(__dirname,'..');
 const {completeChat,ProviderError}=require(path.join(root,'services/chatCompletion'));
+test.beforeEach(()=>require(path.join(root,'services/chatCompletion')).resetProviderState());
 const weatherIntent=require(path.join(root,'services/weatherIntent'));
-function load(relative,stubs){const module={exports:{}};const source=fs.readFileSync(path.join(root,relative),'utf8');const wrapped=vm.runInThisContext('(function(require,module,exports){'+source+'\n})',{filename:relative});wrapped(name=>Object.hasOwn(stubs,name)?stubs[name]:name==='./chatIdempotency'?{execute:async({generate,persist})=>{const value=await generate();const chatId=await persist(value,'33333333-3333-4333-8333-333333333333');return {...value,persistence:{saved:!!chatId,chatId}};}}:require(name),module,module.exports);return module.exports;}
+function load(relative,stubs){const module={exports:{}};const source=fs.readFileSync(path.join(root,relative),'utf8');const wrapped=vm.runInThisContext('(function(require,module,exports){'+source+'\n})',{filename:relative});wrapped(name=>Object.hasOwn(stubs,name)?stubs[name]:name==='./chatIdempotency'?{execute:async({generate,persist})=>{const value=await generate();const chatId=await persist(value,'33333333-3333-4333-8333-333333333333');return {...value,persistence:{saved:!!chatId,chatId}};}}:require(name.startsWith('.')?path.resolve(path.dirname(path.join(root,relative)),name):name),module,module.exports);return module.exports;}
 const user='11111111-1111-4111-8111-111111111111',thread='22222222-2222-4222-8222-222222222222';
-function database(owner=true){return {from(table){const query=new Proxy({}, {get(_,method){if(method==='then')return (resolve)=>resolve({data:table==='conversations'&&owner?{id:thread}:table==='users'?{family_id:null}:[],error:!owner&&table==='conversations'?{}:null});return ()=>query;}});return query;}};}
+function database(owner=true){return {from(table){const query=new Proxy({}, {get(_,method){if(method==='then')return (resolve)=>resolve({data:table==='conversations'&&owner?{id:thread}:table==='users'?{family_id:null}:[],error:!owner&&table==='conversations'?{code:'42501'}:null});return ()=>query;}});return query;}};}
 function engine({completion,weather}={}){return load('services/conversationEngine.js',{'@supabase/supabase-js':{createClient:()=>database()},'./tools':{getTool:()=>({execute:weather||(()=>({data:{temperature:{degrees:25}},location:{name:'Prayagraj'}}))})},'./aiGateway':{callGroq:()=>{},callOpenAI:()=>{}},'./chatCompletion':{completeChat:completion,ProviderError},'./weatherIntent':weatherIntent});}
 test('named-city weather recovery never needs GPS and rejects unrelated requests',()=>{assert.equal(weatherIntent('Prayagraj ka mausam batao').tool_args.locationName,'Prayagraj');assert.equal(weatherIntent('प्रयागराज का मौसम बताओ').tool_args.locationName,'Prayagraj');assert.equal(weatherIntent('weather in Prayagraj').tool_args.locationName,'Prayagraj');assert.equal(weatherIntent('आज मौसम कैसा है?').tool_args.locationName,null);assert.equal(weatherIntent('मेरी family दिखाओ'),null);});
 test('final answer preserves Markdown, indentation and actual streamed chunks',async()=>{
@@ -54,10 +55,10 @@ test('SSE transport emits ordered deltas and done, and aborts provider work on d
 });
 test('JWT authentication still runs before the SSE or JSON handler',async()=>{
  let calls=0,handlers;const router={get(){},use(){},post(path,...items){if(path==='/run')handlers=items;}};
- const stubs={express:{Router:()=>router},jsonwebtoken:{verify(){throw new Error('invalid');}},'../services/streamResponse':()=>{calls++;},'../services/autonomousEngine':{run:()=>{calls++;}}};
+ const stubs={'../middleware/chatRateLimit':{userLimiter:(req,res,next)=>next()},express:{Router:()=>router},jsonwebtoken:{verify(){throw new Error('invalid');}},'../services/streamResponse':()=>{calls++;},'../services/autonomousEngine':{run:()=>{calls++;}}};
  for(const name of ['chat','gps','sos','scanner','family','memory'])stubs['./'+name]={};
  load('routes/autonomousEngine.js',stubs);const res={status(value){this.code=value;return this;},json(value){this.body=value;return this;}};
- handlers[0]({headers:{}},res,()=>calls++);assert.equal(res.code,401);assert.equal(calls,0);
+ handlers[0]({headers:{}},res,()=>calls++);assert.equal(res.code,401);assert.equal(calls,0);assert.equal(res.body.code,'login_required');const previousSecret=process.env.JWT_SECRET;process.env.JWT_SECRET='fixture';handlers[0]({headers:{authorization:'Bearer invalid'}},res,()=>calls++);if(previousSecret===undefined)delete process.env.JWT_SECRET;else process.env.JWT_SECRET=previousSecret;assert.equal(res.code,401);assert.equal(res.body.code,'login_required');assert.equal(calls,0);
 });
 test('abort after a real partial answer persists only that user’s partial text',async()=>{
  const controller=new AbortController();let saved;

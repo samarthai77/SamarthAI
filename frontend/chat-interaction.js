@@ -1,3 +1,5 @@
+let chatCooldownUntil=0,chatCooldownTimer;
+function armChatCooldown(seconds){const ms=Math.min(900,Math.max(0,Number(seconds)||0))*1000;if(!ms)return;chatCooldownUntil=Math.max(chatCooldownUntil,Date.now()+ms);clearTimeout(chatCooldownTimer);chatCooldownTimer=setTimeout(()=>{chatCooldownUntil=0;setChatBusy(sendInFlight);},Math.max(0,chatCooldownUntil-Date.now()));chatCooldownTimer.unref?.();setChatBusy(sendInFlight);}
 let sendInFlight=false, conversationReady=Promise.resolve(), activeChatRequest=null;
 function createChatRequestId(){
     if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
@@ -65,7 +67,7 @@ function beginChatTurn(wrap){latestChatUser=wrap;alignChatTurn=true;layoutChatRe
 function resetChatTurn(){latestChatUser=null;alignChatTurn=false;document.getElementById('chatMessages').style.removeProperty('--reply-space');}
 function chatMessageAdded(wrap,isUser){if(isUser)beginChatTurn(wrap);else layoutChatReply();}
 function setChatBusy(busy){
-    const button=document.getElementById('sendBtn');button.disabled=false;button.classList.toggle('is-stop',busy);
+    const button=document.getElementById('sendBtn');button.disabled=!busy&&Date.now()<chatCooldownUntil;button.classList.toggle('is-stop',busy);
     button.setAttribute('aria-label',busy?'Stop generating':'Send message');button.title=busy?'Stop generating':'Send';button.textContent=busy?'■':'➤';
     button.onclick=busy?stopGenerating:()=>sendMessage();
 }
@@ -74,20 +76,27 @@ function stopGenerating(){
     if(request.ai) {const label=document.createElement('div');label.className='generation-status';label.textContent='Stopped';request.ai.querySelector('.msg').append(label);}
     activeChatRequest=null;sendInFlight=false;showTyping(false);setChatBusy(false);
 }
-function chatStatus(request,text,retryable=true){
+function chatStatus(request,text,retryable=true,recovery){
     const status=document.createElement('div');status.className='send-error';status.role='alert';status.append(document.createTextNode(text));
-    if(retryable){const button=document.createElement('button');button.type='button';button.textContent='Retry / फिर भेजें';button.onclick=()=>sendMessage({message:request.message,wrap:request.wrap,conversationId:request.conversationId,oldAI:request.ai,requestId:request.requestId,language:request.language});status.append(button);}
+    if(retryable||recovery==='confirm_new_request'){
+      const button=document.createElement('button');button.type='button';
+      button.textContent=recovery==='confirm_new_request'?'नया अनुरोध: फिर Generate करें':'Retry / फिर भेजें';
+      button.onclick=()=>{if(Date.now()<chatCooldownUntil){showFeedbackMessage('Cooldown पूरा होने पर कोशिश करें।');return;}
+       if(recovery==='confirm_new_request'&&!window.confirm('नया AI अनुरोध चलेगा और अतिरिक्त API खर्च हो सकता है। पिछली request अनिश्चित हो तो उसका जवाब बाद में आ सकता है। क्या फिर generate करें?'))return;
+       return sendMessage({message:request.message,wrap:request.wrap,conversationId:request.conversationId,oldAI:request.ai,requestId:recovery==='confirm_new_request'?undefined:request.requestId,language:request.language});};status.append(button);
+    }
     request.wrap.querySelector('.msg').append(status);
 }
 async function consumeChatEvents(response,receive,signal){
     const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
-    const drain=()=>{let index;while((index=buffer.indexOf('\n\n'))>=0){const frame=buffer.slice(0,index);buffer=buffer.slice(index+2);const lines=frame.split('\n');const event=lines.find(line=>line.startsWith('event:'))?.slice(6).trim();const data=lines.filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');if(data)receive(event||'message',JSON.parse(data));}};
-    try{while(true){signal.throwIfAborted();const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true}).replace(/\r/g,'');if(buffer.length>1024*1024)throw new Error('Stream too large');drain();}buffer+=decoder.decode();if(buffer.trim()){buffer+='\n\n';drain();}}
+    const drain=()=>{let index;while((index=buffer.indexOf('\n\n'))>=0){const frame=buffer.slice(0,index);buffer=buffer.slice(index+2);const lines=frame.split('\n');const event=lines.find(line=>line.startsWith('event:'))?.slice(6).trim();const data=lines.filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');if(data){let payload;try{payload=JSON.parse(data);}catch{throw Object.assign(new Error('Stream protocol'),{code:'sse_protocol'});}receive(event||'message',payload);}}};
+    try{while(true){signal.throwIfAborted();const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true}).replace(/\r/g,'');if(buffer.length>1024*1024)throw Object.assign(new Error('Stream too large'),{code:'sse_protocol'});drain();}buffer+=decoder.decode();if(buffer.trim()){buffer+='\n\n';drain();}}
     finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
 }
+function waitChatReady(task,signal){return new Promise((resolve,reject)=>{const abort=()=>{signal.removeEventListener('abort',abort);reject(Object.assign(new Error('Request ended'),{code:'request_timeout'}));};if(signal.aborted){Promise.resolve(task).catch(()=>{});return abort();}signal.addEventListener('abort',abort,{once:true});Promise.resolve(task).then(value=>{signal.removeEventListener('abort',abort);resolve(value);},error=>{signal.removeEventListener('abort',abort);reject(error);});});}
 async function sendMessage(retry=null){
     const started=performance.now();
-    const input=document.getElementById('chatInput');if(sendInFlight)return;
+    const input=document.getElementById('chatInput');if(sendInFlight)return;if(Date.now()<chatCooldownUntil){showFeedbackMessage('Cooldown पूरा होने पर कोशिश करें।');return;}
     const message=retry?retry.message:input.value.trim();if(!message)return;
     if(retry && retry.conversationId!==currentConversationId){showFeedbackMessage('मूल बातचीत खोलकर फिर कोशिश करें।');return;}
     const request={requestId:retry?.requestId||createChatRequestId(),language:retry?.language||localStorage.getItem('samarthai_language')||'hi-IN',message,wrap:retry?.wrap||addMessage(message,true),conversationId:currentConversationId,controller:new AbortController(),text:'',ai:null,stopped:false};
@@ -102,9 +111,9 @@ async function sendMessage(retry=null){
         if(!request.ai){showTyping(false);request.ai=addMessage('',false);timing.firstTextMs=performance.now()-timing.start;}
         request.text+=text;if(!paintTimer)paintTimer=setTimeout(paint,70);
     };
-    const timeout=setTimeout(()=>{request.timedOut=true;request.controller.abort();},125000);
+    const timeout=setTimeout(()=>{request.timedOut=true;request.controller.abort();},130000);
     try{
-        await chatReady;await conversationReady;if(!stillCurrent())return;
+        await waitChatReady(chatReady,request.controller.signal);await waitChatReady(conversationReady,request.controller.signal);if(!stillCurrent())return;
         if(!request.wrap.isConnected){document.getElementById('chatMessages').append(request.wrap);showTyping(true);beginChatTurn(request.wrap);}
         if(!currentConversationId){const thread=await createNewConversation(true,request.controller.signal);if(!thread?.id)throw new Error('Conversation unavailable');}
         if(!stillCurrent())return;request.conversationId=currentConversationId;
@@ -112,23 +121,30 @@ async function sendMessage(retry=null){
         const location=(!retry && currentChatLocation()) ||{latitude:null,longitude:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,locationUnavailable:true};
         timing.requestMs=performance.now()-timing.start;
         const res=await fetch(AUTONOMOUS_API,{method:'POST',signal:request.controller.signal,headers:{'Content-Type':'application/json','Accept':'text/event-stream','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify({requestId:request.requestId,message,conversationId:request.conversationId,mode:'conversation',stream:true,metadata:{location,language:request.language}})});
-        if(!res.ok){const problem=await res.json().catch(()=>({}));const error=new Error('Chat unavailable');error.code=problem.code || (res.status===401?'login_required':res.status===429?'provider_rate_limit':'network_error');throw error;}
+        if(!res.ok){const problem=await res.json().catch(()=>({}));const error=new Error('Chat unavailable');error.code=problem.code || (res.status===401?'login_required':res.status===429?'server_rate_limit':'network_error');error.retryAfter=Number(problem.retryAfter)||Number(res.headers.get('retry-after'))||0;error.recovery=problem.recovery;error.retryable=problem.retryable;throw error;}
         if(res.headers.get('content-type')?.includes('text/event-stream')){
             await consumeChatEvents(res,(event,data)=>{
                 if(!stillCurrent())return;
+                if(event==='ready'&&Number.isFinite(data.deadlineMs)){clearTimeout(timeout);request.serverTimer=setTimeout(()=>{request.timedOut=true;request.controller.abort();},Math.min(130000,Math.max(1,data.deadlineMs+10000)));}
                 if(event==='delta')delta(data.text);
-                if(event==='error'){const error=new Error('Chat unavailable');error.code=data.code;throw error;}
-                if(event==='done'){const reply=data?.result?.response||data?.response;if(typeof reply==='string'){request.text=reply;if(!request.ai)request.ai=addMessage('',false);}finished=true;}
+                if(event==='error'){const error=new Error('Chat unavailable');Object.assign(error,{code:data.code,retryAfter:data.retryAfter,recovery:data.recovery,retryable:data.retryable});throw error;}
+                if(event==='done'){const reply=data?.result?.response||data?.response;if(typeof reply!=='string'||!reply.trim())throw Object.assign(new Error('Empty response'),{code:'provider_empty_response'});if(typeof reply==='string'){request.text=reply;if(!request.ai)request.ai=addMessage('',false);}finished=true;}
             },request.controller.signal);
-            if(!finished)throw new Error('Connection interrupted');
+            if(!finished)throw Object.assign(new Error('Connection interrupted'),{code:'sse_interrupted'});
         }else{
             const data=await res.json(),reply=data?.result?.response||data?.response;
-            if(!data.success&&data.error)throw new Error('Chat unavailable');if(typeof reply!=='string'||!reply.trim())throw new Error('Empty response');delta(reply);finished=true;
+            if(!data.success&&data.error)throw Object.assign(new Error('Chat unavailable'),{code:data.code,retryAfter:data.retryAfter,recovery:data.recovery,retryable:data.retryable});if(typeof reply!=='string'||!reply.trim())throw new Error('Empty response');delta(reply);finished=true;
         }
         if(!stillCurrent())return;clearTimeout(paintTimer);paint();showTyping(false);timing.ok=true;speakAIResponse(request.text);
         loadConversations().then(renderConversationList);
-    }catch(error){if(stillCurrent()){clearTimeout(paintTimer);if(request.ai)paint();const statusText=request.timedOut?'जवाब में अधिक समय लग रहा है।':error.code==='login_required'?'सत्र समाप्त हो गया है। फिर login करें।':error.code==='provider_rate_limit'?'अधिक अनुरोध आ रहे हैं। थोड़ी देर बाद फिर कोशिश करें।':['provider_auth','provider_configuration','provider_not_configured'].includes(error.code)?'AI सेवा फिलहाल उपलब्ध नहीं है। कुछ देर बाद फिर कोशिश करें।':'जवाब पूरा नहीं हो पाया। आपका संदेश सुरक्षित है।';const requestMessages={request_in_progress:'यह request अभी चल रही है। थोड़ी देर बाद Retry से स्थिति जाँचें; दोबारा generation नहीं चलेगी।',request_failed:'यह request विफल होकर बंद हो गई है। फिर generate कराने के लिए संदेश नया भेजें।',request_id_conflict:'Request ID दूसरे संदेश के लिए इस्तेमाल हुई है। संदेश नया भेजें।',request_replay_expired:'इस request का replay समय समाप्त है। इसे दोबारा generate नहीं किया गया।',history_save_pending:'जवाब तैयार है; history की पुष्टि बाकी है। Retry से सुरक्षित recovery करें।',idempotency_unavailable:'सुरक्षित request tracking उपलब्ध नहीं है। थोड़ी देर बाद Retry करें।'};chatStatus(request,requestMessages[error.code]||statusText,!['request_failed','request_id_conflict','request_replay_expired'].includes(error.code));timing.ok=false;}}
-    finally{clearTimeout(timeout);clearTimeout(paintTimer);if(stillCurrent()){activeChatRequest=null;sendInFlight=false;showTyping(false);setChatBusy(false);window.samarthChatTiming=timing;}}
+    }catch(error){if(stillCurrent()){clearTimeout(paintTimer);if(request.ai)paint();
+      const code=request.timedOut?'request_timeout':error.code||'network_error';
+      const messages={server_rate_limit:'Server अनुरोध सीमा पहुँची है। Cooldown के बाद Retry करें।',provider_rate_limit:'AI provider की सीमा पहुँची है। Cooldown के बाद कोशिश करें।',login_required:'सत्र समाप्त या अमान्य है। फिर login करें।',auth_configuration:'Login सेवा अभी उपलब्ध नहीं है।',conversation_forbidden:'इस बातचीत का access उपलब्ध नहीं है।',database_unavailable:'डेटाबेस उपलब्ध नहीं है। Retry से स्थिति जाँचें।',database_timeout:'डेटाबेस ने समय पर जवाब नहीं दिया। Retry करें।',request_timeout:'Request की समय-सीमा समाप्त हुई। Retry से स्थिति जाँचें।',provider_timeout:'AI provider ने समय पर जवाब नहीं दिया।',provider_network:'AI provider से कनेक्शन नहीं हो पाया।',provider_auth:'AI सेवा का configuration उपलब्ध नहीं है।',provider_configuration:'AI सेवा का configuration उपलब्ध नहीं है।',provider_not_configured:'AI सेवा उपलब्ध नहीं है।',sse_protocol:'जवाब की stream अमान्य है। Retry करें।',sse_interrupted:'जवाब की stream अधूरी रह गई। Retry से स्थिति जाँचें।',provider_stream_interrupted:'AI stream अधूरी रह गई।',provider_stream_error:'AI stream में त्रुटि हुई।',provider_protocol:'AI सेवा का जवाब अमान्य था।',provider_empty_response:'AI सेवा ने खाली जवाब दिया।',provider_invalid_json:'AI planner का जवाब अमान्य था।',provider_unavailable:'AI सेवा अभी उपलब्ध नहीं है।',tool_unavailable:'माँगी गई सेवा अभी उपलब्ध नहीं है।',invalid_request:'संदेश या बातचीत अमान्य है।',client_disconnected:'कनेक्शन बंद हुआ। Retry से स्थिति जाँचें।',network_error:'Network से संपर्क नहीं हो पाया। उसी request को Retry करें।',request_in_progress:'यह request अभी चल रही है। Retry केवल स्थिति जाँचेगा।',request_uncertain:'पिछली request की स्थिति अनिश्चित है। अपने-आप generation नहीं दोहराई जाएगी।',request_failed:'यह request विफल होकर बंद हो गई है।',request_id_conflict:'Request ID दूसरे संदेश से जुड़ी है।',request_replay_expired:'इस request का replay समय समाप्त है।',history_save_pending:'जवाब सुरक्षित है; history की पुष्टि बाकी है। Retry करें।',idempotency_unavailable:'सुरक्षित request tracking उपलब्ध नहीं है। Retry करें।',invalid_request_id:'Request ID अमान्य है।'};
+      armChatCooldown(error.retryAfter||(code==='server_rate_limit'||code==='provider_rate_limit'?30:0));
+      const fresh=['request_failed','request_uncertain','request_replay_expired'].includes(code);
+      chatStatus(request,messages[code]||'जवाब पूरा नहीं हो पाया। Retry से स्थिति जाँचें।',error.retryable!==false&&!fresh&&!['login_required','auth_configuration','conversation_forbidden','request_id_conflict','invalid_request_id','invalid_request'].includes(code),fresh?'confirm_new_request':error.recovery);
+      timing.ok=false;}}
+    finally{clearTimeout(timeout);clearTimeout(request.serverTimer);clearTimeout(paintTimer);if(stillCurrent()){activeChatRequest=null;sendInFlight=false;showTyping(false);setChatBusy(false);window.samarthChatTiming=timing;}}
 }
 function initializeChatExperience(){
     const box=document.getElementById('chatMessages');

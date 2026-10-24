@@ -1,4 +1,5 @@
 'use strict';
+const runtime=require('./chatRuntime');
 const chatIdempotency = require('./chatIdempotency');
 
 /**
@@ -34,7 +35,8 @@ const runConversation =
 const supabase =
   createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+    {global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(Math.max(1,Math.min(15000,runtime.remaining())))]):AbortSignal.timeout(Math.max(1,Math.min(15000,runtime.remaining())))})}}
   );
 /* =========================================================
    AGENT REGISTRY
@@ -157,10 +159,7 @@ async function saveAutonomousChat({
       return !existing.error && existing.data?.message === message && existing.data?.response === response ? existing.data.id : null;
     }
     if(error){
-      console.error(
-        '❌ Autonomous chat save error:',
-        error
-      );
+      runtime.diagnostic({stage:'database',code:'operation_failed'});
 
       return null;
     }
@@ -211,10 +210,7 @@ async function saveAutonomousChat({
 
   }catch(error){
 
-    console.error(
-      '❌ Autonomous persistence error:',
-      error
-    );
+    runtime.diagnostic({stage:'database',code:'operation_failed'});
 
     return null;
   }
@@ -325,9 +321,10 @@ async function runOnce(options = {}) {
      ------------------------- */
 
 // Verify thread ownership before loading memory, generating or writing any chat.
-  const {data:thread, error:threadError} = await supabase.from('conversations').select('id').eq('id',conversationId).eq('user_id',userId).single();
+  const {data:thread, error:threadError} = await runtime.database(supabase.from('conversations').select('id').eq('id',conversationId).eq('user_id',userId).single());
   signal?.throwIfAborted();
-  if (threadError || !thread) { const error = new Error('Conversation unavailable'); error.code='conversation_forbidden'; error.status=403; throw error; }
+  if(threadError)throw runtime.error(['PGRST116','42501'].includes(threadError.code)?'conversation_forbidden':'database_unavailable',['PGRST116','42501'].includes(threadError.code)?403:503);
+  if (!thread) { const error = new Error('Conversation unavailable'); error.code='conversation_forbidden'; error.status=403; throw error; }
   let partial = '', result;
   try {
     result = await runConversation({userId, conversationId, message:normalizedMessage,
@@ -389,16 +386,19 @@ return {
    EXPORTS
    ========================================================= */
 
-async function run(options = {}) {
+async function runOwned(options = {}) {
   // Cached responses must pass the same ownership check as fresh generation.
-  const {data:thread,error} = await supabase.from('conversations').select('id').eq('id',options.conversationId).eq('user_id',options.userId).single();
-  if (error || !thread) throw Object.assign(new Error('Conversation unavailable'), {code:'conversation_forbidden',status:403});
+  const {data:thread,error} = await runtime.database(supabase.from('conversations').select('id').eq('id',options.conversationId).eq('user_id',options.userId).single());
+  if(error)throw runtime.error(['PGRST116','42501'].includes(error.code)?'conversation_forbidden':'database_unavailable',['PGRST116','42501'].includes(error.code)?403:503);
+  if (!thread) throw Object.assign(new Error('Conversation unavailable'), {code:'conversation_forbidden',status:403});
   const requestId = options.requestId ?? createRunId(); // Compatibility for legacy callers.
   return chatIdempotency.execute({db:supabase,options:{...options,requestId},
     generate:()=>runOnce({...options,_skipHistory:true}),
     persist:(response,chatId)=>saveAutonomousChat({userId:options.userId,conversationId:options.conversationId,
       message:normalizeMessage(options.message),response:response.result?.response || '',agentId:response.agent?.id,chatId})});
 }
+
+async function run(options={}) { return runtime.run(options,()=>runOwned(options)); }
 
 module.exports = {
   run,

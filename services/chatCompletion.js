@@ -1,4 +1,8 @@
 'use strict';
+const runtime=require('./chatRuntime');
+const {createHash}=require('crypto');
+const cooldowns=new Map();
+function retrySeconds(value){const n=Number(value);return Math.min(300,Math.max(1,Number.isFinite(n)&&n>0?Math.ceil(n):Math.ceil((Date.parse(value)-Date.now())/1000)||30));}
 // One attempt per configured provider. Never log bodies, prompts, URLs or credentials.
 class ProviderError extends Error {
   constructor(code, status = 503) { super(code); this.code = code; this.status = status; }
@@ -36,10 +40,18 @@ async function completeChat({messages, response_format, max_completion_tokens = 
   ].filter(provider => provider.key);
   if (!providers.length) throw new ProviderError('provider_not_configured');
   let failure;
-  for (const provider of providers) {
+  for (const [index,provider] of providers.entries()) {
+    const stateKey=provider.name+createHash('sha256').update(provider.key).digest('hex');
+    const blocked=cooldowns.get(stateKey);
+    if(blocked&&blocked.until>Date.now()){failure=Object.assign(new ProviderError(blocked.code,blocked.code==='provider_rate_limit'?429:503),{retryAfter:Math.ceil((blocked.until-Date.now())/1000)});continue;}
     signal?.throwIfAborted();
     const timeout = new AbortController();
-    const timer = setTimeout(() => timeout.abort(), response_format ? 20000 : 45000);
+    const ctx=runtime.context.getStore();
+    if(ctx&&response_format&&!ctx.plannerDeadlineAt)ctx.plannerDeadlineAt=Math.min(ctx.deadlineAt-runtime.RESERVE_MS,Date.now()+30000);
+    const budget=Math.min(runtime.remaining(runtime.RESERVE_MS),response_format&&ctx?ctx.plannerDeadlineAt-Date.now():Infinity);
+    if(budget<=0)throw runtime.error('request_timeout',504);
+    const attemptMs=Math.max(1,Math.min(response_format?20000:45000,Math.floor(budget/(providers.length-index))));
+    const timer=setTimeout(()=>timeout.abort(),attemptMs);
     const combined = signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal;
     let text = '', streamed = false;
     const push = delta => { if (typeof delta === 'string' && delta) { text += delta; if (onDelta) { streamed = true; onDelta(delta); } } };
@@ -60,7 +72,11 @@ async function completeChat({messages, response_format, max_completion_tokens = 
         if (provider.name === 'groq' && provider.model.startsWith('openai/gpt-oss')) Object.assign(body, {reasoning_effort:'low', include_reasoning:false});
       }
       const response = await fetch(url, {method:'POST', headers, body:JSON.stringify(body), signal:combined});
-      if (!response.ok) { await response.body?.cancel(); throw new ProviderError(errorCode(response.status), response.status); }
+      if (!response.ok) {
+        const code=errorCode(response.status),retryAfter=response.status===429?retrySeconds(response.headers.get('retry-after')):0;
+        if(response.status===429||['provider_auth','provider_configuration'].includes(code))cooldowns.set(stateKey,{code,until:Date.now()+(retryAfter||60)*1000});
+        await response.body?.cancel();throw Object.assign(new ProviderError(code,response.status),{retryAfter});
+      }
       const deltaFrom = data => provider.name === 'gemini'
         ? (data.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('')
         : data.choices?.[0]?.delta?.content;
@@ -86,11 +102,11 @@ async function completeChat({messages, response_format, max_completion_tokens = 
     } catch (error) {
       if (signal?.aborted) throw signal.reason;
       failure = error instanceof ProviderError ? error : new ProviderError(timeout.signal.aborted ? 'provider_timeout' : 'provider_network');
-      console.warn('[chat-provider]', {provider:provider.name, code:failure.code, status:failure.status});
+      runtime.diagnostic({stage:'provider',provider:provider.name,code:failure.code,status:failure.status});
       // Switching after text reached the browser would splice two different answers together.
       if (streamed) { failure.partial=true; throw failure; }
     } finally { clearTimeout(timer); }
   }
   throw failure;
 }
-module.exports = {completeChat, ProviderError, readEvents};
+module.exports = {completeChat, ProviderError, readEvents, resetProviderState:()=>cooldowns.clear()};

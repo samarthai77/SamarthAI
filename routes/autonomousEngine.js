@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 const streamResponse = require('../services/streamResponse');
+const runtime=require('../services/chatRuntime');
+const {userLimiter}=require('../middleware/chatRateLimit');
+const {randomUUID}=require('crypto');
 
 const autonomousEngine = require('../services/autonomousEngine');
 
@@ -27,6 +30,7 @@ function authenticate(req, res, next) {
     if (!authHeader) {
       return res.status(401).json({
         success: false,
+        code:'login_required',
         error: 'Authorization header required'
       });
     }
@@ -39,6 +43,7 @@ function authenticate(req, res, next) {
     ) {
       return res.status(401).json({
         success: false,
+        code:'login_required',
         error: 'Invalid authorization format'
       });
     }
@@ -46,12 +51,11 @@ function authenticate(req, res, next) {
     const token = parts[1];
 
     if (!process.env.JWT_SECRET) {
-      console.error(
-        '❌ JWT_SECRET is not configured'
-      );
+      runtime.diagnostic({stage:'auth',code:'operation_failed'});
 
       return res.status(500).json({
         success: false,
+        code:'auth_configuration',
         error: 'Authentication configuration error'
       });
     }
@@ -64,6 +68,7 @@ function authenticate(req, res, next) {
     if (!decoded?.id) {
       return res.status(401).json({
         success: false,
+        code:'login_required',
         error: 'Invalid authentication token'
       });
     }
@@ -74,22 +79,21 @@ function authenticate(req, res, next) {
 
   } catch (error) {
 
-    console.error(
-      '❌ Autonomous authentication error:',
-      error.message
-    );
+    runtime.diagnostic({stage:'auth',code:'operation_failed'});
 
     if (
       error.name === 'TokenExpiredError'
     ) {
       return res.status(401).json({
         success: false,
+        code:'login_required',
         error: 'Authentication token expired'
       });
     }
 
     return res.status(401).json({
       success: false,
+      code:'login_required',
       error: 'Invalid authentication token'
     });
   }
@@ -115,10 +119,7 @@ router.get('/health', (req, res) => {
 
   } catch (error) {
 
-    console.error(
-      '❌ Autonomous health error:',
-      error
-    );
+    runtime.diagnostic({stage:'auth',code:'operation_failed'});
 
     return res.status(500).json({
       success: false,
@@ -146,10 +147,7 @@ router.get('/agents', (req, res) => {
 
   } catch (error) {
 
-    console.error(
-      '❌ Agent list error:',
-      error
-    );
+    runtime.diagnostic({stage:'auth',code:'operation_failed'});
 
     return res.status(500).json({
       success: false,
@@ -167,6 +165,7 @@ router.get('/agents', (req, res) => {
 router.post(
   '/run',
   authenticate,
+  userLimiter,
   async (req, res) => {
 
     try {
@@ -184,6 +183,7 @@ router.post(
       ) {
         return res.status(400).json({
           success: false,
+          code:'invalid_request',
           error: 'Message is required'
         });
       }
@@ -191,31 +191,25 @@ router.post(
       if (!conversationId) {
         return res.status(400).json({
           success: false,
+          code:'invalid_request',
           error: 'conversationId is required'
         });
       }
 
-      const options = {userId:req.user.id, conversationId, requestId:req.body.requestId, message:message.trim(), mode:mode || 'conversation',
+      const options = {userId:req.user.id, conversationId, requestId:req.body.requestId??randomUUID(), message:message.trim(), mode:mode || 'conversation',
         metadata:metadata && typeof metadata === 'object' ? metadata : {}};
-      if (message.length > 10000) return res.status(400).json({success:false,error:'Message too long'});
+      if (message.length > 10000) return res.status(400).json({success:false,code:'invalid_request',error:'Message too long'});
       if (req.body.stream === true && req.accepts('text/event-stream')) return streamResponse(req,res,autonomousEngine.run,options);
-      const result = await autonomousEngine.run(options);
-
-      return res.json(result);
+      return streamResponse.json(req,res,autonomousEngine.run,options);
 
     } catch (error) {
 
-      console.error(
-        '❌ Autonomous run error:',
-        error.code || 'chat_unavailable'
-      );
+      runtime.diagnostic({stage:'auth',code:'operation_failed'});
 
       return res.status([400,403,409].includes(error.status) ? error.status : 503).json({
         success: false,
         autonomous: true,
-        code:error.code || 'chat_unavailable',
-        retryable:!['request_failed','request_id_conflict','request_replay_expired','invalid_request_id'].includes(error.code),
-        error:'AI service abhi available nahi hai. Dobara try karein.'
+        ...runtime.envelope(error)
       });
     }
   }
