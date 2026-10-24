@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Family Security — SamarthAI Kavach</title>
@@ -3158,6 +3159,7 @@ if (guidelinesLink) {
     });
 })();
     async function addFamilyMember() {
+    await window.SamarthAuth.ready;
     const nameInput = document.getElementById('familyName');
     const phoneInput = document.getElementById('familyPhone');
     const locationInput = document.getElementById('familyLocation');
@@ -3234,6 +3236,7 @@ if (guidelinesLink) {
     }
 }   
   async function loadFamily() {
+    await window.SamarthAuth.ready;
     try {
         const token = localStorage.getItem('token');
 
@@ -3503,6 +3506,7 @@ if (memberCount) {
     }
 }
 async function loadJoinRequests() {
+    await window.SamarthAuth.ready;
 
     try {
 
@@ -3779,6 +3783,7 @@ async function loadJoinRequests() {
     }
 }
  async function approveJoinRequest(requestId) {
+    await window.SamarthAuth.ready;
 
     const confirmed =
         confirm(
@@ -3843,6 +3848,7 @@ async function loadJoinRequests() {
     }
 }
  async function rejectJoinRequest(requestId) {
+    await window.SamarthAuth.ready;
 
     const confirmed =
         confirm(
@@ -3927,6 +3933,7 @@ function escapeFamilyJS(value) {
 
 }   
 async function trackFamilyMember(memberId) {
+    await window.SamarthAuth.ready;
     try {
         const token = localStorage.getItem('token');
 
@@ -3974,6 +3981,7 @@ async function trackFamilyMember(memberId) {
     }
 }
         async function deleteFamilyMember(id) {
+    await window.SamarthAuth.ready;
             if (!confirm('Delete this member?')) return;
             try {
                 const token = localStorage.getItem('token');
@@ -3987,6 +3995,7 @@ async function trackFamilyMember(memberId) {
             }
         }
 async function generateFamilyCode() {
+    await window.SamarthAuth.ready;
 
     try {
 
@@ -4052,6 +4061,7 @@ async function generateFamilyCode() {
 
 
 async function joinFamilyWithCode() {
+    await window.SamarthAuth.ready;
 
     const code =
         document.getElementById(

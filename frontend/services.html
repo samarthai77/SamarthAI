@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#003366" />
@@ -1229,6 +1230,7 @@ const notificationRequestId = urlParams.get('request_id');
 // ============================================
 
 async function editService(service) {
+    await window.SamarthAuth.ready;
 
     const token = localStorage.getItem('token');
 
@@ -1359,6 +1361,7 @@ async function editService(service) {
 // ============================================
 
 async function deleteService(service) {
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -1646,6 +1649,7 @@ async function openProviderReviews(service) {
     }
 }
 async function openProviderComplaint(service) {
+    await window.SamarthAuth.ready;
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -1954,6 +1958,7 @@ async function openProviderComplaint(service) {
     });
 }    
 async function requestService(service) {
+    await window.SamarthAuth.ready;
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -2522,6 +2527,7 @@ async function openPortfolio(service) {
     }
 
 async function loadNotificationRequest() {
+    await window.SamarthAuth.ready;
     if (!notificationRequestId) return;
 
     const token = localStorage.getItem('token');
@@ -2734,6 +2740,7 @@ async function updateProviderRequestStatus(
 // ============================================
 
 async function loadNotificationComplaint() {
+    await window.SamarthAuth.ready;
 
     if (!notificationComplaintId) {
         return;
@@ -2863,6 +2870,7 @@ async function loadNotificationComplaint() {
     }
 
     async function addService() {
+    await window.SamarthAuth.ready;
         const button = document.getElementById('addServiceBtn');
         const status = document.getElementById('addStatus');
 
@@ -3029,8 +3037,7 @@ try {
             if (typeof logout === 'function') {
                 logout();
             } else {
-                localStorage.removeItem('token');
-                window.location.href = 'login.html';
+                window.SamarthAuth.logout().then(ok => { if (ok) window.location.href = 'login.html'; });
             }
         });
 

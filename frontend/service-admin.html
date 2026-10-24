@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -485,6 +486,8 @@ function showMessage(message, isError = false) {
    ========================================= */
 
 async function loadComplaints() {
+    await window.SamarthAuth.ready;
+    if (window.SamarthAuth.unavailable && !getToken()) return;
 
     const token = getToken();
 
@@ -968,6 +971,7 @@ function closeNoteModal() {
 
 
 async function saveAdminAction() {
+    await window.SamarthAuth.ready;
 
     if (!selectedComplaint) return;
 
@@ -1052,6 +1056,7 @@ function closeDisableModal() {
    ========================================= */
 
 async function confirmDisableService() {
+    await window.SamarthAuth.ready;
 
     if (!selectedServiceId) return;
 

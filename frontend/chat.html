@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+<script src="auth-session.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <title>Chat — SamarthAI</title>
@@ -2588,6 +2589,7 @@ let voiceReplyEnabled = false;
 /* ===== LOAD PROFILE ===== */
 
 async function loadChatProfile(){
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -2836,6 +2838,7 @@ let conversations = [];
 /* ===== LOAD CONVERSATION LIST ===== */
 
 async function loadConversations(){
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -2894,6 +2897,7 @@ async function loadConversations(){
 /* ===== CREATE NEW CONVERSATION ===== */
 
 async function createNewConversation(forSend = false, signal = null){
+    await window.SamarthAuth.ready;
     if (sendInFlight && !forSend) return null;
 
     const token =
@@ -2982,6 +2986,7 @@ function openConversation(conversationId) {
 }
 
 async function loadConversation(conversationId){
+    await window.SamarthAuth.ready;
 
     if(!conversationId) return;
 
@@ -3991,7 +3996,7 @@ function openPrivacyFromMenu(){
 }
 
 
-function logoutFromChatMenu(){
+async function logoutFromChatMenu(){
 
     const confirmed =
         confirm(
@@ -4002,10 +4007,7 @@ function logoutFromChatMenu(){
         return;
     }
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-
-    location.href = 'index.html';
+    if (await window.SamarthAuth.logout()) location.href = 'index.html';
 
 }
 /* ===== OPEN PANEL ===== */

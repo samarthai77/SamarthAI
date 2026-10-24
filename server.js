@@ -103,7 +103,8 @@ app.use(
 
     allowedHeaders: [
       'Content-Type',
-      'Authorization'
+      'Authorization',
+      'X-CSRF-Token'
     ]
   })
 );
@@ -150,6 +151,8 @@ const globalLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
+// Validate session revocation before any authenticated API side effect.
+app.use(require('./middleware/authSession').sessionGate);
 // ===== USER ACTIVITY TRACKER =====
 const activityTracker = require('./middleware/activityTracker');
 app.use(activityTracker);

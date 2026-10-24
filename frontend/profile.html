@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile — SamarthAI</title>
@@ -370,6 +371,7 @@
         // =========================
 
         async function loadProfileData() {
+    await window.SamarthAuth.ready;
             try {
                 const token =
                     localStorage.getItem('token');
@@ -530,6 +532,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // =========================
 
         async function uploadProfilePhoto() {
+    await window.SamarthAuth.ready;
 
             const input =
                 document.getElementById(
@@ -651,6 +654,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // =========================
 
         async function updateProfile() {
+    await window.SamarthAuth.ready;
 
             const name =
                 document.getElementById(
@@ -735,6 +739,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // =========================
 
 async function loadPaymentStatus() {
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -854,6 +859,7 @@ async function loadPaymentStatus() {
 // =========================
 
 async function loadInvoices() {
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -1069,6 +1075,7 @@ function openPaymentPage() {
 // =========================
 
 async function deleteMyAccount() {
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem('token');
@@ -1148,8 +1155,7 @@ if (!currentPassword.trim()) {
         }
 
         // Clear local account session
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        window.SamarthAuth.clear(false);
 
         alert(
             '✅ Your SamarthAI account has been permanently deleted.'

@@ -3,7 +3,7 @@ const API_BASE = 'https://samarthai-backend.onrender.com/api';
 
 // ===== CHECK AUTH =====
 function getToken() {
-    return localStorage.getItem('token');
+    return window.SamarthAuth.peekToken();
 }
 
 function isLoggedIn() {
@@ -12,10 +12,11 @@ function isLoggedIn() {
 
 // ===== VERIFY LIVE SESSION =====
 async function validateSession() {
+    const restored = await window.SamarthAuth.ready;
     const token = getToken();
 
     if (!token) {
-        return false;
+        return restored === null ? null : false;
     }
 
     try {
@@ -27,18 +28,16 @@ async function validateSession() {
             }
         });
 
-        if (!response.ok) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+        if (response.status === 401) {
+            window.SamarthAuth.clear();
             return false;
         }
+        if (!response.ok) return null;
 
         const user = await response.json();
 
         if (!user || !user.id) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            return false;
+            return null;
         }
 
         // Keep local user data synchronized
@@ -47,13 +46,8 @@ async function validateSession() {
         return true;
 
     } catch (error) {
-        console.error('Session validation error:', error);
-
-        // Fail closed for protected pages
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-
-        return false;
+        // Temporary failures do not prove logout. Backend continues to deny access.
+        return null;
     }
 }
 // ===== NAVIGATION =====
@@ -62,14 +56,13 @@ function navigateTo(page) {
 }
 
 // ===== LOGOUT =====
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigateTo('index.html');
+async function logout() {
+    if (await window.SamarthAuth.logout()) navigateTo('index.html');
 }
 
 // ===== API HELPER =====
 async function apiRequest(endpoint, method = 'GET', body = null) {
+    await window.SamarthAuth.ready;
     const token = getToken();
     const headers = {
         'Content-Type': 'application/json'
@@ -114,6 +107,7 @@ async function loadProfile() {
 
 // ===== RUN ON PAGE LOAD =====
 document.addEventListener('DOMContentLoaded', async () => {
+    await window.SamarthAuth.ready;
     // Auth check for all protected V1 pages
     const protectedPages = [
         'dashboard.html',
@@ -124,7 +118,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         'gps.html',
         'camera.html',
         'services.html',
-        'category.html'
+        'category.html',
+        'admin.html',
+        'service-admin.html',
+        'payment.html'
     ];
 
     const currentPage =
@@ -144,7 +141,7 @@ if (currentPage === 'index.html' && isLoggedIn()) {
 
 if (protectedPages.includes(currentPage)) {
 
-    if (!isLoggedIn()) {
+    if (!isLoggedIn() && !window.SamarthAuth.unavailable) {
         navigateTo('index.html');
         return;
     }
@@ -152,7 +149,7 @@ if (protectedPages.includes(currentPage)) {
     const sessionValid =
         await validateSession();
 
-    if (!sessionValid) {
+    if (sessionValid === false) {
         navigateTo('index.html');
         return;
     }

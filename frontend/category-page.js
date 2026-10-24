@@ -1288,6 +1288,7 @@
         }
 
         async function loadProviderPhone(service, button) {
+            await window.SamarthAuth.ready;
             let token = '';
             try {
                 token = window.localStorage.getItem('token') || '';

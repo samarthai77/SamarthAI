@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SOS — SamarthAI</title>
@@ -179,6 +180,7 @@
     
 
        async function sendSOS() {
+    await window.SamarthAuth.ready;
 
     const status =
         document.getElementById("sosStatus");
@@ -356,6 +358,7 @@ LOAD ACTIVE FAMILY SOS
 */
 
 async function loadActiveFamilySOS() {
+    await window.SamarthAuth.ready;
 
     const card =
         document.getElementById(
@@ -617,6 +620,7 @@ RESOLVE ACTIVE SOS
 */
 
 async function resolveActiveSOS() {
+    await window.SamarthAuth.ready;
 
     const token =
         localStorage.getItem("token");

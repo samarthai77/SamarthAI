@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="auth-session.js"></script>
     <meta charset="UTF-8">
 
     <meta
@@ -301,6 +302,11 @@ function getToken() {
 // =====================================================
 
 async function startSubscription(planId, button) {
+    await window.SamarthAuth.ready;
+    if (window.SamarthAuth.unavailable && !getToken()) {
+        showMessage('Session service temporarily unavailable. Please retry.', 'error');
+        return;
+    }
 
     const token = getToken();
 

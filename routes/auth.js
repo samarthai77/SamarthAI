@@ -2,7 +2,6 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -58,11 +57,13 @@ const resetPasswordLimiter = rateLimit({
 // Supabase Client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  {global:{fetch:(url,init)=>fetch(url,{...init,signal:AbortSignal.timeout(10000)})}}
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = '1h';
+const {getAuthSessions,AuthError}=require('../services/authSessions');
+const sessionHttp=require('../middleware/authSession');
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
@@ -178,11 +179,39 @@ const upload = multer({
   }
 });
 
+router.use((req,res,next)=>{res.set('Cache-Control','no-store');next();});
+router.get('/session',sessionHttp.bootstrap);
+router.post('/refresh',sessionHttp.csrf,async(req,res)=>{
+  try {
+    const raw=sessionHttp.cookies(req)[sessionHttp.names(req).refresh];
+    if(!raw)throw new AuthError('auth_missing');
+    const session=await getAuthSessions().refresh(raw);
+    return res.json(sessionHttp.writeSession(req,res,session));
+  }catch(error){
+    if(error instanceof AuthError&&error.status===401)sessionHttp.clearSession(req,res);
+    return sessionHttp.sendError(res,error);
+  }
+});
+router.post('/logout',sessionHttp.csrf,async(req,res)=>{
+  try {
+    await getAuthSessions().logout(sessionHttp.cookies(req)[sessionHttp.names(req).refresh],req.headers.authorization?.replace(/^Bearer /,''));
+    sessionHttp.clearSession(req,res);return res.json({success:true});
+  }catch(error){return sessionHttp.sendError(res,error);}
+});
+router.post('/logout-all',sessionHttp.csrf,async(req,res)=>{
+  try {
+    if(!req.authSession)throw new AuthError('auth_missing');
+    await getAuthSessions().revokeUser(req.authSession.id);
+    sessionHttp.clearSession(req,res);return res.json({success:true});
+  }catch(error){return sessionHttp.sendError(res,error);}
+});
+
 // ============ REGISTER ============
 
 router.post(
   '/register',
   registerLimiter,
+  sessionHttp.csrf,
   async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -201,7 +230,7 @@ router.post(
         .limit(1);
 
     if (existingUserError) {
-      console.error('❌ User lookup error:', existingUserError);
+      console.warn('[auth] operation failed');
       return res.status(500).json({
         error: 'Unable to check account'
       });
@@ -229,22 +258,14 @@ router.post(
       .single();
 
     if (error) {
-      console.error('❌ Supabase insert error:', error);
+      console.warn('[auth] operation failed');
       return res.status(400).json({
-        error: error.message
+        error: 'Unable to create account'
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email
-      },
-      JWT_SECRET,
-      {
-        expiresIn: JWT_EXPIRES_IN
-      }
-    );
+    const session=await getAuthSessions().create(user);
+    const {token}=sessionHttp.writeSession(req,res,session);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -258,7 +279,8 @@ router.post(
     });
 
   } catch (error) {
-    console.error('❌ Register error:', error);
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+    console.warn('[auth] operation failed');
     res.status(500).json({
       error: 'Internal server error'
     });
@@ -270,6 +292,7 @@ router.post(
 router.post(
   '/login',
   loginLimiter,
+  sessionHttp.csrf,
   async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -289,7 +312,8 @@ router.post(
 
     const user = users?.[0];
 
-    if (error || !user) {
+    if(error)throw new AuthError('auth_unavailable',503);
+    if (!user) {
       return res.status(401).json({
         error: 'Invalid credentials'
       });
@@ -306,16 +330,8 @@ router.post(
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email
-      },
-      JWT_SECRET,
-      {
-        expiresIn: JWT_EXPIRES_IN
-      }
-    );
+    const session=await getAuthSessions().create(user);
+    const {token}=sessionHttp.writeSession(req,res,session);
 
     res.json({
       message: 'Login successful',
@@ -329,7 +345,8 @@ router.post(
     });
 
   } catch (error) {
-    console.error('❌ Login error:', error);
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+    console.warn('[auth] operation failed');
     res.status(500).json({
       error: 'Internal server error'
     });
@@ -368,10 +385,7 @@ router.post(
         .limit(1);
 
       if (userError) {
-        console.error(
-          'Password reset user lookup failed:',
-          userError.message
-        );
+        console.warn('[auth] operation failed');
 
         return res.status(200).json(genericResponse);
       }
@@ -405,10 +419,7 @@ router.post(
         .is('used_at', null);
 
       if (deleteOldTokensError) {
-        console.error(
-          'Password reset cleanup failed:',
-          deleteOldTokensError.message
-        );
+        console.warn('[auth] operation failed');
 
         return res.status(200).json(genericResponse);
       }
@@ -424,10 +435,7 @@ router.post(
         });
 
       if (insertTokenError) {
-        console.error(
-          'Password reset token creation failed:',
-          insertTokenError.message
-        );
+        console.warn('[auth] operation failed');
 
         return res.status(200).json(genericResponse);
       }
@@ -449,10 +457,7 @@ router.post(
           resetUrl
         });
       } catch (emailError) {
-        console.error(
-          'Password reset email failed:',
-          emailError.message
-        );
+        console.warn('[auth] operation failed');
 
         await supabase
           .from('password_reset_tokens')
@@ -463,10 +468,8 @@ router.post(
       return res.status(200).json(genericResponse);
 
     } catch (error) {
-      console.error(
-        'Forgot password error:',
-        error.message
-      );
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+      console.warn('[auth] operation failed');
 
       return res.status(200).json(genericResponse);
     }
@@ -479,6 +482,7 @@ router.post(
 router.post(
   '/reset-password',
   resetPasswordLimiter,
+  sessionHttp.csrf,
   async (req, res) => {
     try {
       const {
@@ -511,94 +515,10 @@ router.post(
           .update(token)
           .digest('hex');
 
-      const {
-        data: resetTokens,
-        error: tokenLookupError
-      } = await supabase
-        .from('password_reset_tokens')
-        .select(
-          'id, user_id, expires_at, used_at'
-        )
-        .eq('token_hash', tokenHash)
-        .limit(1);
-
-      if (
-        tokenLookupError ||
-        !resetTokens?.length
-      ) {
-        return res.status(400).json({
-          error: 'Invalid or expired reset link'
-        });
-      }
-
-      const resetToken = resetTokens[0];
-
-      if (resetToken.used_at) {
-        return res.status(400).json({
-          error: 'Invalid or expired reset link'
-        });
-      }
-
-      if (
-        new Date(resetToken.expires_at).getTime()
-        <= Date.now()
-      ) {
-        return res.status(400).json({
-          error: 'Invalid or expired reset link'
-        });
-      }
-
-      const {
-        data: consumedToken,
-        error: consumeError
-      } = await supabase
-        .from('password_reset_tokens')
-        .update({
-          used_at: new Date().toISOString()
-        })
-        .eq('id', resetToken.id)
-        .is('used_at', null)
-        .select('id')
-        .maybeSingle();
-
-      if (
-        consumeError ||
-        !consumedToken
-      ) {
-        return res.status(400).json({
-          error: 'Invalid or expired reset link'
-        });
-      }
-
-      const hashedPassword =
-        await bcrypt.hash(password, 12);
-
-      const {
-        error: passwordUpdateError
-      } = await supabase
-        .from('users')
-        .update({
-          password: hashedPassword
-        })
-        .eq('id', resetToken.user_id);
-
-      if (passwordUpdateError) {
-        console.error(
-          'Password update failed:',
-          passwordUpdateError.message
-        );
-
-        return res.status(500).json({
-          error:
-            'Unable to reset password. Please request a new link.'
-        });
-      }
-
-      await supabase
-        .from('password_reset_tokens')
-        .delete()
-        .eq('user_id', resetToken.user_id);
-
+      const hashedPassword=await bcrypt.hash(password,12);
+      const result=await getAuthSessions().resetPassword(tokenHash,hashedPassword);
+      if(result.state!=='reset')return res.status(400).json({error:'Invalid or expired reset link',code:'auth_reset_invalid'});
+      sessionHttp.clearSession(req,res);
       return res.json({
         success: true,
         message:
@@ -606,10 +526,8 @@ router.post(
       });
 
     } catch (error) {
-      console.error(
-        'Reset password error:',
-        error.message
-      );
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+      console.warn('[auth] operation failed');
 
       return res.status(500).json({
         error: 'Unable to reset password'
@@ -629,7 +547,7 @@ router.get('/profile', async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded=req.authSession || await getAuthSessions().validate(token);
 
     const { data: user, error } = await supabase
       .from('users')
@@ -640,18 +558,19 @@ router.get('/profile', async (req, res) => {
       .single();
 
     if (error || !user) {
-      return res.status(404).json({
-        error: 'User not found'
+      return res.status(error ? 503 : 401).json({
+        error: error ? 'Session service temporarily unavailable' : 'User not found'
       });
     }
 
     res.json(user);
 
   } catch (error) {
-    console.error('❌ Profile error:', error);
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+    console.warn('[auth] operation failed');
 
-    res.status(401).json({
-      error: 'Invalid token'
+    res.status(503).json({
+      error: 'Session service temporarily unavailable', code: 'auth_unavailable'
     });
   }
 });
@@ -671,7 +590,7 @@ router.post(
         });
       }
 
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded=req.authSession || await getAuthSessions().validate(token);
 
       if (!req.file) {
         return res.status(400).json({
@@ -705,10 +624,7 @@ router.post(
         });
 
       if (uploadError) {
-        console.error(
-          '❌ Profile photo upload error:',
-          uploadError
-        );
+        console.warn('[auth] operation failed');
 
         return res.status(500).json({
           error: 'Failed to upload profile photo'
@@ -739,10 +655,7 @@ router.post(
         .eq('id', decoded.id);
 
       if (updateError) {
-        console.error(
-          '❌ Profile photo database update error:',
-          updateError
-        );
+        console.warn('[auth] operation failed');
 
         return res.status(500).json({
           error: 'Photo uploaded but profile update failed'
@@ -755,10 +668,8 @@ router.post(
       });
 
     } catch (error) {
-      console.error(
-        '❌ Profile photo error:',
-        error
-      );
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+      console.warn('[auth] operation failed');
 
       if (
         error.name === 'JsonWebTokenError' ||
@@ -788,7 +699,7 @@ router.put('/profile', async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded=req.authSession || await getAuthSessions().validate(token);
 
     const { name, phone } = req.body;
 
@@ -801,9 +712,7 @@ router.put('/profile', async (req, res) => {
       .eq('id', decoded.id);
 
     if (updateError) {
-      return res.status(400).json({
-        error: updateError.message
-      });
+      throw new AuthError('auth_unavailable',503);
     }
 
     const { data: user, error: fetchError } =
@@ -816,9 +725,7 @@ router.put('/profile', async (req, res) => {
         .single();
 
     if (fetchError || !user) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      throw new AuthError(fetchError ? 'auth_unavailable' : 'auth_revoked',fetchError ? 503 : 401);
     }
 
     res.json({
@@ -827,13 +734,11 @@ router.put('/profile', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
-      '❌ Update profile error:',
-      error
-    );
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
+    console.warn('[auth] operation failed');
 
-    res.status(401).json({
-      error: 'Invalid token'
+    res.status(503).json({
+      error: 'Session service temporarily unavailable', code: 'auth_unavailable'
     });
   }
 });
@@ -851,10 +756,7 @@ router.delete('/account', async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      JWT_SECRET
-    );
+    const decoded=req.authSession || await getAuthSessions().validate(token);
 
     if (!decoded?.id) {
       return res.status(401).json({
@@ -925,10 +827,7 @@ if (!passwordMatches) {
 
     if (portfolioError) {
 
-      console.error(
-        '❌ Portfolio cleanup lookup error:',
-        portfolioError
-      );
+      console.warn('[auth] operation failed');
 
       return res.status(500).json({
         error:
@@ -992,10 +891,7 @@ const portfolioPaths = [];
 
     if (deleteError) {
 
-      console.error(
-        '❌ Account deletion database error:',
-        deleteError
-      );
+      console.warn('[auth] operation failed');
 
       return res.status(500).json({
         error:
@@ -1021,19 +917,13 @@ const portfolioPaths = [];
 
         if (portfolioStorageError) {
 storageCleanupWarning = true;
-          console.error(
-            '⚠️ Portfolio storage cleanup error:',
-            portfolioStorageError
-          );
+          console.warn('[auth] operation failed');
 
         }
 
       } catch (storageError) {
 storageCleanupWarning = true;
-        console.error(
-          '⚠️ Portfolio storage cleanup exception:',
-          storageError
-        );
+        console.warn('[auth] operation failed');
 
       }
     }
@@ -1056,10 +946,7 @@ storageCleanupWarning = true;
 if (profileListError) {
   storageCleanupWarning = true;
 
-  console.error(
-    '⚠️ Profile photo listing error:',
-    profileListError
-  );
+  console.warn('[auth] operation failed');
 }
 
 if (
@@ -1082,20 +969,14 @@ if (
 
         if (profileRemoveError) {
 storageCleanupWarning = true;
-          console.error(
-            '⚠️ Profile photo cleanup error:',
-            profileRemoveError
-          );
+          console.warn('[auth] operation failed');
 
         }
       }
 
     } catch (storageError) {
 storageCleanupWarning = true;
-      console.error(
-        '⚠️ Profile photo cleanup exception:',
-        storageError
-      );
+      console.warn('[auth] operation failed');
 
     }
 
@@ -1104,6 +985,7 @@ storageCleanupWarning = true;
     // FINAL RESPONSE
     // ------------------------------------------------
 
+ sessionHttp.clearSession(req,res);
  res.json({
   success: true,
 
@@ -1119,11 +1001,9 @@ storageCleanupWarning = true;
 });
 
   } catch (error) {
+    if(error instanceof AuthError)return sessionHttp.sendError(res,error);
 
-    console.error(
-      '❌ Delete account error:',
-      error
-    );
+    console.warn('[auth] operation failed');
 
 
     if (
