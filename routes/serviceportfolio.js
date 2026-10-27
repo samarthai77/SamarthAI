@@ -1,3 +1,6 @@
+const securityLog = require('../services/securityLog');
+const { createSessionGuard } = require('../middleware/sessionGuard');
+const { limits: imageLimits, uploadSlot, validateImage } = require('../middleware/safeUpload');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -7,7 +10,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -19,9 +23,7 @@ if (!JWT_SECRET) {
 // Maximum 5 MB per photo
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024
-  },
+  limits: imageLimits,
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
       'image/jpeg',
@@ -44,7 +46,7 @@ const upload = multer({
 // POST /api/service-portfolio/:serviceId
 // ============================================
 
-router.post('/:serviceId', upload.single('photo'), async (req, res) => {
+router.post('/:serviceId', createSessionGuard(supabase, { required: true }), uploadSlot, upload.single('photo'), validateImage, async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -73,7 +75,7 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
 
     if (serviceError) {
       return res.status(500).json({
-        error: serviceError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -94,7 +96,7 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
 
     if (countError) {
       return res.status(500).json({
-        error: countError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -124,10 +126,10 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
       });
 
     if (uploadError) {
-      console.error('❌ Portfolio upload error:', uploadError);
+      securityLog.error('❌ Portfolio upload error:', uploadError);
 
       return res.status(500).json({
-        error: uploadError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -168,7 +170,7 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
         .remove([fileName]);
 
       return res.status(500).json({
-        error: insertError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -178,7 +180,7 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Portfolio upload error:', error);
+    securityLog.error('❌ Portfolio upload error:', error);
 
     if (
       error.name === 'JsonWebTokenError' ||
@@ -197,7 +199,7 @@ router.post('/:serviceId', upload.single('photo'), async (req, res) => {
       }
 
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -233,14 +235,14 @@ router.get('/:serviceId', async (req, res) => {
 
     if (error) {
       return res.status(500).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
     res.json(data || []);
 
   } catch (error) {
-    console.error('❌ Get portfolio error:', error);
+    securityLog.error('❌ Get portfolio error:', error);
 
     res.status(500).json({
       error: 'Internal server error'
@@ -275,7 +277,7 @@ router.delete('/:id', async (req, res) => {
 
     if (findError) {
       return res.status(500).json({
-        error: findError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -310,7 +312,7 @@ router.delete('/:id', async (req, res) => {
 
     if (deleteError) {
       return res.status(500).json({
-        error: deleteError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -319,7 +321,7 @@ router.delete('/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Delete portfolio error:', error);
+    securityLog.error('❌ Delete portfolio error:', error);
 
     if (
       error.name === 'JsonWebTokenError' ||

@@ -1,3 +1,7 @@
+const securityLog = require('../services/securityLog');
+const { sessionVersion, passwordError, boundedFetch } = require('../services/security');
+const { createSessionGuard } = require('../middleware/sessionGuard');
+const { limits: imageLimits, uploadSlot, validateImage } = require('../middleware/safeUpload');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
@@ -58,9 +62,11 @@ const resetPasswordLimiter = rateLimit({
 // Supabase Client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
+const requireSession = createSessionGuard(supabase, { required: true });
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '1h';
 
@@ -87,7 +93,7 @@ async function sendPasswordResetEmail({
     );
   }
 
-  const response = await fetch(
+  const response = await boundedFetch(
     'https://api.resend.com/emails',
     {
       method: 'POST',
@@ -158,9 +164,7 @@ async function sendPasswordResetEmail({
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024
-  },
+  limits: imageLimits,
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
       'image/jpeg',
@@ -193,6 +197,10 @@ router.post(
       });
     }
   
+    const policyError = passwordError(password);
+    if (policyError) return res.status(400).json({ error: policyError });
+    if (typeof name !== 'string' || name.length > 200 || typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid name or email' });
+
     const { data: existingUsers, error: existingUserError } =
       await supabase
         .from('users')
@@ -201,7 +209,7 @@ router.post(
         .limit(1);
 
     if (existingUserError) {
-      console.error('❌ User lookup error:', existingUserError);
+      securityLog.error('❌ User lookup error:', existingUserError);
       return res.status(500).json({
         error: 'Unable to check account'
       });
@@ -213,7 +221,7 @@ router.post(
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const { data: user, error } = await supabase
       .from('users')
@@ -229,16 +237,17 @@ router.post(
       .single();
 
     if (error) {
-      console.error('❌ Supabase insert error:', error);
+      securityLog.error('❌ Supabase insert error:', error);
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
     const token = jwt.sign(
       {
         id: user.id,
-        email: user.email
+        email: user.email,
+        sv: sessionVersion(user.password)
       },
       JWT_SECRET,
       {
@@ -258,7 +267,7 @@ router.post(
     });
 
   } catch (error) {
-    console.error('❌ Register error:', error);
+    securityLog.error('❌ Register error:', error);
     res.status(500).json({
       error: 'Internal server error'
     });
@@ -274,7 +283,7 @@ router.post(
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || email.length > 254 || typeof password !== 'string' || Buffer.byteLength(password) > 1024 || !email || !password) {
       return res.status(400).json({
         error: 'Email and password are required'
       });
@@ -309,7 +318,8 @@ router.post(
     const token = jwt.sign(
       {
         id: user.id,
-        email: user.email
+        email: user.email,
+        sv: sessionVersion(user.password)
       },
       JWT_SECRET,
       {
@@ -329,7 +339,7 @@ router.post(
     });
 
   } catch (error) {
-    console.error('❌ Login error:', error);
+    securityLog.error('❌ Login error:', error);
     res.status(500).json({
       error: 'Internal server error'
     });
@@ -368,7 +378,7 @@ router.post(
         .limit(1);
 
       if (userError) {
-        console.error(
+        securityLog.error(
           'Password reset user lookup failed:',
           userError.message
         );
@@ -405,7 +415,7 @@ router.post(
         .is('used_at', null);
 
       if (deleteOldTokensError) {
-        console.error(
+        securityLog.error(
           'Password reset cleanup failed:',
           deleteOldTokensError.message
         );
@@ -424,7 +434,7 @@ router.post(
         });
 
       if (insertTokenError) {
-        console.error(
+        securityLog.error(
           'Password reset token creation failed:',
           insertTokenError.message
         );
@@ -449,7 +459,7 @@ router.post(
           resetUrl
         });
       } catch (emailError) {
-        console.error(
+        securityLog.error(
           'Password reset email failed:',
           emailError.message
         );
@@ -463,7 +473,7 @@ router.post(
       return res.status(200).json(genericResponse);
 
     } catch (error) {
-      console.error(
+      securityLog.error(
         'Forgot password error:',
         error.message
       );
@@ -495,13 +505,10 @@ router.post(
         });
       }
 
-      if (
-        typeof password !== 'string' ||
-        password.length < 8
-      ) {
+      if (passwordError(password)) {
         return res.status(400).json({
           error:
-            'Password must be at least 8 characters'
+            passwordError(password)
         });
       }
 
@@ -583,7 +590,7 @@ router.post(
         .eq('id', resetToken.user_id);
 
       if (passwordUpdateError) {
-        console.error(
+        securityLog.error(
           'Password update failed:',
           passwordUpdateError.message
         );
@@ -606,7 +613,7 @@ router.post(
       });
 
     } catch (error) {
-      console.error(
+      securityLog.error(
         'Reset password error:',
         error.message
       );
@@ -648,7 +655,7 @@ router.get('/profile', async (req, res) => {
     res.json(user);
 
   } catch (error) {
-    console.error('❌ Profile error:', error);
+    securityLog.error('❌ Profile error:', error);
 
     res.status(401).json({
       error: 'Invalid token'
@@ -660,7 +667,10 @@ router.get('/profile', async (req, res) => {
 
 router.post(
   '/profile/photo',
+  requireSession,
+  uploadSlot,
   upload.single('profile_photo'),
+  validateImage,
   async (req, res) => {
     try {
       const token = req.headers.authorization?.split(' ')[1];
@@ -705,7 +715,7 @@ router.post(
         });
 
       if (uploadError) {
-        console.error(
+        securityLog.error(
           '❌ Profile photo upload error:',
           uploadError
         );
@@ -739,7 +749,7 @@ router.post(
         .eq('id', decoded.id);
 
       if (updateError) {
-        console.error(
+        securityLog.error(
           '❌ Profile photo database update error:',
           updateError
         );
@@ -755,7 +765,7 @@ router.post(
       });
 
     } catch (error) {
-      console.error(
+      securityLog.error(
         '❌ Profile photo error:',
         error
       );
@@ -802,7 +812,7 @@ router.put('/profile', async (req, res) => {
 
     if (updateError) {
       return res.status(400).json({
-        error: updateError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -827,7 +837,7 @@ router.put('/profile', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Update profile error:',
       error
     );
@@ -925,7 +935,7 @@ if (!passwordMatches) {
 
     if (portfolioError) {
 
-      console.error(
+      securityLog.error(
         '❌ Portfolio cleanup lookup error:',
         portfolioError
       );
@@ -992,7 +1002,7 @@ const portfolioPaths = [];
 
     if (deleteError) {
 
-      console.error(
+      securityLog.error(
         '❌ Account deletion database error:',
         deleteError
       );
@@ -1021,7 +1031,7 @@ const portfolioPaths = [];
 
         if (portfolioStorageError) {
 storageCleanupWarning = true;
-          console.error(
+          securityLog.error(
             '⚠️ Portfolio storage cleanup error:',
             portfolioStorageError
           );
@@ -1030,7 +1040,7 @@ storageCleanupWarning = true;
 
       } catch (storageError) {
 storageCleanupWarning = true;
-        console.error(
+        securityLog.error(
           '⚠️ Portfolio storage cleanup exception:',
           storageError
         );
@@ -1056,7 +1066,7 @@ storageCleanupWarning = true;
 if (profileListError) {
   storageCleanupWarning = true;
 
-  console.error(
+  securityLog.error(
     '⚠️ Profile photo listing error:',
     profileListError
   );
@@ -1082,7 +1092,7 @@ if (
 
         if (profileRemoveError) {
 storageCleanupWarning = true;
-          console.error(
+          securityLog.error(
             '⚠️ Profile photo cleanup error:',
             profileRemoveError
           );
@@ -1092,7 +1102,7 @@ storageCleanupWarning = true;
 
     } catch (storageError) {
 storageCleanupWarning = true;
-      console.error(
+      securityLog.error(
         '⚠️ Profile photo cleanup exception:',
         storageError
       );
@@ -1120,7 +1130,7 @@ storageCleanupWarning = true;
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       '❌ Delete account error:',
       error
     );
@@ -1157,7 +1167,7 @@ router.use((error, req, res, next) => {
     }
 
     return res.status(400).json({
-      error: error.message
+      error: 'Request could not be completed'
     });
   }
 
@@ -1167,7 +1177,7 @@ router.use((error, req, res, next) => {
       'Only JPG, PNG and WebP images are allowed'
   ) {
     return res.status(400).json({
-      error: error.message
+      error: 'Request could not be completed'
     });
   }
 

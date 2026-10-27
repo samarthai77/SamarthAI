@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -39,13 +41,13 @@ router.get('/', async (req, res) => {
                 });
 
         if (error) {
-            console.error(
+            securityLog.error(
                 '❌ Notifications fetch error:',
                 error
             );
 
             return res.status(400).json({
-                error: error.message
+                error: 'Request could not be completed'
             });
         }
 
@@ -53,7 +55,7 @@ router.get('/', async (req, res) => {
 
     } catch (error) {
 
-        console.error(
+        securityLog.error(
             '❌ Notifications error:',
             error
         );
@@ -91,13 +93,13 @@ router.put('/read-all', async (req, res) => {
                 .eq('is_read', false);
 
         if (error) {
-            console.error(
+            securityLog.error(
                 '❌ Mark notifications read error:',
                 error
             );
 
             return res.status(400).json({
-                error: error.message
+                error: 'Request could not be completed'
             });
         }
 
@@ -108,7 +110,7 @@ router.put('/read-all', async (req, res) => {
 
     } catch (error) {
 
-        console.error(
+        securityLog.error(
             '❌ Mark all notifications error:',
             error
         );

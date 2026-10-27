@@ -6,42 +6,7 @@ const rateLimit = require('express-rate-limit');
 const {limited:apiRateLimitHandler}=require('./middleware/chatRateLimit');
 dotenv.config();
 
-// ===== SUPABASE DIAGNOSTIC START =====
-const dns = require('dns').promises;
 
-(async () => {
-  try {
-    const url = new URL(process.env.SUPABASE_URL);
-    const host = url.hostname;
-
-    console.log('[SUPABASE DIAG] Host:', host);
-
-    const dnsResult = await dns.lookup(host);
-    console.log('[SUPABASE DIAG] DNS OK:', dnsResult);
-
-    const response = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/users?select=id&limit=1`,
-      {
-        headers: {
-          apikey: process.env.SUPABASE_SERVICE_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
-        }
-      }
-    );
-
-    console.log('[SUPABASE DIAG] HTTP Status:', response.status);
-    console.log('[SUPABASE DIAG] Supabase connection OK');
-  } catch (err) {
-    console.error('[SUPABASE DIAG] FAILED:', {
-      name: err.name,
-      message: err.message,
-      code: err.code,
-      cause: err.cause?.message,
-      causeCode: err.cause?.code
-    });
-  }
-})();
-// ===== SUPABASE DIAGNOSTIC END =====
 
 const app = express();
 app.set('trust proxy', 1);
@@ -53,7 +18,8 @@ app.disable('x-powered-by');
 
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: false, // Per-document hash policy is supplied below.
+    referrerPolicy: { policy: 'no-referrer' }
   })
 );
 
@@ -69,7 +35,8 @@ app.use(
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://samarthai-backend.onrender.com'
+  'https://samarthai-backend.onrender.com',
+  'https://samarthai.life'
 ].filter(Boolean);
 
 app.use(
@@ -108,28 +75,6 @@ app.use(
   })
 );
 // =====================================================
-// RAZORPAY WEBHOOK RAW BODY
-// Must run BEFORE express.json()
-// =====================================================
-
-app.use(
-  '/api/payment/webhook',
-  express.raw({
-    type: 'application/json',
-    limit: '1mb'
-  })
-);
-// =====================================================
-// GLOBAL REQUEST SIZE LIMIT
-// =====================================================
-
-app.use(
-  express.json({
-  limit: '8mb'
-  })
-);
-
-// =====================================================
 // GLOBAL RATE LIMIT
 // =====================================================
 
@@ -150,6 +95,23 @@ const globalLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
+// Authentication and rate limiting run before expensive body parsing.
+const { createClient } = require('@supabase/supabase-js');
+const { createSessionGuard } = require('./middleware/sessionGuard');
+const sessionDatabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, { global: { fetch: require('./services/security').boundedFetch } });
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const publicAuth = /^\/auth\/(login|register|forgot-password|reset-password)\/?$/.test(req.path);
+  if (publicAuth || req.path.replace(/\/$/, '') === '/payment/webhook') return next();
+  const required = (req.method === 'POST' && ['/scanner/analyze', '/chat', '/autonomous/run'].includes(req.path.replace(/\/$/, '')));
+  return createSessionGuard(sessionDatabase, { required })(req, res, next);
+});
+app.use('/api/payment/webhook', express.raw({ type: 'application/json', limit: '1mb', inflate: false }));
+const ordinaryJson = express.json({ limit: '128kb', inflate: false });
+const imageJson = express.json({ limit: '9mb', inflate: false });
+app.use((req, res, next) => (['/api/scanner/analyze', '/api/chat'].includes(req.path.replace(/\/$/, '')) ? imageJson : ordinaryJson)(req, res, next));
+app.use(require('./middleware/contentSecurityPolicy'));
+app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 // ===== USER ACTIVITY TRACKER =====
 const activityTracker = require('./middleware/activityTracker');
 app.use(activityTracker);
@@ -228,8 +190,18 @@ app.use((error,req,res,next)=>{
   if(!res.headersSent)return res.status(issue.status).json(runtime.envelope(issue));
   if(!res.writableEnded)res.end();
 });
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.type === 'entity.too.large' ? 413 : error.type === 'entity.parse.failed' ? 400 : error.status === 415 ? 415 : error.message === 'CORS origin not allowed' ? 403 : 500;
+  return res.status(status).json({ error: status === 413 ? 'Request body too large' : status === 400 ? 'Invalid request body' : status === 403 ? 'Origin not allowed' : status === 415 ? 'Unsupported content encoding' : 'Request could not be completed' });
+});
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, '0.0.0.0', () => {
+if (require.main === module) {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`SamarthAI server running on port ${PORT}`);
 });
+server.requestTimeout = 30000;
+server.headersTimeout = 15000;
+}
+module.exports = app;

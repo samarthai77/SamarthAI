@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -62,7 +64,7 @@ is_active: true
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.status(201).json({
@@ -70,7 +72,7 @@ is_active: true
       service
     });
   } catch (error) {
-    console.error('❌ Add service error:', error);
+    securityLog.error('❌ Add service error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -98,7 +100,7 @@ users(name, profile_photo_url)
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
  const safeServices = (services || []).map(service => ({
@@ -115,7 +117,7 @@ users(name, profile_photo_url)
     res.json(safeServices);
 
   } catch (error) {
-    console.error('❌ Get services error:', error);
+    securityLog.error('❌ Get services error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -165,7 +167,7 @@ router.get('/nearby', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -234,7 +236,7 @@ router.get('/nearby', async (req, res) => {
     res.json(nearbyServices);
 
   } catch (error) {
-    console.error('❌ Nearby services error:', error);
+    securityLog.error('❌ Nearby services error:', error);
 
     res.status(500).json({
       error: 'Internal server error'
@@ -264,7 +266,7 @@ router.get('/:id/contact', async (req, res) => {
 
     if (serviceError) {
       return res.status(500).json({
-        error: serviceError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -282,7 +284,7 @@ router.get('/:id/contact', async (req, res) => {
 
     if (providerError) {
       return res.status(500).json({
-        error: providerError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -298,7 +300,7 @@ router.get('/:id/contact', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get service contact error:', error);
+    securityLog.error('❌ Get service contact error:', error);
 
     if (
       error.name === 'JsonWebTokenError' ||
@@ -371,7 +373,7 @@ longitude:
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({
@@ -379,7 +381,7 @@ longitude:
       service
     });
   } catch (error) {
-    console.error('❌ Update service error:', error);
+    securityLog.error('❌ Update service error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -412,12 +414,12 @@ router.delete('/:id', async (req, res) => {
       .eq('id', id);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({ message: 'Service deleted successfully' });
   } catch (error) {
-    console.error('❌ Delete service error:', error);
+    securityLog.error('❌ Delete service error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

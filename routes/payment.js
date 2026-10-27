@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -29,9 +30,14 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// Razorpay 2.9.8 exposes its Axios instance; constructor timeout is ignored.
+razorpay.api.rq.defaults.timeout = 15000;
+razorpay.api.rq.defaults.maxRedirects = 0;
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 // =====================================================
@@ -111,7 +117,7 @@ function authenticate(req, res, next) {
     next();
 
   } catch (error) {
-    console.error('❌ Payment authentication error:', error);
+    securityLog.error('❌ Payment authentication error:', error);
 
     return res.status(401).json({
       error: 'Invalid or expired authentication token'
@@ -186,7 +192,7 @@ router.post('/create-subscription', authenticate, async (req, res) => {
         .limit(1);
 
     if (existingError) {
-      console.error(
+      securityLog.error(
         '❌ Existing subscription lookup error:',
         existingError
       );
@@ -324,7 +330,7 @@ router.post('/create-subscription', authenticate, async (req, res) => {
       .single();
 
     if (saveError) {
-      console.error(
+      securityLog.error(
         '❌ Subscription database error:',
         saveError
       );
@@ -375,7 +381,7 @@ router.post('/create-subscription', authenticate, async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Razorpay create subscription error:',
       error
     );
@@ -436,7 +442,7 @@ router.post('/create-order', authenticate, async (req, res) => {
       .limit(1);
 
     if (recentOrderError) {
-      console.error(
+      securityLog.error(
         '❌ Recent payment order lookup error:',
         recentOrderError
       );
@@ -514,7 +520,7 @@ router.post('/create-order', authenticate, async (req, res) => {
       .single();
 
     if (saveOrderError) {
-      console.error(
+      securityLog.error(
         '❌ Payment order database error:',
         saveOrderError
       );
@@ -546,7 +552,7 @@ router.post('/create-order', authenticate, async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Razorpay create order error:',
       error
     );
@@ -600,7 +606,7 @@ router.post('/verify', authenticate, async (req, res) => {
       .maybeSingle();
 
     if (paymentOrderError) {
-      console.error(
+      securityLog.error(
         '❌ Payment order lookup error:',
         paymentOrderError
       );
@@ -663,7 +669,7 @@ router.post('/verify', authenticate, async (req, res) => {
         generatedBuffer
       )
     ) {
-      console.warn(
+      securityLog.warn(
         '⚠️ Invalid Razorpay payment signature',
         {
           userId: req.user.id,
@@ -694,7 +700,7 @@ router.post('/verify', authenticate, async (req, res) => {
       paymentOrder.currency !==
       plan.currency
     ) {
-      console.error(
+      securityLog.error(
         '❌ Payment amount mismatch',
         {
           orderId: razorpay_order_id,
@@ -707,6 +713,10 @@ router.post('/verify', authenticate, async (req, res) => {
         error: 'Payment amount mismatch'
       });
     }
+
+    // A valid checkout HMAC alone does not prove capture or the charged amount.
+    const captured = await razorpay.payments.fetch(razorpay_payment_id);
+    if (captured?.id !== razorpay_payment_id || captured?.order_id !== paymentOrder.provider_order_id || captured?.status !== 'captured' || captured?.amount !== paymentOrder.amount_paise || captured?.currency !== paymentOrder.currency) return res.status(409).json({ error: 'Payment is not captured or does not match this order' });
 
     // -------------------------------------------------
     // Save verified payment
@@ -737,7 +747,7 @@ router.post('/verify', authenticate, async (req, res) => {
       .maybeSingle();
 
     if (updateError) {
-      console.error(
+      securityLog.error(
         '❌ Payment update error:',
         updateError
       );
@@ -796,7 +806,7 @@ router.post('/verify', authenticate, async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Razorpay verification error:',
       error
     );
@@ -820,7 +830,7 @@ router.post('/webhook', async (req, res) => {
       process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error(
+      securityLog.error(
         '❌ RAZORPAY_WEBHOOK_SECRET is not configured'
       );
 
@@ -834,7 +844,7 @@ router.post('/webhook', async (req, res) => {
     // -------------------------------------------------
 
     if (!Buffer.isBuffer(req.body)) {
-      console.error(
+      securityLog.error(
         '❌ Razorpay webhook raw body is missing'
       );
 
@@ -854,7 +864,7 @@ router.post('/webhook', async (req, res) => {
 
     if (
       typeof receivedSignature !== 'string' ||
-      !receivedSignature
+      !/^[a-f0-9]{64}$/i.test(receivedSignature)
     ) {
       return res.status(400).json({
         error: 'Webhook signature missing'
@@ -890,7 +900,7 @@ router.post('/webhook', async (req, res) => {
         generatedBuffer
       )
     ) {
-      console.warn(
+      securityLog.warn(
         '⚠️ Invalid Razorpay webhook signature'
       );
 
@@ -910,7 +920,7 @@ router.post('/webhook', async (req, res) => {
         rawBody.toString('utf8')
       );
     } catch (parseError) {
-      console.error(
+      securityLog.error(
         '❌ Invalid Razorpay webhook JSON:',
         parseError
       );
@@ -935,17 +945,8 @@ router.post('/webhook', async (req, res) => {
     // 5. Get Razorpay event ID
     // -------------------------------------------------
 
-    const eventIdHeader =
-      req.headers['x-razorpay-event-id'];
-
-    const eventId =
-      typeof eventIdHeader === 'string' &&
-      eventIdHeader.trim()
-        ? eventIdHeader.trim()
-        : crypto
-            .createHash('sha256')
-            .update(rawBody)
-            .digest('hex');
+    // The event-id header is not covered by the provider HMAC.
+    const eventId = crypto.createHash('sha256').update(rawBody).digest('hex');
 
     // -------------------------------------------------
     // 6. Idempotency
@@ -966,7 +967,7 @@ router.post('/webhook', async (req, res) => {
       .maybeSingle();
 
     if (existingEventError) {
-      console.error(
+      securityLog.error(
         '❌ Webhook event lookup error:',
         existingEventError
       );
@@ -1010,7 +1011,7 @@ router.post('/webhook', async (req, res) => {
         if (
           webhookInsertError.code !== '23505'
         ) {
-          console.error(
+          securityLog.error(
             '❌ Webhook event insert error:',
             webhookInsertError
           );
@@ -1025,8 +1026,11 @@ router.post('/webhook', async (req, res) => {
 // INVOICE WEBHOOKS
 // -------------------------------------------------
 
-const invoice =
-  payload?.payload?.invoice?.entity;
+let invoice = payload?.payload?.invoice?.entity;
+if (invoice?.id && ['invoice.paid', 'invoice.partially_paid', 'invoice.expired'].includes(eventType)) {
+  invoice = await razorpay.invoices.fetch(invoice.id);
+  if (!invoice || invoice.id !== payload.payload.invoice.entity.id) return res.status(503).json({ error: 'Unable to verify invoice' });
+}
 
 const invoiceEvents = new Set([
   'invoice.paid',
@@ -1046,7 +1050,7 @@ if (invoiceEvents.has(eventType)) {
     typeof invoiceId !== 'string' ||
     !invoiceId
   ) {
-    console.warn(
+    securityLog.warn(
       '⚠️ Invoice ID missing in webhook',
       {
         eventType,
@@ -1098,7 +1102,7 @@ if (invoiceEvents.has(eventType)) {
 
     if (error) {
 
-      console.error(
+      securityLog.error(
         '❌ Invoice subscription lookup error:',
         error
       );
@@ -1113,7 +1117,7 @@ if (invoiceEvents.has(eventType)) {
 
   if (!localSubscription) {
 
-    console.error(
+    securityLog.error(
       '❌ Invoice could not be linked to subscription',
       {
         invoiceId,
@@ -1131,7 +1135,7 @@ if (invoiceEvents.has(eventType)) {
   // Determine invoice status
   // -------------------------------------------------
 
-  let invoiceStatus = 'issued';
+  let invoiceStatus = ['paid', 'partially_paid', 'expired', 'issued', 'draft'].includes(invoice.status) ? invoice.status : 'issued';
 
   if (
     eventType === 'invoice.paid'
@@ -1260,7 +1264,7 @@ if (invoiceEvents.has(eventType)) {
 
   if (invoiceUpsertError) {
 
-    console.error(
+    securityLog.error(
       '❌ Invoice database error:',
       invoiceUpsertError
     );
@@ -1275,9 +1279,9 @@ if (invoiceEvents.has(eventType)) {
   // invoice payment.
   // -------------------------------------------------
 
-  if (
-    eventType === 'invoice.paid'
-  ) {
+  if (eventType === 'invoice.paid' && invoice.status === 'paid' && invoice.amount_due === 0 && invoice.currency === 'INR' && Number.isSafeInteger(invoice.amount_paid) && invoice.amount_paid >= invoice.amount && invoice.amount > 0) {
+    const current = await razorpay.subscriptions.fetch(localSubscription.provider_subscription_id);
+    if (current?.id !== localSubscription.provider_subscription_id || current?.status !== 'active' || current?.plan_id !== PLANS[localSubscription.plan_id]?.razorpayPlanId || !Number.isSafeInteger(current.current_end) || current.current_end * 1000 <= Date.now()) return res.status(409).json({ error: 'Subscription state does not permit activation' });
 
     const {
       error: activateError
@@ -1285,6 +1289,7 @@ if (invoiceEvents.has(eventType)) {
       .from('subscriptions')
       .update({
         status: 'active',
+        current_end: new Date(current.current_end * 1000).toISOString(),
         updated_at:
           new Date().toISOString()
       })
@@ -1295,7 +1300,7 @@ if (invoiceEvents.has(eventType)) {
 
     if (activateError) {
 
-      console.error(
+      securityLog.error(
         '❌ Subscription activation error:',
         activateError
       );
@@ -1327,7 +1332,7 @@ if (invoiceEvents.has(eventType)) {
 
   if (invoiceProcessedError) {
 
-    console.error(
+    securityLog.error(
       '❌ Invoice webhook processed-state error:',
       invoiceProcessedError
     );
@@ -1347,8 +1352,11 @@ if (invoiceEvents.has(eventType)) {
     // 8. Extract subscription entity
     // -------------------------------------------------
 
-    const subscription =
-      payload?.payload?.subscription?.entity;
+    let subscription = payload?.payload?.subscription?.entity;
+    if (subscription?.id) {
+      subscription = await razorpay.subscriptions.fetch(subscription.id);
+      if (!subscription || subscription.id !== payload.payload.subscription.entity.id) return res.status(503).json({ error: 'Unable to verify subscription' });
+    }
 
     const subscriptionId =
       subscription?.id;
@@ -1359,7 +1367,7 @@ if (invoiceEvents.has(eventType)) {
     ) {
       // This should not happen for the subscription
       // events configured in Razorpay Dashboard.
-      console.warn(
+      securityLog.warn(
         '⚠️ Subscription entity missing in webhook',
         {
           eventType,
@@ -1404,7 +1412,7 @@ if (invoiceEvents.has(eventType)) {
       .maybeSingle();
 
     if (subscriptionLookupError) {
-      console.error(
+      securityLog.error(
         '❌ Subscription lookup error:',
         subscriptionLookupError
       );
@@ -1423,35 +1431,6 @@ if (invoiceEvents.has(eventType)) {
         ? subscription.status.toLowerCase()
         : '';
 
-    const eventStatusMap = {
-      'subscription.authenticated':
-        'authenticated',
-
-      'subscription.activated':
-        'active',
-
-      'subscription.charged':
-        'active',
-
-      'subscription.pending':
-        'pending',
-
-      'subscription.halted':
-        'halted',
-
-      'subscription.cancelled':
-        'cancelled',
-
-      'subscription.completed':
-        'completed',
-
-      'subscription.paused':
-        'paused',
-
-      'subscription.resumed':
-        'active'
-    };
-
     const allowedStatuses = new Set([
       'created',
       'pending',
@@ -1464,9 +1443,7 @@ if (invoiceEvents.has(eventType)) {
       'halted'
     ]);
 
-    let nextStatus =
-      eventStatusMap[eventType] ||
-      statusFromEntity;
+    let nextStatus = statusFromEntity;
 
     if (
       !allowedStatuses.has(nextStatus)
@@ -1546,7 +1523,7 @@ if (invoiceEvents.has(eventType)) {
         );
 
       if (updateSubscriptionError) {
-        console.error(
+        securityLog.error(
           '❌ Subscription update error:',
           updateSubscriptionError
         );
@@ -1581,7 +1558,7 @@ if (invoiceEvents.has(eventType)) {
         !planIdFromNotes ||
         !PLANS[planIdFromNotes]
       ) {
-        console.error(
+        securityLog.error(
           '❌ Cannot link Razorpay subscription to user',
           {
             subscriptionId,
@@ -1627,7 +1604,7 @@ if (invoiceEvents.has(eventType)) {
         ]);
 
       if (insertSubscriptionError) {
-        console.error(
+        securityLog.error(
           '❌ Subscription fallback insert error:',
           insertSubscriptionError
         );
@@ -1657,7 +1634,7 @@ if (invoiceEvents.has(eventType)) {
       );
 
     if (processedError) {
-      console.error(
+      securityLog.error(
         '❌ Webhook processed-state error:',
         processedError
       );
@@ -1676,7 +1653,7 @@ if (invoiceEvents.has(eventType)) {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Razorpay webhook error:',
       error
     );
@@ -1735,7 +1712,7 @@ router.get('/status', authenticate, async (req, res) => {
 
     if (error) {
 
-      console.error(
+      securityLog.error(
         '❌ Payment status lookup error:',
         error
       );
@@ -1759,10 +1736,7 @@ router.get('/status', authenticate, async (req, res) => {
         if (
           !subscription?.current_end
         ) {
-          return (
-            subscription.status ===
-            'active'
-          );
+          return false;
         }
 
         const endTime =
@@ -1773,8 +1747,7 @@ router.get('/status', authenticate, async (req, res) => {
         return (
           endTime > now &&
           [
-            'active',
-            'authenticated'
+            'active'
           ].includes(
             subscription.status
           )
@@ -1895,7 +1868,7 @@ router.get('/status', authenticate, async (req, res) => {
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       '❌ Payment status error:',
       error
     );
@@ -1950,7 +1923,7 @@ router.get(
 
       if (error) {
 
-        console.error(
+        securityLog.error(
           '❌ Invoice lookup error:',
           error
         );
@@ -2005,7 +1978,7 @@ router.get(
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         '❌ Invoice API error:',
         error
       );

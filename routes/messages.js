@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -78,7 +80,7 @@ if (!receiverMember) {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.status(201).json({
@@ -86,7 +88,7 @@ if (!receiverMember) {
       data
     });
   } catch (error) {
-    console.error('❌ Send message error:', error);
+    securityLog.error('❌ Send message error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -143,12 +145,12 @@ if (!receiverMember) {
       .order('created_at', { ascending: true });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json(messages);
   } catch (error) {
-    console.error('❌ Get messages error:', error);
+    securityLog.error('❌ Get messages error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -181,12 +183,12 @@ router.delete('/:id', async (req, res) => {
       .eq('id', id);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
-    console.error('❌ Delete message error:', error);
+    securityLog.error('❌ Delete message error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

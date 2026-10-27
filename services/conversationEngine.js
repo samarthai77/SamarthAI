@@ -1,3 +1,4 @@
+const { boundedFetch } = require('./security');
 const runtime=require('./chatRuntime');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -2147,7 +2148,7 @@ if(!place){
        * Planner decides whether external information is needed.
        */
    const tavilyResponse =
-        await fetch(
+        await boundedFetch(
           'https://api.tavily.com/search',
           {
             method: 'POST',
@@ -2206,7 +2207,7 @@ if(!place){
     return {
       ok: false,
       tool: toolName,
-      error: error.message || 'Tool execution failed.'
+      error: 'Tool execution failed.'
     };
   }
 }

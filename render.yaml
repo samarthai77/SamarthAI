@@ -2,14 +2,19 @@ services:
   - type: web
     name: samarthai-backend
     env: node
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: node server.js
     plan: free
+    healthCheckPath: /healthz
     envVars:
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: NODE_ENV
+        value: production
       - key: SUPABASE_URL
-        value: https://curszxwxfujksnkihkc.supabase.co
+        sync: false
       - key: SUPABASE_ANON_KEY
-        value: sb_publishable_bQxJArHzqVUuHD-wMGkvqQ_EdPf04
+        sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
       

@@ -1,3 +1,5 @@
+const securityLog = require('./securityLog');
+const { boundedFetch } = require('./security');
 const GROQ_MODEL = 'openai/gpt-oss-20b';
 const OPENAI_MODEL = 'gpt-6-astra';
 const CLAUDE_MODEL = 'claude-fable-5';
@@ -137,7 +139,7 @@ Do not return explanations outside JSON.
       })
       .join('\n\n');
 
-  const response = await fetch(
+  const response = await boundedFetch(
     'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
@@ -183,7 +185,7 @@ Do not return explanations outside JSON.
 
   if (!response.ok) {
 
-    console.error(
+    securityLog.error(
       'Tool planner error:',
       JSON.stringify(data)
     );
@@ -236,7 +238,7 @@ Do not return explanations outside JSON.
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       'Tool planner JSON error:',
       raw
     );
@@ -454,7 +456,7 @@ ${String(memoryText || '')}
   /*
    * Call Groq.
    */
-  const response = await fetch(
+  const response = await boundedFetch(
     'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
@@ -516,7 +518,7 @@ if (!response.ok) {
 
     if (shouldFallback) {
 
-      console.warn(
+      securityLog.warn(
       `Groq unavailable (${response.status}). Trying Gemini.`  
       );
 
@@ -542,7 +544,7 @@ if (process.env.GEMINI_API_KEY) {
         response_format
       });
 
-    console.warn(
+    securityLog.warn(
       'Gemini fallback succeeded.'
     );
 
@@ -550,7 +552,7 @@ if (process.env.GEMINI_API_KEY) {
 
   } catch (geminiError) {
 
-    console.error(
+    securityLog.error(
       'Gemini fallback failed:',
       geminiError.message
     );
@@ -559,7 +561,7 @@ if (process.env.GEMINI_API_KEY) {
 
 } else {
 
-  console.warn(
+  securityLog.warn(
     'GEMINI_API_KEY is not configured.'
   );
 
@@ -614,7 +616,7 @@ if (process.env.GEMINI_API_KEY) {
             fallbackResult.text.trim()
           ) {
 
-            console.warn(
+            securityLog.warn(
               'OpenAI fallback succeeded.'
             );
 
@@ -627,7 +629,7 @@ if (process.env.GEMINI_API_KEY) {
 
         } catch (openAIError) {
 
-          console.error(
+          securityLog.error(
             'OpenAI fallback failed:',
             openAIError.message
           );
@@ -636,7 +638,7 @@ if (process.env.GEMINI_API_KEY) {
 
       } else {
 
-        console.warn(
+        securityLog.warn(
           'OPENAI_API_KEY is not configured.'
         );
 
@@ -875,7 +877,7 @@ ${String(memoryText || '')}
 
   }
 
-  const response = await fetch(
+  const response = await boundedFetch(
 
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
 
@@ -1059,7 +1061,7 @@ ${memoryText}
   }
 
 
-  const response = await fetch(
+  const response = await boundedFetch(
     'https://api.openai.com/v1/responses',
     {
 
@@ -1203,7 +1205,7 @@ async function callClaude({
   });
 
 
-  const response = await fetch(
+  const response = await boundedFetch(
     'https://api.anthropic.com/v1/messages',
     {
 

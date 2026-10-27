@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -57,7 +59,7 @@ router.post('/', async (req, res) => {
 
     if (providerError) {
       return res.status(500).json({
-        error: providerError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -83,7 +85,7 @@ router.post('/', async (req, res) => {
 
       if (serviceError) {
         return res.status(500).json({
-          error: serviceError.message
+          error: 'Request could not be completed'
         });
       }
 
@@ -133,13 +135,13 @@ router.post('/', async (req, res) => {
         .single();
 
     if (complaintError) {
-      console.error(
+      securityLog.error(
         '❌ Complaint insert error:',
         complaintError
       );
 
       return res.status(400).json({
-        error: complaintError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -164,7 +166,7 @@ router.post('/', async (req, res) => {
         }]);
 
     if (notificationError) {
-      console.error(
+      securityLog.error(
         '❌ Complaint notification error:',
         notificationError
       );
@@ -183,7 +185,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Create complaint error:',
       error
     );
@@ -243,7 +245,7 @@ router.get('/my', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -268,7 +270,7 @@ router.get('/my', async (req, res) => {
     res.json(safeComplaints);
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Get customer complaints error:',
       error
     );
@@ -328,7 +330,7 @@ router.get('/provider', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -353,7 +355,7 @@ router.get('/provider', async (req, res) => {
     res.json(safeComplaints);
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Get provider complaints error:',
       error
     );

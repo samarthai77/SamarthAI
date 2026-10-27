@@ -1,9 +1,11 @@
+const securityLog = require('../services/securityLog');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 // Same user ke last_seen ko baar-baar DB me update na karein
@@ -31,7 +33,9 @@ async function activityTracker(req, res, next) {
       process.env.JWT_SECRET
     );
 
-    const userId = decoded.id;
+    const userId = req.user?.id;
+    if (lastActivityWrite.size >= 10000) { for (const [id, time] of lastActivityWrite) if (Date.now() - time >= WRITE_INTERVAL_MS) lastActivityWrite.delete(id); }
+    if (lastActivityWrite.size >= 10000 && !lastActivityWrite.has(userId)) return next();
 
     if (!userId) {
       return next();
@@ -58,7 +62,7 @@ async function activityTracker(req, res, next) {
 
   } catch (error) {
     // Activity tracker ki wajah se normal request kabhi block nahi hogi
-    console.warn(
+    securityLog.warn(
       'Activity tracker warning:',
       error.message
     );

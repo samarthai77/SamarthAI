@@ -3442,7 +3442,7 @@ if (memberCount) {
                     <div class="family-member-actions">
 
                         <button
-                            onclick="trackFamilyMember('${escapeFamilyJS(member.id)}')"
+                            data-security-action="trackFamilyMember" data-arg1="${escapeFamilyJS(member.id)}"
                         >
                             📍 Track
                         </button>
@@ -3451,7 +3451,7 @@ if (memberCount) {
                             !isAdmin
                                 ? `
                                     <button
-                                        onclick="deleteFamilyMember('${escapeFamilyJS(member.id)}')"
+                                        data-security-action="deleteFamilyMember" data-arg1="${escapeFamilyJS(member.id)}"
                                     >
                                         Delete
                                     </button>
@@ -3727,11 +3727,7 @@ async function loadJoinRequests() {
                         class="
                             family-join-request-approve
                         "
-                        onclick="
-                            approveJoinRequest(
-                                '${escapeFamilyJS(request.id)}'
-                            )
-                        "
+                        data-security-action="approveJoinRequest" data-arg1="${escapeFamilyJS(request.id)}"
                     >
                         ✅ Approve
                     </button>
@@ -3740,11 +3736,7 @@ async function loadJoinRequests() {
                         class="
                             family-join-request-reject
                         "
-                        onclick="
-                            rejectJoinRequest(
-                                '${escapeFamilyJS(request.id)}'
-                            )
-                        "
+                        data-security-action="rejectJoinRequest" data-arg1="${escapeFamilyJS(request.id)}"
                     >
                         ❌ Reject
                     </button>
@@ -4302,5 +4294,6 @@ async function loadKavachPromoSlideshow() {
   }
 }   
     </script>
+<script src="security-actions.js" defer></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -50,7 +52,7 @@ async function requireServiceAdmin(req, res) {
 
   if (error) {
     res.status(500).json({
-      error: error.message
+      error: 'Request could not be completed'
     });
     return null;
   }
@@ -96,7 +98,7 @@ router.get('/complaints', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -170,7 +172,7 @@ router.get('/complaints', async (req, res) => {
     res.json(safeComplaints);
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Admin get complaints error:',
       error
     );
@@ -232,7 +234,7 @@ router.put('/complaints/:id', async (req, res) => {
 
     if (existingError) {
       return res.status(500).json({
-        error: existingError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -268,7 +270,7 @@ router.put('/complaints/:id', async (req, res) => {
 
     if (updateError) {
       return res.status(400).json({
-        error: updateError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -296,7 +298,7 @@ router.put('/complaints/:id', async (req, res) => {
       }]);
 
     if (actionError) {
-      console.error(
+      securityLog.error(
         '❌ Admin action log error:',
         actionError
       );
@@ -354,7 +356,7 @@ router.put('/complaints/:id', async (req, res) => {
         }]);
 
     if (notificationError) {
-      console.error(
+      securityLog.error(
         '❌ Admin notification error:',
         notificationError
       );
@@ -366,7 +368,7 @@ router.put('/complaints/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Admin update complaint error:',
       error
     );
@@ -410,7 +412,7 @@ router.post('/services/:id/disable', async (req, res) => {
 
     if (serviceError) {
       return res.status(500).json({
-        error: serviceError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -440,7 +442,7 @@ router.post('/services/:id/disable', async (req, res) => {
 
     if (updateError) {
       return res.status(400).json({
-        error: updateError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -465,7 +467,7 @@ router.post('/services/:id/disable', async (req, res) => {
       }]);
 
     if (actionError) {
-      console.error(
+      securityLog.error(
         '❌ Service disable action log error:',
         actionError
       );
@@ -493,7 +495,7 @@ router.post('/services/:id/disable', async (req, res) => {
         }]);
 
     if (notificationError) {
-      console.error(
+      securityLog.error(
         '❌ Service disable notification error:',
         notificationError
       );
@@ -505,7 +507,7 @@ router.post('/services/:id/disable', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
+    securityLog.error(
       '❌ Admin disable service error:',
       error
     );

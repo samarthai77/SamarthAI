@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const { redactFamilyLocation, denyFamilyLocationRead } = require('../services/familyLocationPrivacy');
 const express = require("express");
 const jwt = require("jsonwebtoken");
@@ -8,7 +9,8 @@ const router = express.Router();
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -225,7 +227,7 @@ async function createFamilyForUser(userId) {
         Do NOT silently leave an unusable family.
         Return the real database error.
         */
-        console.error(
+        securityLog.error(
             "Admin membership creation error:",
             memberError
         );
@@ -426,7 +428,7 @@ if (!membership?.family_id) {
 });
     } catch (err) {
 
-        console.error(
+        securityLog.error(
             "Family fetch error:",
             err
         );
@@ -612,7 +614,7 @@ router.post("/", async (req, res) => {
 
     } catch (err) {
 
-        console.error(
+        securityLog.error(
             "Family insert error:",
             err
         );
@@ -837,7 +839,7 @@ router.post(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family invite code generation error:",
                 err
             );
@@ -1158,14 +1160,14 @@ router.post(
                         }]);
 
                     if (alertError) {
-                        console.error(
+                        securityLog.error(
                             "Family join request notification error:",
                             alertError
                         );
                     }
                 }
             } catch (notificationError) {
-                console.error(
+                securityLog.error(
                     "Family admin notification error:",
                     notificationError
                 );
@@ -1193,7 +1195,7 @@ router.post(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family join request error:",
                 err
             );
@@ -1378,7 +1380,7 @@ profile_photo_url:
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family join request fetch error:",
                 err
             );
@@ -1486,15 +1488,13 @@ router.post(
 
             if (error) {
 
-                console.error(
+                securityLog.error(
                     "Family join approval RPC error:",
                     error
                 );
 
                 return res.status(400).json({
-                    error:
-                        error.message ||
-                        "Could not approve family join request"
+                    error: 'Could not approve family join request'
                 });
             }
 
@@ -1509,7 +1509,7 @@ router.post(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family join approval error:",
                 err
             );
@@ -1656,7 +1656,7 @@ router.post(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family join rejection error:",
                 err
             );
@@ -1769,7 +1769,7 @@ if (member.location_sharing_enabled !== true) {
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family GPS error:",
                 err
             );
@@ -1911,7 +1911,7 @@ router.post(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family SOS error:",
                 err
             );
@@ -2065,7 +2065,7 @@ router.delete(
 
         } catch (err) {
 
-            console.error(
+            securityLog.error(
                 "Family delete error:",
                 err
             );
@@ -2112,7 +2112,7 @@ router.get("/alerts", async (req, res) => {
             .limit(50);
 
         if (error) {
-            console.error("Family alerts fetch error:", error);
+            securityLog.error("Family alerts fetch error:", error);
             return res.status(500).json({
                 error: "Could not load family alerts"
             });
@@ -2129,7 +2129,7 @@ router.get("/alerts", async (req, res) => {
             });
         }
 
-        console.error("Family alerts error:", err);
+        securityLog.error("Family alerts error:", err);
         return res.status(500).json({
             error: "Could not load family alerts"
         });

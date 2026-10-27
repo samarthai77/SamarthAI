@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const { denyFamilyLocationRead } = require('../services/familyLocationPrivacy');
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -7,7 +8,8 @@ const router = express.Router();
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -30,7 +32,7 @@ function getUserId(req) {
 
         return decoded.id || null;
     } catch (error) {
-        console.error('GPS auth error:', error.message);
+        securityLog.error('GPS auth error:', error.message);
         return null;
     }
 }
@@ -81,7 +83,7 @@ router.patch('/location-sharing', async (req, res) => {
             .maybeSingle();
 
         if (memberError) {
-            console.error('Location sharing lookup error:', memberError);
+            securityLog.error('Location sharing lookup error:', memberError);
 
             return res.status(500).json({
                 success: false,
@@ -108,7 +110,7 @@ router.patch('/location-sharing', async (req, res) => {
             .eq('is_active', true);
 
         if (updateError) {
-            console.error('Location sharing update error:', updateError);
+            securityLog.error('Location sharing update error:', updateError);
 
             return res.status(500).json({
                 success: false,
@@ -125,7 +127,7 @@ router.patch('/location-sharing', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Location sharing error:', error);
+        securityLog.error('Location sharing error:', error);
 
         return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
@@ -184,7 +186,7 @@ router.put('/location', async (req, res) => {
             .maybeSingle();
 
         if (memberError) {
-            console.error('GPS member lookup error:', memberError);
+            securityLog.error('GPS member lookup error:', memberError);
 
             return res.status(500).json({
                 success: false,
@@ -218,7 +220,7 @@ if (member.location_sharing_enabled !== true) {
             .single();
 
         if (updateError) {
-            console.error('GPS location update error:', updateError);
+            securityLog.error('GPS location update error:', updateError);
 
             return res.status(500).json({
                 success: false,
@@ -233,7 +235,7 @@ if (member.location_sharing_enabled !== true) {
         });
 
     } catch (error) {
-        console.error('GPS location error:', error);
+        securityLog.error('GPS location error:', error);
 
         return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
@@ -288,7 +290,7 @@ router.get('/:memberId', async (req, res) => {
                 .maybeSingle();
 
         if (memberError) {
-            console.error('GPS family member error:', memberError);
+            securityLog.error('GPS family member error:', memberError);
 
             return res.status(500).json({
                 success: false,
@@ -316,7 +318,7 @@ if (member.location_sharing_enabled !== true) {
         });
 
     } catch (error) {
-        console.error('GPS member location error:', error);
+        securityLog.error('GPS member location error:', error);
 
         return res.status(error.status === 403 ? 403 : 500).json({
             success: false,
@@ -389,7 +391,7 @@ router.post('/:memberId/sos', async (req, res) => {
                 .single();
 
         if (sosError) {
-            console.error('GPS SOS error:', sosError);
+            securityLog.error('GPS SOS error:', sosError);
 
             return res.status(500).json({
                 success: false,
@@ -404,7 +406,7 @@ router.post('/:memberId/sos', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('GPS SOS service error:', error);
+        securityLog.error('GPS SOS service error:', error);
 
         return res.status(500).json({
             success: false,

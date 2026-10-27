@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -51,7 +53,7 @@ router.post('/', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 // ============ PROVIDER NOTIFICATION ============
     if (provider_id) {
@@ -67,7 +69,7 @@ router.post('/', async (req, res) => {
         }]);
 
       if (notificationError) {
-        console.error(
+        securityLog.error(
           '❌ Provider notification error:',
           notificationError
         );
@@ -78,7 +80,7 @@ router.post('/', async (req, res) => {
       request
     });
   } catch (error) {
-    console.error('❌ Create request error:', error);
+    securityLog.error('❌ Create request error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -99,12 +101,12 @@ router.get('/', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json(requests);
   } catch (error) {
-    console.error('❌ Get requests error:', error);
+    securityLog.error('❌ Get requests error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -129,14 +131,14 @@ router.get('/provider', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
     res.json(requests);
 
   } catch (error) {
-    console.error('❌ Get provider requests error:', error);
+    securityLog.error('❌ Get provider requests error:', error);
 
     res.status(500).json({
       error: 'Internal server error'
@@ -206,7 +208,7 @@ router.put('/provider/:id/status', async (req, res) => {
 
     if (updateError) {
       return res.status(400).json({
-        error: updateError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -234,7 +236,7 @@ router.put('/provider/:id/status', async (req, res) => {
         }]);
 
     if (notificationError) {
-      console.error(
+      securityLog.error(
         '❌ Customer notification error:',
         notificationError
       );
@@ -250,7 +252,7 @@ router.put('/provider/:id/status', async (req, res) => {
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       '❌ Provider request status error:',
       error
     );
@@ -299,7 +301,7 @@ router.put('/:id', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({
@@ -307,7 +309,7 @@ router.put('/:id', async (req, res) => {
       request
     });
   } catch (error) {
-    console.error('❌ Update request error:', error);
+    securityLog.error('❌ Update request error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -340,12 +342,12 @@ router.delete('/:id', async (req, res) => {
       .eq('id', id);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({ message: 'Request deleted successfully' });
   } catch (error) {
-    console.error('❌ Delete request error:', error);
+    securityLog.error('❌ Delete request error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

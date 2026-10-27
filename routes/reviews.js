@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -34,7 +36,7 @@ router.get('/provider/:provider_id', async (req, res) => {
 
     if (servicesError) {
       return res.status(400).json({
-        error: servicesError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -58,7 +60,7 @@ router.get('/provider/:provider_id', async (req, res) => {
 
     if (reviewsError) {
       return res.status(400).json({
-        error: reviewsError.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -93,7 +95,7 @@ router.get('/provider/:provider_id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Provider rating error:', error);
+    securityLog.error('❌ Provider rating error:', error);
 
     res.status(500).json({
       error: 'Internal server error'
@@ -131,7 +133,7 @@ router.post('/', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.status(201).json({
@@ -139,7 +141,7 @@ router.post('/', async (req, res) => {
       review
     });
   } catch (error) {
-    console.error('❌ Add review error:', error);
+    securityLog.error('❌ Add review error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -159,12 +161,12 @@ router.get('/:service_id', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json(reviews);
   } catch (error) {
-    console.error('❌ Get reviews error:', error);
+    securityLog.error('❌ Get reviews error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -204,7 +206,7 @@ router.put('/:id', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({
@@ -212,7 +214,7 @@ router.put('/:id', async (req, res) => {
       review
     });
   } catch (error) {
-    console.error('❌ Update review error:', error);
+    securityLog.error('❌ Update review error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -245,12 +247,12 @@ router.delete('/:id', async (req, res) => {
       .eq('id', id);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Request could not be completed' });
     }
 
     res.json({ message: 'Review deleted successfully' });
   } catch (error) {
-    console.error('❌ Delete review error:', error);
+    securityLog.error('❌ Delete review error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

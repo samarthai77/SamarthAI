@@ -1,3 +1,5 @@
+const securityLog = require('../services/securityLog');
+const { boundedFetch } = require('../services/security');
 const express = require("express");
 const jwt = require("jsonwebtoken");
 
@@ -169,7 +171,7 @@ router.post("/analyze", authenticate, async (req, res) => {
     // GEMINI REQUEST
     // -------------------------------------------------
 
-    const geminiResponse = await fetch(
+    const geminiResponse = await boundedFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
         GEMINI_MODEL
       )}:generateContent`,
@@ -215,7 +217,7 @@ router.post("/analyze", authenticate, async (req, res) => {
     try {
       data = await geminiResponse.json();
     } catch (error) {
-      console.error(
+      securityLog.error(
         "Gemini scanner returned invalid JSON"
       );
 
@@ -225,7 +227,7 @@ router.post("/analyze", authenticate, async (req, res) => {
     }
 
     if (!geminiResponse.ok || data?.error) {
-      console.error(
+      securityLog.error(
         "Gemini scanner error:",
         JSON.stringify({
           status: geminiResponse.status,
@@ -266,7 +268,7 @@ router.post("/analyze", authenticate, async (req, res) => {
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       "Scanner error:",
       error?.message || "Unknown error"
     );

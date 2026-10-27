@@ -1,3 +1,5 @@
+const securityLog = require('../services/securityLog');
+const { uploadSlot } = require('../middleware/safeUpload');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -7,7 +9,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -23,7 +26,7 @@ const bannerUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: MAX_BANNER_SIZE,
-    files: 1
+    files: 1, fields: 8, parts: 9, fieldSize: 8192
   },
   fileFilter: (req, file, callback) => {
     const allowedTypes = [
@@ -84,7 +87,7 @@ async function requireServiceAdmin(req, res) {
     .maybeSingle();
 
   if (error) {
-    console.error(
+    securityLog.error(
       '❌ Admin authorization error:',
       error
     );
@@ -450,7 +453,7 @@ adminStep = 'members_list';
 
 } catch (error) {
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error:',
       JSON.stringify(
         error,
@@ -459,44 +462,36 @@ adminStep = 'members_list';
       )
     );
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error message:',
       error?.message
     );
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error code:',
       error?.code
     );
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error details:',
       error?.details
     );
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error hint:',
       error?.hint
     );
 
-    console.error(
+    securityLog.error(
       '❌ Admin dashboard error stack:',
       error?.stack
     );
-console.error(
+securityLog.error(
   '❌ Admin dashboard error step:',
   adminStep
 );
     res.status(500).json({
-      error:
-        'Unable to load admin dashboard',
-
-      details:
-        error?.message ||
-        error?.details ||
-        error?.hint ||
-        error?.code ||
-        'Unknown database error'
+      error: 'Unable to load admin dashboard'
     });
   }
 });
@@ -655,7 +650,7 @@ router.post('/install', async (req, res) => {
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       '❌ App install tracking error:',
       error
     );
@@ -673,11 +668,16 @@ router.post('/install', async (req, res) => {
 
 router.post(
   '/banners',
+  async (req, res, next) => {
+    const auth = await requireServiceAdmin(req, res);
+    if (auth) next();
+  },
+  uploadSlot,
   (req, res, next) => {
     bannerUpload.single('file')(req, res, (error) => {
       if (error) {
         return res.status(400).json({
-          error: error.message || 'Invalid banner upload'
+          error: 'Request could not be completed'
         });
       }
       next();
@@ -768,7 +768,7 @@ if (!slideNumber) {
         banner: data
       });
     } catch (error) {
-      console.error('Kavach banner upload failed:', error);
+      securityLog.error('Kavach banner upload failed:', error);
 
       if (uploadedPath) {
         await supabase.storage
@@ -804,7 +804,7 @@ router.get('/banners/public', async (req, res) => {
           .createSignedUrl(banner.storage_path, 3600);
 
         if (urlError || !signed?.signedUrl) {
-          console.error(
+          securityLog.error(
             'Public banner URL creation failed:',
             urlError
           );
@@ -826,7 +826,7 @@ router.get('/banners/public', async (req, res) => {
       banners: banners.filter(Boolean)
     });
   } catch (error) {
-    console.error('Public Kavach banners failed:', error);
+    securityLog.error('Public Kavach banners failed:', error);
 
     return res.status(500).json({
       error: 'Unable to load promotional banners'
@@ -865,7 +865,7 @@ router.get('/banners', async (req, res) => {
 
     return res.json({ success: true, banners });
   } catch (error) {
-    console.error('Kavach banner list failed:', error);
+    securityLog.error('Kavach banner list failed:', error);
     return res.status(500).json({
       error: 'Unable to load banners'
     });
@@ -937,7 +937,7 @@ router.patch('/banners/:id/settings', async (req, res) => {
 
     return res.json({ success: true, banner: data });
   } catch (error) {
-    console.error('Kavach banner settings update failed:', error);
+    securityLog.error('Kavach banner settings update failed:', error);
 
     return res.status(500).json({
       error: 'Unable to update banner settings'
@@ -978,7 +978,7 @@ router.patch('/banners/:id/status', async (req, res) => {
 
     return res.json({ success: true, banner: data });
   } catch (error) {
-    console.error('Kavach banner status update failed:', error);
+    securityLog.error('Kavach banner status update failed:', error);
     return res.status(500).json({
       error: 'Unable to update banner status'
     });
@@ -1018,7 +1018,7 @@ router.delete('/banners/:id', async (req, res) => {
       .remove([banner.storage_path]);
 
     if (deleteFileError) {
-      console.error(
+      securityLog.error(
         'Banner row deleted, but storage cleanup failed:',
         deleteFileError
       );
@@ -1033,7 +1033,7 @@ router.delete('/banners/:id', async (req, res) => {
       message: 'Banner deleted'
     });
   } catch (error) {
-    console.error('Kavach banner delete failed:', error);
+    securityLog.error('Kavach banner delete failed:', error);
     return res.status(500).json({
       error: 'Unable to delete banner'
     });

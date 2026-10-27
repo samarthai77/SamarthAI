@@ -1,3 +1,5 @@
+const securityLog = require('../services/securityLog');
+const { boundedFetch } = require('../services/security');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -19,7 +21,7 @@ function getUserId(req) {
 
         return decoded?.id || null;
     } catch (error) {
-        console.error(
+        securityLog.error(
             'Weather JWT error:',
             error.message
         );
@@ -58,12 +60,12 @@ async function googleWeather(
         `&units_system=METRIC` +
         extraParams;
 
-    const response = await fetch(url);
+    const response = await boundedFetch(url);
 
     const data = await response.json();
 
     if (!response.ok) {
-        console.error(
+        securityLog.error(
             'Google Weather API error:',
             response.status,
             JSON.stringify(data)
@@ -182,7 +184,7 @@ router.get('/', async (req, res) => {
 
     } catch (error) {
 
-        console.error(
+        securityLog.error(
             'Weather route error:',
             error.message
         );

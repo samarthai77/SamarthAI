@@ -1,3 +1,5 @@
+const securityLog = require('../services/securityLog');
+const { boundedFetch } = require('../services/security');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const {
@@ -12,7 +14,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -66,7 +69,7 @@ function getUserId(req) {
 
   } catch (error) {
 
-    console.error(
+    securityLog.error(
       'JWT error:',
       error.message
     );
@@ -103,7 +106,7 @@ async function analyzeImage(
     'image/png';
 
   const response =
-    await fetch(
+    await boundedFetch(
 
  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -216,7 +219,7 @@ async function createConversation(
     .single();
 
   if (error) {
-    console.error(
+    securityLog.error(
       'Conversation create error:',
       error
     );
@@ -267,7 +270,7 @@ async function getOwnedConversation(
 
   if (error) {
 
-    console.error(
+    securityLog.error(
       'Conversation lookup error:',
       error
     );
@@ -397,7 +400,7 @@ async function touchConversation(
 
   if (error) {
 
-    console.error(
+    securityLog.error(
       'Conversation update error:',
       error
     );
@@ -448,7 +451,7 @@ async function saveChat(
 
   if (error) {
 
-    console.error(
+    securityLog.error(
       'Chat save error:',
       error
     );
@@ -510,7 +513,7 @@ router.post(
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         'New conversation error:',
         error
       );
@@ -519,9 +522,7 @@ router.post(
         .status(500)
         .json({
 
-          error:
-            error.message ||
-            'Conversation creation failed'
+          error: 'Request could not be completed'
 
         });
     }
@@ -601,7 +602,7 @@ router.get(
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         'Conversation history error:',
         error
       );
@@ -714,7 +715,7 @@ router.get(
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         'Conversation load error:',
         error
       );
@@ -812,7 +813,7 @@ router.delete(
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         'Conversation delete error:',
         error
       );
@@ -1059,7 +1060,7 @@ const result =
 
     } catch (error) {
 
-      console.error(
+      securityLog.error(
         '❌ Chat error:',
         error
       );
@@ -1073,9 +1074,7 @@ const result =
         .status(status)
         .json({
 
-          error:
-            error.message ||
-            'Internal server error'
+          error: 'Request could not be completed'
 
         });
 

@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { createClient } = require("@supabase/supabase-js");
@@ -7,7 +8,8 @@ const router = express.Router();
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -466,7 +468,7 @@ router.post(
                 );
 
             if (locationError) {
-                console.error(
+                securityLog.error(
                     "SOS location update error:",
                     locationError
                 );
@@ -496,7 +498,7 @@ router.post(
 
 
             if (membersError) {
-                console.error(
+                securityLog.error(
                     "Family members lookup error:",
                     membersError
                 );
@@ -556,7 +558,7 @@ router.post(
                         in-app alerts failed.
                         */
 
-                        console.error(
+                        securityLog.error(
                             "SOS family alert error:",
                             alertError
                         );
@@ -591,7 +593,7 @@ router.post(
 
         } catch (error) {
 
-            console.error(
+            securityLog.error(
                 "❌ Create SOS error:",
                 error
             );
@@ -848,7 +850,7 @@ router.get(
 
         } catch (error) {
 
-            console.error(
+            securityLog.error(
                 "❌ Active family SOS error:",
                 error
             );
@@ -1078,7 +1080,7 @@ router.post(
 
         } catch (error) {
 
-            console.error(
+            securityLog.error(
                 "❌ Resolve SOS error:",
                 error
             );
@@ -1148,7 +1150,7 @@ router.get(
 
         } catch (error) {
 
-            console.error(
+            securityLog.error(
                 "❌ Get SOS error:",
                 error
             );

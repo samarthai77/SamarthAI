@@ -323,7 +323,8 @@
                 <input
                     type="password"
                     id="regPassword"
-                    placeholder="Create a password"
+                    placeholder="At least 12 characters (max 72 UTF-8 bytes)"
+                    minlength="12"
                     autocomplete="new-password"
                 >
 
@@ -544,6 +545,11 @@ async function register(){
 
     }
 
+
+    if ([...password].length < 12 || new TextEncoder().encode(password).length > 72) {
+        message.textContent = 'Password must contain at least 12 characters and at most 72 UTF-8 bytes.';
+        return;
+    }
 
     saveLanguage();
 

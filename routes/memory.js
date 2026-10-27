@@ -1,3 +1,4 @@
+const securityLog = require('../services/securityLog');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -6,7 +7,8 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  { global: { fetch: require('../services/security').boundedFetch } }
 );
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -109,7 +111,7 @@ router.post('/personal', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -119,7 +121,7 @@ router.post('/personal', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Personal memory save error:', error);
+    securityLog.error('Personal memory save error:', error);
 
     if (
       error.message === 'NO_TOKEN' ||
@@ -167,7 +169,7 @@ router.get('/personal/:key', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Personal memory fetch error:', error);
+    securityLog.error('Personal memory fetch error:', error);
 
     if (
       error.message === 'NO_TOKEN' ||
@@ -258,7 +260,7 @@ router.post('/family', async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        error: 'Request could not be completed'
       });
     }
 
@@ -268,7 +270,7 @@ router.post('/family', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Family memory save error:', error);
+    securityLog.error('Family memory save error:', error);
 
     if (
       error.message === 'NO_TOKEN' ||
@@ -324,7 +326,7 @@ router.get('/family/:key', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Family memory fetch error:', error);
+    securityLog.error('Family memory fetch error:', error);
 
     if (
       error.message === 'NO_TOKEN' ||
