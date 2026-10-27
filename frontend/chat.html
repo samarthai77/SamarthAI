@@ -1427,6 +1427,8 @@ body{
     border:1px solid rgba(150,200,255,.15) !important;
 }
 #featureMenu{
+    /* Cancel legacy translateX on desktop; fixed left/right define the viewport bounds. */
+    transform:none !important;
     display:none !important;
     position:fixed !important;
     left:10px !important;
@@ -2573,12 +2575,12 @@ body{
 
 <script>
 const CHAT_API =
-    'https://samarthai-backend.onrender.com/api/chat';
+    '/api/chat';
 
 const AUTONOMOUS_API =
-    'https://samarthai-backend.onrender.com/api/autonomous/run';
+    '/api/autonomous/run';
 const PROFILE_API =
-    'https://samarthai-backend.onrender.com/api/auth/profile';
+    '/api/auth/profile';
 
 let recognition = null;
 let isListening = false;

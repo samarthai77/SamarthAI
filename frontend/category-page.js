@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    const SERVICE_API_URL = 'https://samarthai-backend.onrender.com/api/services';
+    const SERVICE_API_URL = '/api/services';
     if (new URLSearchParams(window.location.search).get('category') === 'home-services') {
         document.title = 'Home Services — SamarthAI Kavach';
         initializeHomeServices();

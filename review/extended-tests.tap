@@ -1,0 +1,266 @@
+TAP version 13
+# Subtest: health and authored frontend pages serve without credentials
+ok 1 - health and authored frontend pages serve without credentials
+  ---
+  duration_ms: 155.7429
+  type: 'test'
+  ...
+# Subtest: CORS accepts the Kavach frontend and rejects unrelated origins
+ok 2 - CORS accepts the Kavach frontend and rejects unrelated origins
+  ---
+  duration_ms: 9.3261
+  type: 'test'
+  ...
+# Subtest: protected feature routes reject missing or forged authentication
+ok 3 - protected feature routes reject missing or forged authentication
+  ---
+  duration_ms: 30.2005
+  type: 'test'
+  ...
+# Subtest: profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+ok 4 - profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+  ---
+  duration_ms: 15.2715
+  type: 'test'
+  ...
+# Subtest: profile upload decodes a real image and stores normalized WebP
+ok 5 - profile upload decodes a real image and stores normalized WebP
+  ---
+  duration_ms: 32.5206
+  type: 'test'
+  ...
+# Subtest: profile upload rejects MIME spoofing and too many multipart fields
+ok 6 - profile upload rejects MIME spoofing and too many multipart fields
+  ---
+  duration_ms: 19.8199
+  type: 'test'
+  ...
+# Subtest: Family returns only the current family and redacts ordinary location sharing
+ok 7 - Family returns only the current family and redacts ordinary location sharing
+  ---
+  duration_ms: 18.9745
+  type: 'test'
+  ...
+# Subtest: Family non-admin mutation is denied
+ok 8 - Family non-admin mutation is denied
+  ---
+  duration_ms: 19.6179
+  type: 'test'
+  ...
+# Subtest: GPS retains fail-closed consent and family ownership checks
+ok 9 - GPS retains fail-closed consent and family ownership checks
+  ---
+  duration_ms: 21.5635
+  type: 'test'
+  ...
+# Subtest: SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+ok 10 - SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+  ---
+  duration_ms: 9.9681
+  type: 'test'
+  ...
+# Subtest: Scanner requires authentication, validates data and uses mocked provider
+ok 11 - Scanner requires authentication, validates data and uses mocked provider
+  ---
+  duration_ms: 14.8659
+  type: 'test'
+  ...
+# Subtest: Services listing works and owner mutation cannot target another provider
+ok 12 - Services listing works and owner mutation cannot target another provider
+  ---
+  duration_ms: 12.893
+  type: 'test'
+  ...
+# Subtest: database diagnostics and malformed/oversized bodies do not leak to clients
+ok 13 - database diagnostics and malformed/oversized bodies do not leak to clients
+  ---
+  duration_ms: 14.6952
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: admin dashboard failure does not expose database details or hints
+ok 14 - admin dashboard failure does not expose database details or hints
+  ---
+  duration_ms: 10.5928
+  type: 'test'
+  ...
+# Subtest: Register enforces password policy, preserves existing accounts and issues a revocable JWT
+ok 15 - Register enforces password policy, preserves existing accounts and issues a revocable JWT
+  ---
+  duration_ms: 979.9907
+  type: 'test'
+  ...
+# Subtest: Login accepts existing passwords and reset revokes JWTs immediately
+ok 16 - Login accepts existing passwords and reset revokes JWTs immediately
+  ---
+  duration_ms: 520.6001
+  type: 'test'
+  ...
+# Subtest: Forgot password uses a generic response and mocked email without disclosing account existence
+ok 17 - Forgot password uses a generic response and mocked email without disclosing account existence
+  ---
+  duration_ms: 6.1964
+  type: 'test'
+  ...
+# Subtest: Razorpay order amount is server-controlled and cross-user verification is denied
+ok 18 - Razorpay order amount is server-controlled and cross-user verification is denied
+  ---
+  duration_ms: 12.7493
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Razorpay signature rejects tampering and valid payment is idempotent
+ok 19 - Razorpay signature rejects tampering and valid payment is idempotent
+  ---
+  duration_ms: 15.458
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+ok 20 - Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+  ---
+  duration_ms: 10.2656
+  type: 'test'
+  ...
+# Subtest: authenticated subscription does not grant paid access; active future subscription does
+ok 21 - authenticated subscription does not grant paid access; active future subscription does
+  ---
+  duration_ms: 9.6542
+  type: 'test'
+  ...
+# Subtest: no referral backend is present: report as absent rather than claim a passing referral test
+ok 22 - no referral backend is present: report as absent rather than claim a passing referral test
+  ---
+  duration_ms: 3.8081
+  type: 'test'
+  ...
+# Subtest: late activation webhook cannot reactivate a provider-cancelled subscription
+ok 23 - late activation webhook cannot reactivate a provider-cancelled subscription
+  ---
+  duration_ms: 3.2107
+  type: 'test'
+  ...
+# Subtest: paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+ok 24 - paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+  ---
+  duration_ms: 6.6733
+  type: 'test'
+  ...
+# Subtest: REVIEW: private profile stays bound to caller despite user-id parameters
+ok 25 - REVIEW: private profile stays bound to caller despite user-id parameters
+  ---
+  duration_ms: 3.4543
+  type: 'test'
+  ...
+# Subtest: REVIEW: another user cannot read private chat history or list its conversation
+ok 26 - REVIEW: another user cannot read private chat history or list its conversation
+  ---
+  duration_ms: 7.8888
+  type: 'test'
+  ...
+# Subtest: REVIEW: Family non-admin cannot approve a join request
+ok 27 - REVIEW: Family non-admin cannot approve a join request
+  ---
+  duration_ms: 3.981
+  type: 'test'
+  ...
+# Subtest: REVIEW: admin approval passes authenticated reviewer to RPC, not body reviewer
+ok 28 - REVIEW: admin approval passes authenticated reviewer to RPC, not body reviewer
+  ---
+  duration_ms: 3.083
+  type: 'test'
+  ...
+# Subtest: REVIEW: active SOS location visible to same-family member but not outsiders
+ok 29 - REVIEW: active SOS location visible to same-family member but not outsiders
+  ---
+  duration_ms: 7.0402
+  type: 'test'
+  ...
+# Subtest: REVIEW: unrelated user cannot resolve someone else emergency
+ok 30 - REVIEW: unrelated user cannot resolve someone else emergency
+  ---
+  duration_ms: 4.369
+  type: 'test'
+  ...
+# Subtest: REVIEW: failed provider payment cannot mark order paid
+ok 31 - REVIEW: failed provider payment cannot mark order paid
+  ---
+  duration_ms: 5.9635
+  type: 'test'
+  ...
+# Subtest: REVIEW: nearby Services search filters location radius and category
+ok 32 - REVIEW: nearby Services search filters location radius and category
+  ---
+  duration_ms: 6.0523
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: REVIEW: refund event behavior is characterized, not declared a passing refund policy
+ok 33 - REVIEW: refund event behavior is characterized, not declared a passing refund policy
+  ---
+  duration_ms: 11.2293
+  type: 'test'
+  ...
+# Subtest: REVIEW ACCEPTANCE: old invoice event must not overwrite authoritative provider invoice status
+not ok 34 - REVIEW ACCEPTANCE: old invoice event must not overwrite authoritative provider invoice status
+  ---
+  duration_ms: 5.0384
+  type: 'test'
+  location: 'C:\\Users\\chandrashekhar singh\\.codex\\worktrees\\backend-security-hardening\\SamarthAI\\tests\\security-integration.test.cjs:267:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'paid' !== 'expired'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'expired'
+  actual: 'paid'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\chandrashekhar singh\.codex\worktrees\backend-security-hardening\SamarthAI\tests\security-integration.test.cjs:273:42)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: isolated mock staging configuration passes local structural validation
+ok 35 - isolated mock staging configuration passes local structural validation
+  ---
+  duration_ms: 3.1148
+  type: 'test'
+  ...
+# Subtest: staging rejects production database host
+ok 36 - staging rejects production database host
+  ---
+  duration_ms: 0.9443
+  type: 'test'
+  ...
+# Subtest: staging rejects live Razorpay mode
+ok 37 - staging rejects live Razorpay mode
+  ---
+  duration_ms: 1.0101
+  type: 'test'
+  ...
+# Subtest: current frontend is blocked from staging because it references Production API
+ok 38 - current frontend is blocked from staging because it references Production API
+  ---
+  duration_ms: 13.6849
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 37
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2796.5549

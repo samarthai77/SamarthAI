@@ -1,0 +1,43 @@
+# Configuration proposal only. No resource has been created.
+# Preflight rejects any reintroduced Production frontend API URLs.
+services:
+  - type: web
+    name: samarthai-kavach-security-staging
+    runtime: node
+    branch: codex/backend-security-hardening
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: npm ci && node --test tests/*.test.cjs review/backend-probes.cjs review/preflight.test.cjs
+    startCommand: node staging/preflight.cjs && node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: NODE_ENV
+        value: production
+      - key: STAGING_ONLY
+        value: 'true'
+      - key: STAGING_SUPABASE_PROJECT_REF
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

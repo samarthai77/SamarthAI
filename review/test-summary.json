@@ -1,0 +1,11 @@
+{
+  "distinctBackendAndPreflight": 106,
+  "backendAndPreflightPassed": 105,
+  "backendAndPreflightFailed": 1,
+  "browserPassed": 24,
+  "browserFailed": 4,
+  "uniquePassed": 129,
+  "uniqueFailed": 5,
+  "refundedAccess": true,
+  "productionNetworkSent": 0
+}

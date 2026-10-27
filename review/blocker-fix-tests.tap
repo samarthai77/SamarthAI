@@ -1,0 +1,889 @@
+TAP version 13
+# Subtest: health and authored frontend pages serve without credentials
+ok 1 - health and authored frontend pages serve without credentials
+  ---
+  duration_ms: 98.0942
+  type: 'test'
+  ...
+# Subtest: CORS accepts the Kavach frontend and rejects unrelated origins
+ok 2 - CORS accepts the Kavach frontend and rejects unrelated origins
+  ---
+  duration_ms: 7.7721
+  type: 'test'
+  ...
+# Subtest: protected feature routes reject missing or forged authentication
+ok 3 - protected feature routes reject missing or forged authentication
+  ---
+  duration_ms: 19.4311
+  type: 'test'
+  ...
+# Subtest: profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+ok 4 - profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+  ---
+  duration_ms: 11.7376
+  type: 'test'
+  ...
+# Subtest: profile upload decodes a real image and stores normalized WebP
+ok 5 - profile upload decodes a real image and stores normalized WebP
+  ---
+  duration_ms: 22.2457
+  type: 'test'
+  ...
+# Subtest: profile upload rejects MIME spoofing and too many multipart fields
+ok 6 - profile upload rejects MIME spoofing and too many multipart fields
+  ---
+  duration_ms: 14.6116
+  type: 'test'
+  ...
+# Subtest: Family returns only the current family and redacts ordinary location sharing
+ok 7 - Family returns only the current family and redacts ordinary location sharing
+  ---
+  duration_ms: 11.1879
+  type: 'test'
+  ...
+# Subtest: Family non-admin mutation is denied
+ok 8 - Family non-admin mutation is denied
+  ---
+  duration_ms: 334.2246
+  type: 'test'
+  ...
+# Subtest: GPS retains fail-closed consent and family ownership checks
+ok 9 - GPS retains fail-closed consent and family ownership checks
+  ---
+  duration_ms: 13.5955
+  type: 'test'
+  ...
+# Subtest: SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+ok 10 - SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+  ---
+  duration_ms: 11.6638
+  type: 'test'
+  ...
+# Subtest: Scanner requires authentication, validates data and uses mocked provider
+ok 11 - Scanner requires authentication, validates data and uses mocked provider
+  ---
+  duration_ms: 14.3016
+  type: 'test'
+  ...
+# Subtest: Services listing works and owner mutation cannot target another provider
+ok 12 - Services listing works and owner mutation cannot target another provider
+  ---
+  duration_ms: 13.4401
+  type: 'test'
+  ...
+# Subtest: database diagnostics and malformed/oversized bodies do not leak to clients
+ok 13 - database diagnostics and malformed/oversized bodies do not leak to clients
+  ---
+  duration_ms: 12.4027
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: admin dashboard failure does not expose database details or hints
+ok 14 - admin dashboard failure does not expose database details or hints
+  ---
+  duration_ms: 5.5132
+  type: 'test'
+  ...
+# Subtest: Register enforces password policy, preserves existing accounts and issues a revocable JWT
+ok 15 - Register enforces password policy, preserves existing accounts and issues a revocable JWT
+  ---
+  duration_ms: 662.8692
+  type: 'test'
+  ...
+# Subtest: Login accepts existing passwords and reset revokes JWTs immediately
+ok 16 - Login accepts existing passwords and reset revokes JWTs immediately
+  ---
+  duration_ms: 340.6831
+  type: 'test'
+  ...
+# Subtest: Forgot password uses a generic response and mocked email without disclosing account existence
+ok 17 - Forgot password uses a generic response and mocked email without disclosing account existence
+  ---
+  duration_ms: 5.4166
+  type: 'test'
+  ...
+# Subtest: Razorpay order amount is server-controlled and cross-user verification is denied
+ok 18 - Razorpay order amount is server-controlled and cross-user verification is denied
+  ---
+  duration_ms: 9.7165
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Razorpay signature rejects tampering and valid payment is idempotent
+ok 19 - Razorpay signature rejects tampering and valid payment is idempotent
+  ---
+  duration_ms: 10.2878
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+ok 20 - Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+  ---
+  duration_ms: 12.2874
+  type: 'test'
+  ...
+# Subtest: authenticated subscription does not grant paid access; active future subscription does
+ok 21 - authenticated subscription does not grant paid access; active future subscription does
+  ---
+  duration_ms: 12.4314
+  type: 'test'
+  ...
+# Subtest: no referral backend is present: report as absent rather than claim a passing referral test
+ok 22 - no referral backend is present: report as absent rather than claim a passing referral test
+  ---
+  duration_ms: 3.546
+  type: 'test'
+  ...
+# Subtest: late activation webhook cannot reactivate a provider-cancelled subscription
+ok 23 - late activation webhook cannot reactivate a provider-cancelled subscription
+  ---
+  duration_ms: 4.1324
+  type: 'test'
+  ...
+# Subtest: paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+ok 24 - paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+  ---
+  duration_ms: 7.2448
+  type: 'test'
+  ...
+# Subtest: REVIEW: private profile stays bound to caller despite user-id parameters
+ok 25 - REVIEW: private profile stays bound to caller despite user-id parameters
+  ---
+  duration_ms: 4.5044
+  type: 'test'
+  ...
+# Subtest: REVIEW: another user cannot read private chat history or list its conversation
+ok 26 - REVIEW: another user cannot read private chat history or list its conversation
+  ---
+  duration_ms: 11.2655
+  type: 'test'
+  ...
+# Subtest: REVIEW: Family non-admin cannot approve a join request
+ok 27 - REVIEW: Family non-admin cannot approve a join request
+  ---
+  duration_ms: 5.4319
+  type: 'test'
+  ...
+# Subtest: REVIEW: admin approval passes authenticated reviewer to RPC, not body reviewer
+ok 28 - REVIEW: admin approval passes authenticated reviewer to RPC, not body reviewer
+  ---
+  duration_ms: 5.7006
+  type: 'test'
+  ...
+# Subtest: REVIEW: active SOS location visible to same-family member but not outsiders
+ok 29 - REVIEW: active SOS location visible to same-family member but not outsiders
+  ---
+  duration_ms: 9.8723
+  type: 'test'
+  ...
+# Subtest: REVIEW: unrelated user cannot resolve someone else emergency
+ok 30 - REVIEW: unrelated user cannot resolve someone else emergency
+  ---
+  duration_ms: 3.8291
+  type: 'test'
+  ...
+# Subtest: REVIEW: failed provider payment cannot mark order paid
+ok 31 - REVIEW: failed provider payment cannot mark order paid
+  ---
+  duration_ms: 5.7866
+  type: 'test'
+  ...
+# Subtest: REVIEW: nearby Services search filters location radius and category
+ok 32 - REVIEW: nearby Services search filters location radius and category
+  ---
+  duration_ms: 5.7585
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: REVIEW: refund event behavior is characterized, not declared a passing refund policy
+ok 33 - REVIEW: refund event behavior is characterized, not declared a passing refund policy
+  ---
+  duration_ms: 10.7967
+  type: 'test'
+  ...
+# Subtest: REVIEW ACCEPTANCE: old invoice event must not overwrite authoritative provider invoice status
+ok 34 - REVIEW ACCEPTANCE: old invoice event must not overwrite authoritative provider invoice status
+  ---
+  duration_ms: 6.1111
+  type: 'test'
+  ...
+# Subtest: isolated mock staging configuration passes local structural validation
+ok 35 - isolated mock staging configuration passes local structural validation
+  ---
+  duration_ms: 4.1077
+  type: 'test'
+  ...
+# Subtest: staging rejects production database host
+ok 36 - staging rejects production database host
+  ---
+  duration_ms: 1.953
+  type: 'test'
+  ...
+# Subtest: staging rejects live Razorpay mode
+ok 37 - staging rejects live Razorpay mode
+  ---
+  duration_ms: 1.3058
+  type: 'test'
+  ...
+# Subtest: current frontend has no hardcoded Production API references
+ok 38 - current frontend has no hardcoded Production API references
+  ---
+  duration_ms: 1063.5004
+  type: 'test'
+  ...
+# Subtest: preflight still rejects a frontend fixture containing a Production API reference
+ok 39 - preflight still rejects a frontend fixture containing a Production API reference
+  ---
+  duration_ms: 28.7697
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":6,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"in_progress"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":14,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"uncertain"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"failed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"failed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"failed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"failed"}
+# [chat-diagnostic] {"event":"chat","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","stage":"ledger","durationMs":0,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","stage":"ledger","durationMs":0,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"completed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"replay"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"in_progress"}
+# Subtest: simultaneous identical requests claim once, then replay without generation or duplicate history
+ok 40 - simultaneous identical requests claim once, then replay without generation or duplicate history
+  ---
+  duration_ms: 51.6246
+  type: 'test'
+  ...
+# Subtest: new server/module instance replays completed durable state; current ownership checked first
+ok 41 - new server/module instance replays completed durable state; current ownership checked first
+  ---
+  duration_ms: 4.3817
+  type: 'test'
+  ...
+# Subtest: orphan claim after restart never takes over or calls AI
+ok 42 - orphan claim after restart never takes over or calls AI
+  ---
+  duration_ms: 1.8547
+  type: 'test'
+  ...
+# Subtest: failed request is terminal on retry and remains terminal after restart
+ok 43 - failed request is terminal on retry and remains terminal after restart
+  ---
+  duration_ms: 4.0333
+  type: 'test'
+  ...
+# Subtest: disconnect with streamed text persists partial once and safely replays it
+ok 44 - disconnect with streamed text persists partial once and safely replays it
+  ---
+  duration_ms: 3.7486
+  type: 'test'
+  ...
+# Subtest: disconnect before first text never regenerates that request
+ok 45 - disconnect before first text never regenerates that request
+  ---
+  duration_ms: 2.3551
+  type: 'test'
+  ...
+# Subtest: completed generation survives history outage and concurrent retries save one row
+ok 46 - completed generation survives history outage and concurrent retries save one row
+  ---
+  duration_ms: 2.4719
+  type: 'test'
+  ...
+# Subtest: history INSERT commit with lost acknowledgement recovers via same primary key
+ok 47 - history INSERT commit with lost acknowledgement recovers via same primary key
+  ---
+  duration_ms: 1.9663
+  type: 'test'
+  ...
+# Subtest: request ID cannot be reused for a different message, conversation or language
+ok 48 - request ID cannot be reused for a different message, conversation or language
+  ---
+  duration_ms: 3.675
+  type: 'test'
+  ...
+# Subtest: different users are isolated; location revocation does not resend or regenerate
+ok 49 - different users are isolated; location revocation does not resend or regenerate
+  ---
+  duration_ms: 3.5017
+  type: 'test'
+  ...
+# Subtest: expiry discards replay payload, retains tombstone, never regenerates
+ok 50 - expiry discards replay payload, retains tombstone, never regenerates
+  ---
+  duration_ms: 2.4236
+  type: 'test'
+  ...
+# Subtest: invalid ID, unavailable ledger and conflicting existing history all fail closed
+ok 51 - invalid ID, unavailable ledger and conflicting existing history all fail closed
+  ---
+  duration_ms: 2.2895
+  type: 'test'
+  ...
+# Subtest: fresh Node process replays DB snapshot with zero provider calls and one history row
+ok 52 - fresh Node process replays DB snapshot with zero provider calls and one history row
+  ---
+  duration_ms: 159.614
+  type: 'test'
+  ...
+# Subtest: lost completion acknowledgement cannot overwrite committed completion or regenerate
+ok 53 - lost completion acknowledgement cannot overwrite committed completion or regenerate
+  ---
+  duration_ms: 2.006
+  type: 'test'
+  ...
+# Subtest: claim acknowledgement lost after INSERT never starts a second generation
+ok 54 - claim acknowledgement lost after INSERT never starts a second generation
+  ---
+  duration_ms: 1.1991
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_rate_limit","status":429,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_rate_limit","status":429,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"gemini","code":"provider_rate_limit","status":429,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_auth","status":401,"durationMs":0}
+# Subtest: provider 429 uses Retry-After and skips cooled provider on following request
+ok 55 - provider 429 uses Retry-After and skips cooled provider on following request
+  ---
+  duration_ms: 52.4418
+  type: 'test'
+  ...
+# Subtest: all configured providers exhausted produce provider limit, not server limit
+ok 56 - all configured providers exhausted produce provider limit, not server limit
+  ---
+  duration_ms: 6.0582
+  type: 'test'
+  ...
+# Subtest: configuration failure is cooled; missing keys never receive calls
+ok 57 - configuration failure is cooled; missing keys never receive calls
+  ---
+  duration_ms: 1.6524
+  type: 'test'
+  ...
+# Subtest: exhausted shared budget calls no provider
+ok 58 - exhausted shared budget calls no provider
+  ---
+  duration_ms: 2.4035
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_timeout","status":503,"durationMs":89}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":1}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"provider_rate_limit","status":429,"durationMs":1}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":0}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"request_uncertain","status":409,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":0}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"database_unavailable","status":503,"durationMs":1}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":0}
+# Subtest: per-attempt timeout leaves shared time for fallback
+ok 59 - per-attempt timeout leaves shared time for fallback
+  ---
+  duration_ms: 90.1894
+  type: 'test'
+  ...
+# Subtest: numeric DOMException codes become structured timeout/disconnect errors
+ok 60 - numeric DOMException codes become structured timeout/disconnect errors
+  ---
+  duration_ms: 0.7148
+  type: 'test'
+  ...
+# Subtest: terminal/uncertain/expired states require explicit new request recovery
+ok 61 - terminal/uncertain/expired states require explicit new request recovery
+  ---
+  duration_ms: 0.4118
+  type: 'test'
+  ...
+# Subtest: diagnostic logger discards prompts, location, keys, arbitrary codes and user identifiers
+ok 62 - diagnostic logger discards prompts, location, keys, arbitrary codes and user identifiers
+  ---
+  duration_ms: 0.4441
+  type: 'test'
+  ...
+# Subtest: database timeout and network errors are not auth failures
+ok 63 - database timeout and network errors are not auth failures
+  ---
+  duration_ms: 0.5895
+  type: 'test'
+  ...
+# Subtest: SSE preserves provider Retry-After and terminal recovery fields
+ok 64 - SSE preserves provider Retry-After and terminal recovery fields
+  ---
+  duration_ms: 2.3417
+  type: 'test'
+  ...
+# Subtest: JSON Chat uses same structured error transport and HTTP code
+ok 65 - JSON Chat uses same structured error transport and HTTP code
+  ---
+  duration_ms: 1.3247
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"request_timeout","status":504,"durationMs":24}
+# Subtest: shared transport deadline aborts generation with a stable string code
+ok 66 - shared transport deadline aborts generation with a stable string code
+  ---
+  duration_ms: 24.1489
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","stage":"rate_limit","code":"server_rate_limit","status":429,"durationMs":0}
+# Subtest: real Express limiter excludes static assets, returns IP 429 + Retry-After
+ok 67 - real Express limiter excludes static assets, returns IP 429 + Retry-After
+  ---
+  duration_ms: 6002.4796
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","stage":"rate_limit","code":"server_rate_limit","status":429,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":0}
+# Subtest: authenticated user limiter has independent per-user counters
+ok 68 - authenticated user limiter has independent per-user counters
+  ---
+  duration_ms: 41.2431
+  type: 'test'
+  ...
+# Subtest: Chat code has no raw console error/body logging
+ok 69 - Chat code has no raw console error/body logging
+  ---
+  duration_ms: 2.0775
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"request_timeout","status":504,"durationMs":20}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","durationMs":0}
+# [chat-diagnostic] {"event":"chat","requestId":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","stage":"request","code":"provider_auth","status":401,"durationMs":1}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":1,"ledgerState":"claimed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":2,"ledgerState":"failed"}
+# [chat-diagnostic] {"event":"chat","requestId":"33333333-3333-4333-8333-333333333333","stage":"ledger","durationMs":0,"ledgerState":"failed"}
+# Subtest: deadline closes transport even when a tool ignores abort
+ok 70 - deadline closes transport even when a tool ignores abort
+  ---
+  duration_ms: 20.2477
+  type: 'test'
+  ...
+# Subtest: user limiter runs after JWT verification and invalid bodies are structured
+ok 71 - user limiter runs after JWT verification and invalid bodies are structured
+  ---
+  duration_ms: 1.3141
+  type: 'test'
+  ...
+# Subtest: provider authentication failure is service unavailable, not caller logout
+ok 72 - provider authentication failure is service unavailable, not caller logout
+  ---
+  duration_ms: 1.1496
+  type: 'test'
+  ...
+# Subtest: PostgREST-wrapped network and abort failures keep DB codes
+ok 73 - PostgREST-wrapped network and abort failures keep DB codes
+  ---
+  duration_ms: 0.6588
+  type: 'test'
+  ...
+# Subtest: known terminal provider failure immediately offers confirmed new request without unlocking the ID
+ok 74 - known terminal provider failure immediately offers confirmed new request without unlocking the ID
+  ---
+  duration_ms: 4.6814
+  type: 'test'
+  ...
+# Subtest: frontend network Retry keeps request ID, prompt, thread and language; does not resend GPS
+ok 75 - frontend network Retry keeps request ID, prompt, thread and language; does not resend GPS
+  ---
+  duration_ms: 167.2749
+  type: 'test'
+  ...
+# Subtest: frontend simultaneous Send is guarded and SSE completed replay renders normally
+ok 76 - frontend simultaneous Send is guarded and SSE completed replay renders normally
+  ---
+  duration_ms: 17.838
+  type: 'test'
+  ...
+# Subtest: terminal failed request does not offer an automatic paid Retry
+ok 77 - terminal failed request does not offer an automatic paid Retry
+  ---
+  duration_ms: 2.9637
+  type: 'test'
+  ...
+# Subtest: older mobile browsers generate secure UUIDs without randomUUID support
+ok 78 - older mobile browsers generate secure UUIDs without randomUUID support
+  ---
+  duration_ms: 3.2101
+  type: 'test'
+  ...
+# Subtest: new paid attempt requires confirmation and a different request ID
+ok 79 - new paid attempt requires confirmation and a different request ID
+  ---
+  duration_ms: 5.755
+  type: 'test'
+  ...
+# Subtest: server cooldown blocks Send and preserves the draft
+ok 80 - server cooldown blocks Send and preserves the draft
+  ---
+  duration_ms: 4.1352
+  type: 'test'
+  ...
+# Subtest: malformed SSE is a protocol failure, not an empty successful reply
+ok 81 - malformed SSE is a protocol failure, not an empty successful reply
+  ---
+  duration_ms: 4.2315
+  type: 'test'
+  ...
+# Subtest: Stop remains usable during an active request and stops only that request
+ok 82 - Stop remains usable during an active request and stops only that request
+  ---
+  duration_ms: 8.721
+  type: 'test'
+  ...
+# Subtest: Stop cancels a pending prerequisite without issuing a request
+ok 83 - Stop cancels a pending prerequisite without issuing a request
+  ---
+  duration_ms: 3.6794
+  type: 'test'
+  ...
+# [chat-diagnostic] {"event":"chat","stage":"conversation","code":"operation_failed","durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"conversation","code":"operation_failed","durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"conversation","code":"operation_failed","durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_rate_limit","status":429,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"provider","provider":"groq","code":"provider_stream_interrupted","status":503,"durationMs":0}
+# [chat-diagnostic] {"event":"chat","stage":"request","durationMs":1}
+# [chat-diagnostic] {"event":"chat","stage":"request","status":200,"durationMs":1}
+# [chat-diagnostic] {"event":"chat","stage":"request","durationMs":1}
+# [chat-diagnostic] {"event":"chat","stage":"request","code":"client_disconnected","status":499,"durationMs":1}
+# [chat-diagnostic] {"event":"chat","stage":"auth","code":"operation_failed","durationMs":0}
+# Subtest: named-city weather recovery never needs GPS and rejects unrelated requests
+ok 84 - named-city weather recovery never needs GPS and rejects unrelated requests
+  ---
+  duration_ms: 11.3749
+  type: 'test'
+  ...
+# Subtest: final answer preserves Markdown, indentation and actual streamed chunks
+ok 85 - final answer preserves Markdown, indentation and actual streamed chunks
+  ---
+  duration_ms: 5.9097
+  type: 'test'
+  ...
+# Subtest: planner outage still routes explicit Prayagraj weather to actual tool without GPS
+ok 86 - planner outage still routes explicit Prayagraj weather to actual tool without GPS
+  ---
+  duration_ms: 4.1187
+  type: 'test'
+  ...
+# Subtest: planner outage for non-weather is retryable, never a fabricated successful answer
+ok 87 - planner outage for non-weather is retryable, never a fabricated successful answer
+  ---
+  duration_ms: 2.4196
+  type: 'test'
+  ...
+# Subtest: thread ownership is enforced before calling the conversation engine
+ok 88 - thread ownership is enforced before calling the conversation engine
+  ---
+  duration_ms: 2.7563
+  type: 'test'
+  ...
+# Subtest: configured provider chain falls back on 429, no missing-provider calls, no text duplication
+ok 89 - configured provider chain falls back on 429, no missing-provider calls, no text duplication
+  ---
+  duration_ms: 63.5212
+  type: 'test'
+  ...
+# Subtest: provider streams actual split UTF-8 SSE deltas; cancellation stops fetch
+ok 90 - provider streams actual split UTF-8 SSE deltas; cancellation stops fetch
+  ---
+  duration_ms: 5.234
+  type: 'test'
+  ...
+# Subtest: mid-stream interruption is an error and never starts another provider
+ok 91 - mid-stream interruption is an error and never starts another provider
+  ---
+  duration_ms: 2.6974
+  type: 'test'
+  ...
+# Subtest: SSE transport emits ordered deltas and done, and aborts provider work on disconnect
+ok 92 - SSE transport emits ordered deltas and done, and aborts provider work on disconnect
+  ---
+  duration_ms: 4.6924
+  type: 'test'
+  ...
+# Subtest: JWT authentication still runs before the SSE or JSON handler
+ok 93 - JWT authentication still runs before the SSE or JSON handler
+  ---
+  duration_ms: 50.4372
+  type: 'test'
+  ...
+# Subtest: abort after a real partial answer persists only that user’s partial text
+ok 94 - abort after a real partial answer persists only that user’s partial text
+  ---
+  duration_ms: 4.467
+  type: 'test'
+  ...
+# Subtest: health and authored frontend pages serve without credentials
+ok 95 - health and authored frontend pages serve without credentials
+  ---
+  duration_ms: 91.3076
+  type: 'test'
+  ...
+# Subtest: CORS accepts the Kavach frontend and rejects unrelated origins
+ok 96 - CORS accepts the Kavach frontend and rejects unrelated origins
+  ---
+  duration_ms: 8.6244
+  type: 'test'
+  ...
+# Subtest: protected feature routes reject missing or forged authentication
+ok 97 - protected feature routes reject missing or forged authentication
+  ---
+  duration_ms: 21.6858
+  type: 'test'
+  ...
+# Subtest: profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+ok 98 - profile and portfolio uploads reject unauthenticated oversized multipart before parsing
+  ---
+  duration_ms: 15.5481
+  type: 'test'
+  ...
+# Subtest: profile upload decodes a real image and stores normalized WebP
+ok 99 - profile upload decodes a real image and stores normalized WebP
+  ---
+  duration_ms: 21.7307
+  type: 'test'
+  ...
+# Subtest: profile upload rejects MIME spoofing and too many multipart fields
+ok 100 - profile upload rejects MIME spoofing and too many multipart fields
+  ---
+  duration_ms: 11.068
+  type: 'test'
+  ...
+# Subtest: Family returns only the current family and redacts ordinary location sharing
+ok 101 - Family returns only the current family and redacts ordinary location sharing
+  ---
+  duration_ms: 10.6265
+  type: 'test'
+  ...
+# Subtest: Family non-admin mutation is denied
+ok 102 - Family non-admin mutation is denied
+  ---
+  duration_ms: 338.4986
+  type: 'test'
+  ...
+# Subtest: GPS retains fail-closed consent and family ownership checks
+ok 103 - GPS retains fail-closed consent and family ownership checks
+  ---
+  duration_ms: 10.659
+  type: 'test'
+  ...
+# Subtest: SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+ok 104 - SOS rejects invalid coordinates and stores a valid emergency with server-controlled contacts
+  ---
+  duration_ms: 8.1678
+  type: 'test'
+  ...
+# Subtest: Scanner requires authentication, validates data and uses mocked provider
+ok 105 - Scanner requires authentication, validates data and uses mocked provider
+  ---
+  duration_ms: 12.6038
+  type: 'test'
+  ...
+# Subtest: Services listing works and owner mutation cannot target another provider
+ok 106 - Services listing works and owner mutation cannot target another provider
+  ---
+  duration_ms: 9.7721
+  type: 'test'
+  ...
+# Subtest: database diagnostics and malformed/oversized bodies do not leak to clients
+ok 107 - database diagnostics and malformed/oversized bodies do not leak to clients
+  ---
+  duration_ms: 15.2447
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: admin dashboard failure does not expose database details or hints
+ok 108 - admin dashboard failure does not expose database details or hints
+  ---
+  duration_ms: 6.9237
+  type: 'test'
+  ...
+# Subtest: Register enforces password policy, preserves existing accounts and issues a revocable JWT
+ok 109 - Register enforces password policy, preserves existing accounts and issues a revocable JWT
+  ---
+  duration_ms: 667.2233
+  type: 'test'
+  ...
+# Subtest: Login accepts existing passwords and reset revokes JWTs immediately
+ok 110 - Login accepts existing passwords and reset revokes JWTs immediately
+  ---
+  duration_ms: 336.0934
+  type: 'test'
+  ...
+# Subtest: Forgot password uses a generic response and mocked email without disclosing account existence
+ok 111 - Forgot password uses a generic response and mocked email without disclosing account existence
+  ---
+  duration_ms: 5.1131
+  type: 'test'
+  ...
+# Subtest: Razorpay order amount is server-controlled and cross-user verification is denied
+ok 112 - Razorpay order amount is server-controlled and cross-user verification is denied
+  ---
+  duration_ms: 7.9226
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Razorpay signature rejects tampering and valid payment is idempotent
+ok 113 - Razorpay signature rejects tampering and valid payment is idempotent
+  ---
+  duration_ms: 13.0057
+  type: 'test'
+  ...
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# [backend] { event: 'operation_failed', code: 'internal_error' }
+# Subtest: Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+ok 114 - Webhook authenticates exact raw bytes, rejects forgery and ignores unsigned event-id changes
+  ---
+  duration_ms: 14.274
+  type: 'test'
+  ...
+# Subtest: authenticated subscription does not grant paid access; active future subscription does
+ok 115 - authenticated subscription does not grant paid access; active future subscription does
+  ---
+  duration_ms: 14.5159
+  type: 'test'
+  ...
+# Subtest: no referral backend is present: report as absent rather than claim a passing referral test
+ok 116 - no referral backend is present: report as absent rather than claim a passing referral test
+  ---
+  duration_ms: 6.1316
+  type: 'test'
+  ...
+# Subtest: late activation webhook cannot reactivate a provider-cancelled subscription
+ok 117 - late activation webhook cannot reactivate a provider-cancelled subscription
+  ---
+  duration_ms: 3.2063
+  type: 'test'
+  ...
+# Subtest: paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+ok 118 - paid invoice cannot reactivate cancelled subscription; current paid billing period can activate
+  ---
+  duration_ms: 6.3477
+  type: 'test'
+  ...
+# Subtest: sessions accept current token and reject changed password across process instances
+ok 119 - sessions accept current token and reject changed password across process instances
+  ---
+  duration_ms: 58.1725
+  type: 'test'
+  ...
+# Subtest: sessions reject legacy, disabled, deleted, malformed, expired and wrong-algorithm JWTs
+ok 120 - sessions reject legacy, disabled, deleted, malformed, expired and wrong-algorithm JWTs
+  ---
+  duration_ms: 5.2453
+  type: 'test'
+  ...
+# Subtest: session DB failure fails closed without returning sensitive diagnostics
+ok 121 - session DB failure fails closed without returning sensitive diagnostics
+  ---
+  duration_ms: 1.634
+  type: 'test'
+  ...
+# Subtest: password policy applies Unicode length and bcrypt UTF-8 byte ceiling
+ok 122 - password policy applies Unicode length and bcrypt UTF-8 byte ceiling
+  ---
+  duration_ms: 0.7518
+  type: 'test'
+  ...
+# Subtest: session JWT fingerprint is keyed and does not disclose password hash
+ok 123 - session JWT fingerprint is keyed and does not disclose password hash
+  ---
+  duration_ms: 0.6865
+  type: 'test'
+  ...
+# Subtest: uploads decode and normalize valid JPG, PNG and WebP
+ok 124 - uploads decode and normalize valid JPG, PNG and WebP
+  ---
+  duration_ms: 139.5259
+  type: 'test'
+  ...
+# Subtest: uploads reject spoofed MIME, corrupt data, huge bytes and excessive dimensions
+ok 125 - uploads reject spoofed MIME, corrupt data, huge bytes and excessive dimensions
+  ---
+  duration_ms: 9.1352
+  type: 'test'
+  ...
+# Subtest: upload concurrency releases slots on disconnect and finish exactly once
+ok 126 - upload concurrency releases slots on disconnect and finish exactly once
+  ---
+  duration_ms: 1.2772
+  type: 'test'
+  ...
+# Subtest: outbound fetch composes caller cancellation with a bounded deadline
+ok 127 - outbound fetch composes caller cancellation with a bounded deadline
+  ---
+  duration_ms: 1.368
+  type: 'test'
+  ...
+# Subtest: CSP permits authored inline scripts by hash, and rejects arbitrary inline/eval
+ok 128 - CSP permits authored inline scripts by hash, and rejects arbitrary inline/eval
+  ---
+  duration_ms: 23.8823
+  type: 'test'
+  ...
+# Subtest: runtime pins agree and every authored inline script compiles
+ok 129 - runtime pins agree and every authored inline script compiles
+  ---
+  duration_ms: 12.5237
+  type: 'test'
+  ...
+# Subtest: security logging drops SDK credentials, passwords and raw provider diagnostics
+ok 130 - security logging drops SDK credentials, passwords and raw provider diagnostics
+  ---
+  duration_ms: 1.1365
+  type: 'test'
+  ...
+# Subtest: delegated CSP actions pass data as arguments and ignore arbitrary action names
+ok 131 - delegated CSP actions pass data as arguments and ignore arbitrary action names
+  ---
+  duration_ms: 2.2348
+  type: 'test'
+  ...
+1..131
+# tests 131
+# suites 0
+# pass 131
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9003.0363

@@ -1,5 +1,5 @@
 // ===== APP CONFIG =====
-const API_BASE = 'https://samarthai-backend.onrender.com/api';
+const API_BASE = '/api';
 
 // ===== CHECK AUTH =====
 function getToken() {

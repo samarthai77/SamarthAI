@@ -1135,25 +1135,8 @@ if (invoiceEvents.has(eventType)) {
   // Determine invoice status
   // -------------------------------------------------
 
-  let invoiceStatus = ['paid', 'partially_paid', 'expired', 'issued', 'draft'].includes(invoice.status) ? invoice.status : 'issued';
-
-  if (
-    eventType === 'invoice.paid'
-  ) {
-    invoiceStatus = 'paid';
-  }
-
-  if (
-    eventType === 'invoice.partially_paid'
-  ) {
-    invoiceStatus = 'partially_paid';
-  }
-
-  if (
-    eventType === 'invoice.expired'
-  ) {
-    invoiceStatus = 'expired';
-  }
+  // Webhooks may arrive late or out of order. The fetched provider invoice is authoritative.
+  const invoiceStatus = ['paid', 'partially_paid', 'expired', 'issued', 'draft'].includes(invoice.status) ? invoice.status : 'issued';
 
   // -------------------------------------------------
   // Convert Unix timestamp

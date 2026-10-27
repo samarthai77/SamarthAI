@@ -427,7 +427,7 @@ async function loadNotifications() {
     try {
 
         const response = await fetch(
-            'https://samarthai-backend.onrender.com/api/notifications',
+            '/api/notifications',
             {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -722,7 +722,7 @@ async function toggleNotifications() {
         try {
 
             const response = await fetch(
-                'https://samarthai-backend.onrender.com/api/notifications/read-all',
+                '/api/notifications/read-all',
                 {
                     method: 'PUT',
                     headers: {

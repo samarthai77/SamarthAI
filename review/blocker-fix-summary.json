@@ -1,0 +1,52 @@
+{
+  "node": "v24.22.1",
+  "originalCommit": "6270c05843940a4cc83fab63b5c4455d94217b74",
+  "executedBackendChecks": 131,
+  "backendPassed": 131,
+  "browserPassed": 30,
+  "browserFailed": 0,
+  "uniqueChecks": 137,
+  "uniquePassed": 137,
+  "uniqueFailed": 0,
+  "previouslyFailed": [
+    {
+      "name": "desktop: Chat navigation to family",
+      "passed": true
+    },
+    {
+      "name": "desktop: Chat navigation to scanner",
+      "passed": true
+    },
+    {
+      "name": "desktop: Chat navigation to services",
+      "passed": true
+    },
+    {
+      "name": "desktop: Chat feature retains composer",
+      "passed": true
+    },
+    {
+      "name": "REVIEW ACCEPTANCE: old invoice event must not overwrite authoritative provider invoice status",
+      "passed": true
+    }
+  ],
+  "previousFailuresNowPassed": 5,
+  "trackedChangedFiles": [
+    "frontend/admin.html",
+    "frontend/app.js",
+    "frontend/category-page.js",
+    "frontend/chat.html",
+    "frontend/dashboard.html",
+    "frontend/forgot-password.html",
+    "frontend/login.html",
+    "frontend/payment.html",
+    "frontend/register.html",
+    "frontend/reset-password.html",
+    "frontend/service-admin.html",
+    "frontend/services.html",
+    "middleware/contentSecurityPolicy.js",
+    "routes/payment.js"
+  ],
+  "outOfScopeTrackedChanges": [],
+  "productionApiAttempts": 0
+}

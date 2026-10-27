@@ -1,0 +1,592 @@
+{
+  "method": "offline regex scan; no credential validity checks; binary and >2MiB blobs excluded",
+  "commits": 934,
+  "textBlobs": 912,
+  "findings": [
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "8526060007307d598bdeaeb09ced90447ce54af8",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "provider-token",
+      "path": "render.yaml",
+      "line": 15,
+      "blob": "a7428d19ed198fce055df2195e5aca707053bf9c",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "provider-token",
+      "path": "render.yaml",
+      "line": 14,
+      "blob": "1c94a1a7d9be8069156ca0fa1503289d63849a75",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "07b3d6a62ee0376e898fd1e6c02f23f36ce11d13",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/services.js",
+      "line": 12,
+      "blob": "391c24bdd302a159cd3e43d637de2a4f461eedf7",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/reviews.js",
+      "line": 12,
+      "blob": "53b3fa5785b226ddef05e5e351d0fd81a6245833",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/requests.js",
+      "line": 12,
+      "blob": "ba01fd57f557cf05268e58ea046b932c72eb3a87",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/messages.js",
+      "line": 12,
+      "blob": "0d9a92e6442a806ab52bed0c887ddd434ed4bbaa",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/memory.js",
+      "line": 12,
+      "blob": "fb669daca3c28b7b2b30e18a534a6faecb6f0294",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/gps.js",
+      "line": 12,
+      "blob": "cf7d9d5a06d0910b79e0e348586f7c6a8cb527ba",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 13,
+      "blob": "a101cab7f60db5912adc533766aba0524f075df5",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "5e80810ca0f866cf85c170becabc9fd25e5be137",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "8591fb64cc61db6afa3c95da4510a56f6e97f2a7",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "12be84de43ab915bf82a4b2f5bb801a1589ae56b",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "9596f70b77bb53bd0b684bfb10516421419ed024",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "e869d749282e15dc3ccb6deff6a4f6ccae273f35",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "fffbef976ff329e75bdf2d2a7f10fce505650a13",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "d82b442f1fad6edeaecb597f2c76d8adc957a56d",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "05c9b3637640ef79058658a5281cb3c26c2d546a",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "8b056ea8721a42027f58198d17640959777c47e5",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "208d60b49cbd37fe280846764c5f00244d66b734",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 12,
+      "blob": "0e4c19c8ddd464819668f2e6f660631777caa581",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "025c2de243710dee9d055332c7042822a4c29402",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "a1abadf9334d446dbad96a55e6a916b7ba86d57f",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "e2f7b61208fae4cf822546ecb5ac70890306c928",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 16,
+      "blob": "91d44e512506fb33f34d8d768c38c8df24a70317",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 16,
+      "blob": "23c19bd25b42a88a072194e8bdefc1e3ec031ef3",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 16,
+      "blob": "c14fbf9434dfed5c98083857c38bf9d41f18abd5",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "98977e3ab7e770256f06b931cdf0c2789f1dc077",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "85e51751a7d64c649760f76d8942c148f1213481",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 23,
+      "blob": "af1c755e3c7e07eeff7a4258d4d4fca819b62af7",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "b7c8776cde930a0be86174447da2331270c621c9",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/memory.js",
+      "line": 12,
+      "blob": "446189ff2a9879dcb65230bf5bae0e93b8a15586",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "fb4fecd4d180af0e54ae57e0e71802362d963a3e",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "bb7463670e01b512173f07b6d3f731b75b465ad2",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "8ff609ad8475e7d0e3945224a50d729dc7a1fcc6",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "b5e6ae36d137452f9349dc54ce07e4ce40e68198",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "b29069cf1c23be507d9875eedbe9f3b77561e6ef",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "87d863abe21cd0132c46eadabb52b23cd53abd1b",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 12,
+      "blob": "659cea10cbebb839abbff98172ea4497b008c188",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/gps.js",
+      "line": 12,
+      "blob": "9f7f3ed11b09b7bb1cd3225fbab55bae3600a783",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "5743a21f720419df6da9a26238c879f759c8c1f8",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "92f569393777932ce96b62f77a1bff95d33ae61e",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "f91d9a14501bf05dd14cee3db48fe2c9f6c21a68",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "e0b4cabc4335f73d18fa0525e9afdceb9c841469",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/messages.js",
+      "line": 12,
+      "blob": "6bc47879a8bf7c7a096d84cb1aef162e05467808",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/reviews.js",
+      "line": 12,
+      "blob": "1b16379665698492f711092eec1183c7cc2cac22",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/reviews.js",
+      "line": 12,
+      "blob": "66a7f998515cab41d1db6e087bcf2a43275b843e",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 12,
+      "blob": "5d5105f51aefe6f4c2a4e72915bc5968bc935fc1",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 12,
+      "blob": "d4d9b1c3ce250dd323dda854b07eaee168fbd3c0",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/requests.js",
+      "line": 12,
+      "blob": "f18cf77d32f222d9861612e93ccaca0f2b5db36f",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/requests.js",
+      "line": 12,
+      "blob": "ac498c9bf5623278461743e088d991ea6e586914",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/services.js",
+      "line": 12,
+      "blob": "b0d964701da25d701627438126bea13c7cec4fd1",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/services.js",
+      "line": 12,
+      "blob": "2a98715f6320e29caf7731a7bbd773714a6048b1",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/messages.js",
+      "line": 12,
+      "blob": "31445ba6f7ce8e6b13c572b11b4fd828ebb82ef4",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/reviews.js",
+      "line": 12,
+      "blob": "6d16ada8d48284993ef9cb26ae1e788c9b01cb84",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/family.js",
+      "line": 12,
+      "blob": "524170831e83171b205c022f41a0aa66db8240cd",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/sos.js",
+      "line": 12,
+      "blob": "cfb1efe65f2ae5d2aab9337bec1df5833ee28d8d",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/requests.js",
+      "line": 12,
+      "blob": "e95973eb1711e0cdec70ffc0074b1f4150597b76",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/services.js",
+      "line": 12,
+      "blob": "a296ecaf31654b6027a70656f51f4dbae57dc418",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "c7eb3f6ab149f0c6d0065148cc7996f90442a0d9",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "505ea02e60931b3d90a4d5e04bd24c351dc31e33",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "fceaba87a3467e5cfbf4966095366c52307bfa5b",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "0430e951ad48a6eac2f70ca2b39ba538a5813725",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "15ecdb3aaf63129c80d611159c9aa91df89fd766",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 12,
+      "blob": "2365a46ef06ab021356bf0f1dc7632a3a9385223",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 14,
+      "blob": "2f691133a64945e69cd9cbe9db84aef28f373dbf",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/chat.js",
+      "line": 13,
+      "blob": "f9723bd4b20efaca807995008746064d9bd179fd",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "43ae19cc42ac1ab26d8beaf537fb2a6214cc8a56",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "629a6082fc3d117657b979a6383a4efc8a1afb64",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "c36aecfe7dfc5104c5742231fbcc620daa57b8a5",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "ee7eac0e2dc13cc7d9952eef2b45ade9e56c697a",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    },
+    {
+      "rule": "hardcoded-jwt-fallback",
+      "path": "routes/auth.js",
+      "line": 14,
+      "blob": "16071b54866562c1d8d3659db38a066092e8684e",
+      "inHEAD": false,
+      "inSecurityCommit": false
+    }
+  ],
+  "fixtureOrPublicAnonMatches": 3
+}

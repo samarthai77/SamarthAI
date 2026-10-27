@@ -24,7 +24,7 @@ for (const name of fs.readdirSync(root).filter(name => name.endsWith('.html'))) 
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob: https://*.supabase.co",
     "font-src 'self' data:",
-    "connect-src 'self' https://samarthai-backend.onrender.com https://samarthai.life https://*.supabase.co wss://*.supabase.co https://*.razorpay.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://router.project-osrm.org",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.razorpay.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://router.project-osrm.org",
     "frame-src 'self' blob: https://*.razorpay.com",
     "worker-src 'self' blob:"
   ].join('; '));

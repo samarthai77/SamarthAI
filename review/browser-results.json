@@ -1,0 +1,525 @@
+{
+  "browser": "Local headless Edge; desktop and mobile viewport emulation; no real mobile hardware",
+  "results": [
+    {
+      "name": "desktop: login redirects to Chat under enforced CSP",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat navigation to family",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat navigation to sos",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat navigation to gps",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat navigation to scanner",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat navigation to services",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Chat feature retains composer",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: language selection persists",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: GPS asks only after user action; denial is handled",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: Scanner does not request camera until click; denial is handled",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: payment gateway script allowed by CSP (mocked)",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: admin panel does not render privileged data from an empty fixture",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: API calls stay on the served origin and never target Production",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: no JavaScript page errors",
+      "status": "pass"
+    },
+    {
+      "name": "desktop: no CSP console violations",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: login redirects to Chat under enforced CSP",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat navigation to family",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat navigation to sos",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat navigation to gps",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat navigation to scanner",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat navigation to services",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Chat feature retains composer",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: language selection persists",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: GPS asks only after user action; denial is handled",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: Scanner does not request camera until click; denial is handled",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: payment gateway script allowed by CSP (mocked)",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: admin panel does not render privileged data from an empty fixture",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: API calls stay on the served origin and never target Production",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: no JavaScript page errors",
+      "status": "pass"
+    },
+    {
+      "name": "mobile-emulation: no CSP console violations",
+      "status": "pass"
+    }
+  ],
+  "observations": [
+    {
+      "label": "desktop",
+      "errors": [],
+      "csp": [],
+      "sameOriginApiRequests": [
+        {
+          "path": "/api/auth/login",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/family",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/banners/public",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/sos/family-active",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/services",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/dashboard",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/banners",
+          "method": "GET"
+        }
+      ],
+      "blockedOrMockedExternalRequests": [
+        {
+          "host": "checkout.razorpay.com",
+          "path": "/v1/checkout.js",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "label": "mobile-emulation",
+      "errors": [],
+      "csp": [],
+      "sameOriginApiRequests": [
+        {
+          "path": "/api/auth/login",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/family",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/banners/public",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/sos/family-active",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/services",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/history",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/chat/conversations",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/auth/profile",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/dashboard",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/banners",
+          "method": "GET"
+        }
+      ],
+      "blockedOrMockedExternalRequests": [
+        {
+          "host": "checkout.razorpay.com",
+          "path": "/v1/checkout.js",
+          "method": "GET"
+        }
+      ]
+    }
+  ],
+  "passed": 30,
+  "failed": 0
+}

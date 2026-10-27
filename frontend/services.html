@@ -389,7 +389,7 @@
      * - No heavy images
      */
 
-    const SERVICE_API = 'https://samarthai-backend.onrender.com/api/services';
+    const SERVICE_API = '/api/services';
 const urlParams = new URLSearchParams(window.location.search);
 const notificationRequestId = urlParams.get('request_id');
  const notificationComplaintId =
@@ -855,7 +855,7 @@ const notificationRequestId = urlParams.get('request_id');
         const ratingBox = document.createElement('div');
         ratingBox.className = 'rating-summary';
         ratingBox.textContent = '⭐ Rating load ho rahi hai…';
-        fetch('https://samarthai-backend.onrender.com/api/reviews/provider/' + encodeURIComponent(service.provider_id), { method: 'GET', cache: 'no-store' })
+        fetch('/api/reviews/provider/' + encodeURIComponent(service.provider_id), { method: 'GET', cache: 'no-store' })
             .then(async response => {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Rating unavailable');
@@ -1527,7 +1527,7 @@ async function openProviderReviews(service) {
 
     try {
         const response = await fetch(
-            `https://samarthai-backend.onrender.com/api/reviews/provider/${encodeURIComponent(providerId)}`,
+            `/api/reviews/provider/${encodeURIComponent(providerId)}`,
             {
                 method: 'GET',
                 cache: 'no-store'
@@ -1868,7 +1868,7 @@ async function openProviderComplaint(service) {
         try {
 
             const response = await fetch(
-                'https://samarthai-backend.onrender.com/api/complaints',
+                '/api/complaints',
                 {
                     method: 'POST',
 
@@ -1977,7 +1977,7 @@ async function requestService(service) {
 
     try {
         const response = await fetch(
-            'https://samarthai-backend.onrender.com/api/requests',
+            '/api/requests',
             {
                 method: 'POST',
                 headers: {
@@ -2191,7 +2191,7 @@ async function openPortfolio(service) {
                 );
 
                 const response = await fetch(
-                    `https://samarthai-backend.onrender.com/api/service-portfolio/${encodeURIComponent(service.id)}`,
+                    `/api/service-portfolio/${encodeURIComponent(service.id)}`,
                     {
                         method: 'POST',
                         headers: {
@@ -2251,7 +2251,7 @@ async function openPortfolio(service) {
 
         try {
             const response = await fetch(
-                `https://samarthai-backend.onrender.com/api/service-portfolio/${encodeURIComponent(service.id)}`,
+                `/api/service-portfolio/${encodeURIComponent(service.id)}`,
                 {
                     method: 'GET',
                     cache: 'no-store'
@@ -2536,7 +2536,7 @@ async function loadNotificationRequest() {
     try {
 
         const response = await fetch(
-            'https://samarthai-backend.onrender.com/api/requests/provider',
+            '/api/requests/provider',
             {
                 method: 'GET',
                 headers: {
@@ -2680,7 +2680,7 @@ async function updateProviderRequestStatus(
     try {
 
         const response = await fetch(
-            `https://samarthai-backend.onrender.com/api/requests/provider/${encodeURIComponent(requestId)}/status`,
+            `/api/requests/provider/${encodeURIComponent(requestId)}/status`,
             {
                 method: 'PUT',
 
@@ -2753,7 +2753,7 @@ async function loadNotificationComplaint() {
     try {
 
         const response = await fetch(
-            'https://samarthai-backend.onrender.com/api/complaints/provider',
+            '/api/complaints/provider',
             {
                 method: 'GET',
 

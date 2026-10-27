@@ -1,0 +1,20 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { validate } = require('../staging/preflight.cjs');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'samarthai-preflight-'));
+fs.mkdirSync(path.join(root,'frontend'));
+const env = { STAGING_ONLY:'true',STAGING_SUPABASE_PROJECT_REF:'fixture-staging',SUPABASE_URL:'https://fixture-staging.supabase.co',JWT_SECRET:'fixture-only-staging-session-secret-32bytes',RAZORPAY_KEY_ID:'rzp_test_fixture_only',FRONTEND_URL:'https://fixture-staging.example.invalid',PUBLIC_APP_URL:'https://fixture-staging.example.invalid',SUPABASE_SERVICE_KEY:'fixture-only-value',RAZORPAY_KEY_SECRET:'fixture-only-value',RAZORPAY_WEBHOOK_SECRET:'fixture-only-value',GEMINI_API_KEY:'fixture-only-value' };
+test('isolated mock staging configuration passes local structural validation',()=>assert.deepEqual(validate(env,root),[]));
+test('staging rejects production database host',()=>assert(validate({...env,STAGING_SUPABASE_PROJECT_REF:'curszxwxfujksnkihkc',SUPABASE_URL:'https://curszxwxfujksnkihkc.supabase.co'},root).some(message=>message.includes('Production database'))));
+test('staging rejects live Razorpay mode',()=>assert(validate({...env,RAZORPAY_KEY_ID:'rzp_live_fixture_only'},root).some(message=>message.includes('test mode'))));
+test('current frontend has no hardcoded Production API references',()=>assert(!validate(env).some(message=>message.includes('Production API URL'))));
+test('preflight still rejects a frontend fixture containing a Production API reference',()=>{
+  const unsafeRoot=fs.mkdtempSync(path.join(os.tmpdir(),'samarthai-preflight-unsafe-'));
+  fs.mkdirSync(path.join(unsafeRoot,'frontend'));
+  fs.writeFileSync(path.join(unsafeRoot,'frontend','unsafe.js'),"fetch('https://samarthai-backend.onrender.com/api/auth/profile')");
+  assert(validate(env,unsafeRoot).some(message=>message.includes('Production API URL')));
+});

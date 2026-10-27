@@ -1,0 +1,302 @@
+[
+  {
+    "file": ".gitignore",
+    "bytes": 62,
+    "sha256": "03ba4a2c96eef8b69bcffc6cd39212965d583d098c15b909045cb54ecf648eba",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": ".node-version",
+    "bytes": 8,
+    "sha256": "d9f318747a126ce2247661af67852b185def7789492eabfad7bba322be087c33",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": ".npmrc",
+    "bytes": 48,
+    "sha256": "e97062ac43244c6a7d009f874c68f40dd7890561ba44a62717e7215444bbd3f9",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": ".nvmrc",
+    "bytes": 8,
+    "sha256": "d9f318747a126ce2247661af67852b185def7789492eabfad7bba322be087c33",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "docs/backend-security-hardening-hi.md",
+    "bytes": 18066,
+    "sha256": "55aa8c2d3e75366847bde61c67348b14f5a44691d1b3c6d78670c993d02b3b89",
+    "review": "evidence and report validation"
+  },
+  {
+    "file": "docs/security-audit-full.json",
+    "bytes": 385,
+    "sha256": "d9f0ede4be8031674b82433b164bbad2a93d2ff4259e226967aadc216b190667",
+    "review": "evidence and report validation"
+  },
+  {
+    "file": "docs/security-audit-production.json",
+    "bytes": 385,
+    "sha256": "d9f0ede4be8031674b82433b164bbad2a93d2ff4259e226967aadc216b190667",
+    "review": "evidence and report validation"
+  },
+  {
+    "file": "docs/security-rls-review.sql",
+    "bytes": 1584,
+    "sha256": "86a98a541f9bd200edaa7ca4050ce6f1a3a53065f719b9628d86670ffeef6aec",
+    "review": "evidence and report validation"
+  },
+  {
+    "file": "docs/security-tests.tap",
+    "bytes": 30698,
+    "sha256": "713f59045c06c2810ed2c23674546bbc2e863b1e214786910e7c715f2c0cf81d",
+    "review": "evidence and report validation"
+  },
+  {
+    "file": "frontend/family.html",
+    "bytes": 113513,
+    "sha256": "e9a7dbcfa0c50ef26e91751729f05250b44a5d64bd874b0b67be71360a734b0e",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "frontend/register.html",
+    "bytes": 12932,
+    "sha256": "78ffb768096a03ab47a1aa32066eca619602c1f33894e0cc6ec8b56f3df455b3",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "frontend/reset-password.html",
+    "bytes": 6950,
+    "sha256": "2c410fb6b43920749a6d9b1161780488ebf87e791beeb9a63a3d2979f92a2e16",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "frontend/security-actions.js",
+    "bytes": 919,
+    "sha256": "1b41c3aa06992ef09db922a0ce9c290512a121fdda5d7c973c3d032128385868",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "frontend/service-admin.html",
+    "bytes": 25208,
+    "sha256": "3fd33a78215b52f58930fcb92cab56b2bbaf85d926d84b58c88b3bf262e60906",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "middleware/activityTracker.js",
+    "bytes": 1920,
+    "sha256": "0d0ad8f5ac190f504e0318193728f923eafea855b4a839a5f92f0541fa2241b5",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "middleware/contentSecurityPolicy.js",
+    "bytes": 2051,
+    "sha256": "a67e428751fcf14a73e24803f03cd4d36b1e61c3e5728da91d72c1505751f4fe",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "middleware/safeUpload.js",
+    "bytes": 2260,
+    "sha256": "5f2c088dfa71d724e9f704b9426d13b1eb8e927ce3bcac28b3b6fe1cd84c9470",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "middleware/sessionGuard.js",
+    "bytes": 1749,
+    "sha256": "0548b5bb89a7575d0a0c858d530cea311ec36f36f43a2419914dc8ca26113efa",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "package-lock.json",
+    "bytes": 70282,
+    "sha256": "e526e27396862536f808bfc9a200ec89f89c3c5c37c3e1d332899b8ee4f4facb",
+    "review": "lockfile versions, registry and integrity validation"
+  },
+  {
+    "file": "package.json",
+    "bytes": 628,
+    "sha256": "7bb7c311f5d9efb4f7b35523b1f22e61efd025f70ee6c1c80c592ba3853b54f2",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "render.yaml",
+    "bytes": 446,
+    "sha256": "34180a925e4d3edf4cc10b42c16783d95abafcf38a45740156d9c47896938057",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/admin.js",
+    "bytes": 22362,
+    "sha256": "ecabbf3ebb156a0c8e4e69ae0b6163322ffd977c11a328a38972205a8a20a519",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/auth.js",
+    "bytes": 26613,
+    "sha256": "3d2fed9e85eda4065f29a8c6719770014542eddc07e1414a821e33f2d1c830ef",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/chat.js",
+    "bytes": 16034,
+    "sha256": "1fb3778c53a16a4ff25a14af3ded787e3252b7296dca3c38d4a4dc63b59dd659",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/complaints.js",
+    "bytes": 9194,
+    "sha256": "95f80a45cb2491e5002a93e92cb3545d746e85c433bf4e765e2eb29babae3944",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/family.js",
+    "bytes": 50311,
+    "sha256": "1ab676bf2d2360f950027aa13f74f39f2e03e8dae58c1ace5e160719b608d47a",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/gps.js",
+    "bytes": 12394,
+    "sha256": "6dcb057b8265f95d82bccf71f43fdd73c29c30e430f55fb4387fc76de79063ed",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/memory.js",
+    "bytes": 7715,
+    "sha256": "e98cffe64fe50ca90e175f8f9f637546df7f154ebb932b80628487f265c43e04",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/messages.js",
+    "bytes": 5399,
+    "sha256": "17e93a5901a4250768d8ffd3beea9395cefd491b47e189836ddc5a92995b02c5",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/notifications.js",
+    "bytes": 2901,
+    "sha256": "df5eb702c38d6dce8f5979a5eed47281906746c495ce544cc74742c1bb687a8d",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/payment.js",
+    "bytes": 46003,
+    "sha256": "b2fd11389ba75f4e22263ea34bbb832f4845c39a241f10351e03d6b3ea0ae943",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/requests.js",
+    "bytes": 9382,
+    "sha256": "f2c1c598b8eba3c5b9e7b478cf6188a70675ebb43e0542b477c8e545b5051b9f",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/reviews.js",
+    "bytes": 7061,
+    "sha256": "09fcefcabd35e17b9ea48543df5c541808ffa949702ace8f904157cc2aaaed57",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/scanner.js",
+    "bytes": 7317,
+    "sha256": "9a02dd1f3dcee3c465d73feaa3b7bec154e8d6fbb662a7a612e7971d16bf6d6a",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/serviceadmin.js",
+    "bytes": 11842,
+    "sha256": "16b4ab78f4e45b50f270228bbb236fbd108bdbdb48c8e41baeb2dbda23439203",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/serviceportfolio.js",
+    "bytes": 8289,
+    "sha256": "05f1abceca58af0197066db48c31950ce0c9e9a31de116a0bad8e406f4254f25",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/services.js",
+    "bytes": 10637,
+    "sha256": "94f26d54e6cb8607ad3ebc1cf606d26298f12f19442364431e5e53b34f19cbb0",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/sos.js",
+    "bytes": 25570,
+    "sha256": "4893d950cc0dff8b065b324203e5f8f0b11f79b1429ce4c46353ffe781068b5c",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "routes/weather.js",
+    "bytes": 4316,
+    "sha256": "214ad4582ea8195d3df54c4d3f3f35c45ba32194362a21df99640598443967c2",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "server.js",
+    "bytes": 7398,
+    "sha256": "3f75d69d8821ef179bbe22dcf570580ccb109cace01a55094cdc76f536569de3",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/aiGateway.js",
+    "bytes": 28379,
+    "sha256": "87d3bd784c4876408273ecff02821d04179cafe1a818083fd12de5cd19aea860",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/conversationEngine.js",
+    "bytes": 72223,
+    "sha256": "e9b14c7cd85718c670bb151074237480914f21605504ef15de6546bb4d77d40f",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/security.js",
+    "bytes": 1276,
+    "sha256": "16faae12cb1e081b81197c7485fcb5e19e8ec1614445cd289d26ee400457237b",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/securityLog.js",
+    "bytes": 707,
+    "sha256": "326103635e32191adb9ea33d1ad34dc835568b6219384e67165a855ce88f94d8",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/tools/familyTool.js",
+    "bytes": 2507,
+    "sha256": "d5e2715f1879e35391fcf460a1b5753399345384fb8e8f3925e362b2ded11714",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/tools/gpsTool.js",
+    "bytes": 1722,
+    "sha256": "c0e54ff248b855805ff128cb6a26cc38a005f231d599d2df9caef4b5fe3afba3",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "services/tools/servicesTool.js",
+    "bytes": 7183,
+    "sha256": "253feda6660fbbef587ca6a71c69920d16f32d3806c7460332d00a5c19bd7c4e",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "tests/helpers/securityDatabase.cjs",
+    "bytes": 3272,
+    "sha256": "1224f0007530dc04c47a6852ea335247397e4e4741e86c413e3cbe4804d220a7",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "tests/security-integration.test.cjs",
+    "bytes": 18949,
+    "sha256": "1f9a7c7949e3e45afe895c63970adefc97f2a835f9166f8e14f3c5c75612cc70",
+    "review": "source/diff review and applicable regression tests"
+  },
+  {
+    "file": "tests/security.test.cjs",
+    "bytes": 8796,
+    "sha256": "400574b768b10289ef764a32eaee612bec0e01e8968775fa389bae3426072302",
+    "review": "source/diff review and applicable regression tests"
+  }
+]

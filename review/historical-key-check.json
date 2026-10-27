@@ -1,0 +1,33 @@
+{
+  "method": "offline Git object inspection and current tracked-source scan",
+  "distinctHistoricalSupabaseSecretFormatValues": 1,
+  "historicalLocations": [
+    {
+      "path": "render.yaml",
+      "line": 15,
+      "setting": "SUPABASE_SERVICE_KEY",
+      "inOriginalCommit": false,
+      "commits": [
+        "5283010",
+        "32f18a3"
+      ]
+    },
+    {
+      "path": "render.yaml",
+      "line": 14,
+      "setting": "SUPABASE_SERVICE_KEY",
+      "inOriginalCommit": false,
+      "commits": [
+        "32f18a3",
+        "1d76de0"
+      ]
+    }
+  ],
+  "currentTrackedFilesWithSecretFormat": [],
+  "liveValidity": "unverified: opaque credential cannot be validated offline",
+  "networkRequests": 0,
+  "rotationOrRevocationPerformed": false,
+  "historyRewritePerformed": false,
+  "originalSecurityCommit": "6270c05843940a4cc83fab63b5c4455d94217b74",
+  "status": "OPEN: owner confirmation of prior revocation/rotation is still required"
+}
